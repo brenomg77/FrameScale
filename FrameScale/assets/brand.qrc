@@ -1,0 +1,14 @@
+<RCC>
+    <qresource prefix="/brand">
+        <file>framescale.ico</file>
+        <file>framescale-symbol.png</file>
+        <file>english.json</file>
+        <file>pt-PT.json</file>
+        <file>pt-BR.json</file>
+        <file>chevron-up.svg</file>
+        <file>chevron-ink.svg</file>
+        <file>chevron-up-ink.svg</file>
+        <file>home.svg</file>
+        <file>chevron-dark.svg</file>
+    </qresource>
+</RCC>

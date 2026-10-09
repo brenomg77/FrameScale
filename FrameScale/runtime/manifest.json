@@ -1,0 +1,484 @@
+﻿{
+    "schemaVersion":  2,
+    "platform":  "windows-x86_64",
+    "generated":  "2026-10-05",
+    "packages":  [
+                     {
+                         "id":  "ffmpeg",
+                         "version":  "n8.1.2-51-g7ba069f4f1-20260909",
+                         "source":  "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n8.1-latest-win64-gpl-8.1.zip",
+                         "sha256":  "C635CE2F69C7DEEBB1D4F0A8EB2D7A15FA1820055279D563CBF2985CF8AE793E",
+                         "license":  "GPL-3.0-or-later",
+                         "files":  [
+                                       "ffmpeg.exe",
+                                       "ffprobe.exe"
+                                   ],
+                         "provenance":  "Version read from local binary. Historical mutable latest URL; corresponding build/dependency sources not collected."
+                     },
+                     {
+                         "id":  "realesrgan-ncnn-vulkan",
+                         "version":  "0.2.0",
+                         "source":  "https://github.com/xinntao/Real-ESRGAN-ncnn-vulkan/releases/download/v0.2.0/realesrgan-ncnn-vulkan-v0.2.0-windows.zip",
+                         "sha256":  "1BBBDB12D470AF80B035C773682E144C6C2F6ECE9210832A289AF0A48CE3FA9A",
+                         "license":  "MIT",
+                         "files":  [
+                                       "realesrgan-ncnn-vulkan.exe"
+                                   ],
+                         "provenance":  "Historical archive URL/hash from original manifest; archive not re-downloaded during this repair."
+                     },
+                     {
+                         "id":  "realcugan-ncnn-vulkan",
+                         "version":  "20220728",
+                         "source":  "https://github.com/nihui/realcugan-ncnn-vulkan/releases/download/20220728/realcugan-ncnn-vulkan-20220728-windows.zip",
+                         "sha256":  "C6E08D46C11704B1E3A1ADA9DDD591CB5005F52F132136C8633BA25DEF400E01",
+                         "license":  "MIT",
+                         "files":  [
+                                       "realcugan-ncnn-vulkan.exe"
+                                   ],
+                         "provenance":  "Historical archive URL/hash from original manifest; archive not re-downloaded during this repair."
+                     },
+                     {
+                         "id":  "rife-ncnn-vulkan",
+                         "version":  "20221029",
+                         "source":  "https://github.com/nihui/rife-ncnn-vulkan/releases/download/20221029/rife-ncnn-vulkan-20221029-windows.zip",
+                         "sha256":  "D8E4D772D26CD8006EF0AD0BC82EB191B53C68677D1AE2F42506D74CBBBEA606",
+                         "license":  "MIT",
+                         "files":  [
+                                       "rife-ncnn-vulkan.exe"
+                                   ],
+                         "provenance":  "Historical archive URL/hash from original manifest; archive not re-downloaded during this repair."
+                     },
+                     {
+                         "id":  "mpv",
+                         "version":  "20260903-git-69e63f425a",
+                         "source":  "https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20260903/mpv-x86_64-20260903-git-69e63f425a.7z",
+                         "sha256":  "418DBFB5FEB851CBED33D6C05D8481BA71802621BFD6EFE8974522B28D42AC97",
+                         "license":  "GPL-2.0-or-later",
+                         "files":  [
+                                       "mpv.exe"
+                                   ],
+                         "provenance":  "Archive digest matches GitHub release metadata checked 2026-10-05; local extraction not re-downloaded."
+                     },
+                     {
+                         "id":  "yt-dlp",
+                         "version":  "2026.08.19",
+                         "source":  "https://github.com/yt-dlp/yt-dlp/releases/download/2026.08.19/yt-dlp.exe",
+                         "sha256":  "66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a",
+                         "license":  "GPL-3.0-or-later (bundled executable); Unlicense (yt-dlp source)",
+                         "files":  [
+                                       "yt-dlp.exe"
+                                   ],
+                         "provenance":  "Local executable digest matches official GitHub release asset digest checked 2026-10-05."
+                     },
+                     {
+                         "id":  "deno",
+                         "version":  "2.9.7",
+                         "source":  "https://github.com/denoland/deno/releases/download/v2.9.7/deno-x86_64-pc-windows-msvc.zip",
+                         "sha256":  "a0c3101b4158d1dfb7d6a78a7bf0f3de80c96bb423c152beec8beb22786f2238",
+                         "license":  "MIT (Deno); bundled dependencies have additional terms",
+                         "files":  [
+                                       "deno.exe"
+                                   ],
+                         "provenance":  "Version read from local executable; archive digest from official GitHub release metadata checked 2026-10-05; archive extraction not revalidated."
+                     },
+                     {
+                         "id":  "microsoft-openmp",
+                         "version":  "14.31.31103.0",
+                         "source":  "https://learn.microsoft.com/en-us/cpp/windows/redistributing-visual-cpp-files?view=msvc-170",
+                         "license":  "Microsoft Software License Terms",
+                         "files":  [
+                                       "vcomp140.dll"
+                                   ],
+                         "provenance":  "Local Microsoft file-version resource; originally copied with inference distributions. Exact applicable redistribution terms not recorded."
+                     },
+                     {
+                         "id":  "microsoft-d3dcompiler",
+                         "version":  "10.0.18362.1",
+                         "source":  "https://github.com/shinchiro/mpv-winbuild-cmake/releases/tag/20260903",
+                         "license":  "Microsoft Software License Terms",
+                         "files":  [
+                                       "d3dcompiler_43.dll"
+                                   ],
+                         "provenance":  "Local Microsoft file-version resource; supplied with mpv archive. Exact applicable redistribution terms not recorded."
+                     }
+                 ],
+    "integrityScope":  "All runtime/bin and models files. Hashes describe audited local files; they are not a license certification or proof of upstream authenticity.",
+    "modelPackages":  [
+                          {
+                              "id":  "realesrgan-models",
+                              "source":  "https://github.com/xinntao/Real-ESRGAN",
+                              "license":  "BSD-3-Clause",
+                              "directory":  "models/realesrgan",
+                              "provenance":  "Upstream project reference; exact original archive/revision not established. Local artifacts hashed below."
+                          },
+                          {
+                              "id":  "realcugan-models",
+                              "source":  "https://github.com/bilibili/ailab/tree/main/Real-CUGAN",
+                              "license":  "MIT",
+                              "directory":  "models/realcugan",
+                              "provenance":  "Upstream project reference; exact original archive/revision not established. Local artifacts hashed below."
+                          },
+                          {
+                              "id":  "rife-models",
+                              "source":  "https://github.com/hzwer/ECCV2022-RIFE",
+                              "license":  "MIT",
+                              "directory":  "models/rife",
+                              "provenance":  "Bundled rife-v4.6 only; exact original archive/revision not established. Local artifacts hashed below."
+                          },
+                          {
+                              "id":  "anime4k-shaders",
+                              "source":  "https://github.com/bloc97/Anime4K",
+                              "license":  "MIT",
+                              "directory":  "models/libplacebo",
+                              "provenance":  "V4/V4.1 variants; exact original archive/revision not established. Embedded license retained and local artifacts hashed below."
+                          }
+                      ],
+    "artifacts":  [
+                      {
+                          "path":  "models/libplacebo/anime4k-v4.1-gan.glsl",
+                          "size":  1418791,
+                          "sha256":  "880b56505951cc46c282dd5f083b0fcca104bb156ae01951b26bba1c2378493a"
+                      },
+                      {
+                          "path":  "models/libplacebo/anime4k-v4-a.glsl",
+                          "size":  336741,
+                          "sha256":  "27264a412fbebf203253f280d39acc4cacd42be58bc01d0cf719d61dd6d12adf"
+                      },
+                      {
+                          "path":  "models/libplacebo/anime4k-v4-a+a.glsl",
+                          "size":  372934,
+                          "sha256":  "7c51ec2b6a346a9b362f730380a39600c576e3ee8a8875202d5abd49e6ce0f91"
+                      },
+                      {
+                          "path":  "models/libplacebo/anime4k-v4-b.glsl",
+                          "size":  336870,
+                          "sha256":  "a3299230f960ac9ca25bb2155abf05cb158a5e9e374a15db389ce3537ecdfa26"
+                      },
+                      {
+                          "path":  "models/libplacebo/anime4k-v4-b+b.glsl",
+                          "size":  373163,
+                          "sha256":  "68962d94bb2952534fb9007d0c196cc044e1cedaf6c28e4f2957665cb6b67656"
+                      },
+                      {
+                          "path":  "models/libplacebo/anime4k-v4-c.glsl",
+                          "size":  191859,
+                          "sha256":  "76d608e9ef5c22b0bc13e9350adc04540c2dd61b2b7525b35775d6a2bdae0552"
+                      },
+                      {
+                          "path":  "models/libplacebo/anime4k-v4-c+a.glsl",
+                          "size":  228052,
+                          "sha256":  "2c81f0df2fe414fd41e5b35145bd67b7a937d868569c160a41ee09e7a0598eed"
+                      },
+                      {
+                          "path":  "models/realcugan/models-nose/up2x-no-denoise.bin",
+                          "size":  2551408,
+                          "sha256":  "2b6f4db8fdc04336ac68ba954b4cd3b280beb5e7b6b0bcd97f769accc512cf4a"
+                      },
+                      {
+                          "path":  "models/realcugan/models-nose/up2x-no-denoise.param",
+                          "size":  3346,
+                          "sha256":  "698dc5d61e78998db9cc8620e4509e8a1f2694eeb7ecffe9d41d14bd5ec59fa6"
+                      },
+                      {
+                          "path":  "models/realcugan/models-pro/up2x-conservative.bin",
+                          "size":  2573648,
+                          "sha256":  "087b4f1836a084f432752503c9e12246a4f8446cfa2c5c919fcf490961b5b4f1"
+                      },
+                      {
+                          "path":  "models/realcugan/models-pro/up2x-conservative.param",
+                          "size":  4822,
+                          "sha256":  "98bc044434b31a388627f66fcb816ba8213923a4c69eb346ba67e62ec21f6f4d"
+                      },
+                      {
+                          "path":  "models/realcugan/models-pro/up2x-denoise3x.bin",
+                          "size":  2573648,
+                          "sha256":  "815fe3bf3f14f010f4f7a26ab6d2c47330d80c789720639088ccfaf013cec651"
+                      },
+                      {
+                          "path":  "models/realcugan/models-pro/up2x-denoise3x.param",
+                          "size":  4822,
+                          "sha256":  "98bc044434b31a388627f66fcb816ba8213923a4c69eb346ba67e62ec21f6f4d"
+                      },
+                      {
+                          "path":  "models/realcugan/models-pro/up2x-no-denoise.bin",
+                          "size":  2573648,
+                          "sha256":  "d99abb3266d08b04aadd6008b8855eee06b78055f202c7b93fbf34ab8365cbc9"
+                      },
+                      {
+                          "path":  "models/realcugan/models-pro/up2x-no-denoise.param",
+                          "size":  4822,
+                          "sha256":  "98bc044434b31a388627f66fcb816ba8213923a4c69eb346ba67e62ec21f6f4d"
+                      },
+                      {
+                          "path":  "models/realcugan/models-pro/up3x-conservative.bin",
+                          "size":  2577104,
+                          "sha256":  "bda924012738fd82b13e5ef23feb051976be2803a0aba5651b7c4f99b5713436"
+                      },
+                      {
+                          "path":  "models/realcugan/models-pro/up3x-conservative.param",
+                          "size":  4822,
+                          "sha256":  "6cea6ddc870dd6d16773ee78bdf32bc1bfc55eec2f8fa57d1d33a33ab3ffb6f6"
+                      },
+                      {
+                          "path":  "models/realcugan/models-pro/up3x-denoise3x.bin",
+                          "size":  2577104,
+                          "sha256":  "01a32b0fbba96a60e7e83fbe351a1231f40a43fa9247f9695d7e0633d2f3a938"
+                      },
+                      {
+                          "path":  "models/realcugan/models-pro/up3x-denoise3x.param",
+                          "size":  4822,
+                          "sha256":  "6cea6ddc870dd6d16773ee78bdf32bc1bfc55eec2f8fa57d1d33a33ab3ffb6f6"
+                      },
+                      {
+                          "path":  "models/realcugan/models-pro/up3x-no-denoise.bin",
+                          "size":  2577104,
+                          "sha256":  "2f767e54d25fe4a9a8927783ecff36151504299c833cde85445b1986bbb44800"
+                      },
+                      {
+                          "path":  "models/realcugan/models-pro/up3x-no-denoise.param",
+                          "size":  4822,
+                          "sha256":  "6cea6ddc870dd6d16773ee78bdf32bc1bfc55eec2f8fa57d1d33a33ab3ffb6f6"
+                      },
+                      {
+                          "path":  "models/realcugan/models-se/up2x-conservative.bin",
+                          "size":  2573648,
+                          "sha256":  "91c72c136e7ff8556323d4449c5ceeff22d9829bf8463a01137cadb8d59b84a0"
+                      },
+                      {
+                          "path":  "models/realcugan/models-se/up2x-conservative.param",
+                          "size":  4818,
+                          "sha256":  "91efac7489bf249f092faa3764e3a3d1d31ef290051e39f2afd2138c98ccce30"
+                      },
+                      {
+                          "path":  "models/realcugan/models-se/up2x-denoise1x.bin",
+                          "size":  2573648,
+                          "sha256":  "09373c4fddfd2a57fb4af5e516eba1b4c9caa132fd52ffd01bcaefee543bf7f6"
+                      },
+                      {
+                          "path":  "models/realcugan/models-se/up2x-denoise1x.param",
+                          "size":  4818,
+                          "sha256":  "91efac7489bf249f092faa3764e3a3d1d31ef290051e39f2afd2138c98ccce30"
+                      },
+                      {
+                          "path":  "models/realcugan/models-se/up2x-denoise2x.bin",
+                          "size":  2573648,
+                          "sha256":  "47427a52badebfbd7bb6db97196a2844c553f7f2bb93c9527b26347bea0430e7"
+                      },
+                      {
+                          "path":  "models/realcugan/models-se/up2x-denoise2x.param",
+                          "size":  4818,
+                          "sha256":  "91efac7489bf249f092faa3764e3a3d1d31ef290051e39f2afd2138c98ccce30"
+                      },
+                      {
+                          "path":  "models/realcugan/models-se/up2x-denoise3x.bin",
+                          "size":  2573648,
+                          "sha256":  "610ebae63f388fe6f39615cc5f4eaeb038d5aa6ba8b299ba3b989f7f7a1a280a"
+                      },
+                      {
+                          "path":  "models/realcugan/models-se/up2x-denoise3x.param",
+                          "size":  4818,
+                          "sha256":  "91efac7489bf249f092faa3764e3a3d1d31ef290051e39f2afd2138c98ccce30"
+                      },
+                      {
+                          "path":  "models/realcugan/models-se/up2x-no-denoise.bin",
+                          "size":  2573648,
+                          "sha256":  "7f135a712830b16678cb8247b9517308c5f3858fca9b10e1c3ad5ef6e261de0c"
+                      },
+                      {
+                          "path":  "models/realcugan/models-se/up2x-no-denoise.param",
+                          "size":  4818,
+                          "sha256":  "91efac7489bf249f092faa3764e3a3d1d31ef290051e39f2afd2138c98ccce30"
+                      },
+                      {
+                          "path":  "models/realcugan/models-se/up3x-conservative.bin",
+                          "size":  2577104,
+                          "sha256":  "8321c450efedcd94192196b03ddec19c2a023a5637df7208d49e9e0461560dff"
+                      },
+                      {
+                          "path":  "models/realcugan/models-se/up3x-conservative.param",
+                          "size":  4818,
+                          "sha256":  "9e71ba0bce194f6a95422140c8caa25accbbfd9ec84a0cc08f7f4ec1e615a5a8"
+                      },
+                      {
+                          "path":  "models/realcugan/models-se/up3x-denoise3x.bin",
+                          "size":  2577104,
+                          "sha256":  "fdb269034f7d6bf59be8fe1c03c43a75671af464e045a13870b24b649d64f1f6"
+                      },
+                      {
+                          "path":  "models/realcugan/models-se/up3x-denoise3x.param",
+                          "size":  4818,
+                          "sha256":  "9e71ba0bce194f6a95422140c8caa25accbbfd9ec84a0cc08f7f4ec1e615a5a8"
+                      },
+                      {
+                          "path":  "models/realcugan/models-se/up3x-no-denoise.bin",
+                          "size":  2577104,
+                          "sha256":  "e22e8e647b20eb0067cc46b9cf83bcb0893b2e77e83beaee0bedecf4c735f716"
+                      },
+                      {
+                          "path":  "models/realcugan/models-se/up3x-no-denoise.param",
+                          "size":  4818,
+                          "sha256":  "9e71ba0bce194f6a95422140c8caa25accbbfd9ec84a0cc08f7f4ec1e615a5a8"
+                      },
+                      {
+                          "path":  "models/realcugan/models-se/up4x-conservative.bin",
+                          "size":  2818348,
+                          "sha256":  "1ffde324bf3444adade3e70ff4ff4eac7a4bfbf4c01b5aab4563a89e5cec16da"
+                      },
+                      {
+                          "path":  "models/realcugan/models-se/up4x-conservative.param",
+                          "size":  5078,
+                          "sha256":  "63e8f6a5a57acb4b7678fd928612538ae7208c836223becdb66ffb82bd2aab9b"
+                      },
+                      {
+                          "path":  "models/realcugan/models-se/up4x-denoise3x.bin",
+                          "size":  2818348,
+                          "sha256":  "1fe05d6066901d354bbbc0cb53fba6588ef7637e1ec9c3bce7546900484d0b35"
+                      },
+                      {
+                          "path":  "models/realcugan/models-se/up4x-denoise3x.param",
+                          "size":  5078,
+                          "sha256":  "63e8f6a5a57acb4b7678fd928612538ae7208c836223becdb66ffb82bd2aab9b"
+                      },
+                      {
+                          "path":  "models/realcugan/models-se/up4x-no-denoise.bin",
+                          "size":  2818348,
+                          "sha256":  "aa3d9bda3f46bb48f709d874ccaf67877e94a2fd6cedca7dac5ccb3bf714e066"
+                      },
+                      {
+                          "path":  "models/realcugan/models-se/up4x-no-denoise.param",
+                          "size":  5078,
+                          "sha256":  "63e8f6a5a57acb4b7678fd928612538ae7208c836223becdb66ffb82bd2aab9b"
+                      },
+                      {
+                          "path":  "models/realesrgan/realesr-animevideov3-x2.bin",
+                          "size":  1247368,
+                          "sha256":  "548a36f9c3f4ab8da56cd3b13badf23968bee207b396dad14d04b830e5f2ab2d"
+                      },
+                      {
+                          "path":  "models/realesrgan/realesr-animevideov3-x2.param",
+                          "size":  3216,
+                          "sha256":  "1393f7c0e885f9d15a0668329a13f695ebd0ea45791f46d28145d7934824d224"
+                      },
+                      {
+                          "path":  "models/realesrgan/realesr-animevideov3-x3.bin",
+                          "size":  1247368,
+                          "sha256":  "548a36f9c3f4ab8da56cd3b13badf23968bee207b396dad14d04b830e5f2ab2d"
+                      },
+                      {
+                          "path":  "models/realesrgan/realesr-animevideov3-x3.param",
+                          "size":  3216,
+                          "sha256":  "584a43e429188c159ef8e42191ef5a5fd1d2e3b17398e5cee6089726dec879c7"
+                      },
+                      {
+                          "path":  "models/realesrgan/realesr-animevideov3-x4.bin",
+                          "size":  1247368,
+                          "sha256":  "548a36f9c3f4ab8da56cd3b13badf23968bee207b396dad14d04b830e5f2ab2d"
+                      },
+                      {
+                          "path":  "models/realesrgan/realesr-animevideov3-x4.param",
+                          "size":  3119,
+                          "sha256":  "157c0a10405f885d4c53ce76fe2ba731694bcd16ec90ab6b889335e384239682"
+                      },
+                      {
+                          "path":  "models/realesrgan/realesrgan-x4plus.bin",
+                          "size":  33424520,
+                          "sha256":  "713ee713b0353afaa27976f0563a64a5043bd70b9bd8936c2e26e25ebcdbcddf"
+                      },
+                      {
+                          "path":  "models/realesrgan/realesrgan-x4plus.param",
+                          "size":  117030,
+                          "sha256":  "c8a066c12541a1ef01ba90fddd90688278bdc11536847699239be29225015bc8"
+                      },
+                      {
+                          "path":  "models/realesrgan/realesrgan-x4plus-anime.bin",
+                          "size":  8943500,
+                          "sha256":  "fe01c269cfd10cdef8e018ab66ebe750cf79c7af4d1f9c16c737e1295229bacc"
+                      },
+                      {
+                          "path":  "models/realesrgan/realesrgan-x4plus-anime.param",
+                          "size":  30560,
+                          "sha256":  "d63c7e93c58ec5d0048ca1f0a995f40b2af17c2816a2e0a3b7172046d98795ec"
+                      },
+                      {
+                          "path":  "models/rife/rife-v4.6/flownet.bin",
+                          "size":  10614320,
+                          "sha256":  "f334ed2260149ce0188a6dcf049844e8b0cdd912e01cbcfb63553157d2508958"
+                      },
+                      {
+                          "path":  "models/rife/rife-v4.6/flownet.param",
+                          "size":  16749,
+                          "sha256":  "28df14d57a225725ee5386f52eba422488450d37c9f40800ed4f62e8ba846692"
+                      },
+                      {
+                          "path":  "runtime/bin/d3dcompiler_43.dll",
+                          "size":  4481992,
+                          "sha256":  "4b074a3976399dc735484f5d43d04b519b7bdee8ac719d9ab8ed6bd4e6be0345"
+                      },
+                      {
+                          "path":  "runtime/bin/deno.exe",
+                          "size":  97462048,
+                          "sha256":  "e020f3e232bd16e33768dee528e5983349c962952051ced0a5d58ad42f5d9b33"
+                      },
+                      {
+                          "path":  "runtime/bin/ffmpeg.exe",
+                          "size":  162800128,
+                          "sha256":  "b74bd2209fe38026ae9f73ad676e626599bdc1efd950fe32d40b23184fb1a060"
+                      },
+                      {
+                          "path":  "runtime/bin/ffprobe.exe",
+                          "size":  162594816,
+                          "sha256":  "70be4ea32723b313df89603ba7cfbd818862e8785c20eb9008c27ef161ae84c0"
+                      },
+                      {
+                          "path":  "runtime/bin/mpv.exe",
+                          "size":  120346624,
+                          "sha256":  "4a0bc712bc98e6f80cd980930b74b6ac202b8ccf2041e887adab69906f82731c"
+                      },
+                      {
+                          "path":  "runtime/bin/realcugan-ncnn-vulkan.exe",
+                          "size":  6656512,
+                          "sha256":  "af5a36b124c993c77d0e69e42f640cdc108060874ed060d34ceef66d52c77a9d"
+                      },
+                      {
+                          "path":  "runtime/bin/realesrgan-ncnn-vulkan.exe",
+                          "size":  6161408,
+                          "sha256":  "07e49f7cbb4ede01ae4dd4c399d3a7e5846e3d2085c3128eff881e55cb7b1a0c"
+                      },
+                      {
+                          "path":  "runtime/bin/rife-ncnn-vulkan.exe",
+                          "size":  6974464,
+                          "sha256":  "4b970319db2814c82b15fceed8193151560a676a9eb63f20d4877be77b98f44f"
+                      },
+                      {
+                          "path":  "runtime/bin/vcomp140.dll",
+                          "size":  182704,
+                          "sha256":  "8f72ef2e483465444b2059fc6744d6cb22cd8d8a27f6fa56befd2a42dcd0f78b"
+                      },
+                      {
+                          "path":  "runtime/bin/yt-dlp.exe",
+                          "size":  17840399,
+                          "sha256":  "66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a"
+                      }
+                  ],
+    "licenseFiles":  [
+                         "LICENSE-Anime4K.txt",
+                         "LICENSE-deno.txt",
+                         "LICENSE-GPL-2.0.txt",
+                         "LICENSE-GPL-3.0.txt",
+                         "LICENSE-LGPL-2.1.txt",
+                         "LICENSE-libplacebo-LGPL-2.1.txt",
+                         "LICENSE-mpv-Copyright.txt",
+                         "LICENSE-ncnn-BSD-3-Clause.txt",
+                         "LICENSE-Qt-GPL-3.0.txt",
+                         "LICENSE-Qt-GPL-Exception-1.0.txt",
+                         "LICENSE-Qt-LGPL-3.0.txt",
+                         "LICENSE-Real-CUGAN-models.txt",
+                         "LICENSE-Real-CUGAN-ncnn-vulkan.txt",
+                         "LICENSE-Real-ESRGAN-models.txt",
+                         "LICENSE-Real-ESRGAN-ncnn-vulkan.txt",
+                         "LICENSE-RIFE-models.txt",
+                         "LICENSE-RIFE-ncnn-vulkan.txt",
+                         "LICENSE-yt-dlp.txt",
+                         "LICENSE-yt-dlp-third-party.txt"
+                     ]
+}
