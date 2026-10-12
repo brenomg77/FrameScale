@@ -14,6 +14,7 @@
 #include <QTextDocument>
 #include <QTimer>
 #include <QToolTip>
+#include <QTabBar>
 
 // One application-owned tooltip surface, shared by fields and menu choices.
 // Drawing the translucent window ourselves avoids the native rectangular
@@ -126,7 +127,7 @@ public:
             const auto* help=static_cast<QHelpEvent*>(event);
             // Editors inside spin boxes inherit their parent's help. Keep one
             // owner and anchor while the pointer moves between its children.
-            while (widget->toolTip().isEmpty() && widget->parentWidget()
+            while (widget->toolTip().isEmpty() && !qobject_cast<QTabBar*>(widget) && widget->parentWidget()
                 && !widget->isWindow() && !qobject_cast<QAbstractItemView*>(widget->parentWidget()))
                 widget = widget->parentWidget();
             QString tip=widget->toolTip();
@@ -135,7 +136,12 @@ public:
             if (auto* button=qobject_cast<QAbstractButton*>(widget)) label=button->text();
             else if (auto* caption=qobject_cast<QLabel*>(widget)) label=caption->text();
             else if (auto* combo=qobject_cast<QComboBox*>(widget)) label=combo->currentText();
-            if (auto* menu=qobject_cast<QMenu*>(widget)) {
+            if (auto* tabs=qobject_cast<QTabBar*>(widget)) {
+                const int index=tabs->tabAt(help->pos());
+                if(index<0) return false;
+                tip=tabs->tabToolTip(index).toHtmlEscaped();
+                local=tabs->tabRect(index);
+            } else if (auto* menu=qobject_cast<QMenu*>(widget)) {
                 auto* action=menu->actionAt(help->pos());
                 if (!action || !menu->toolTipsVisible()) return false;
                 tip=action->toolTip(); label=action->text(); local=menu->actionGeometry(action);

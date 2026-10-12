@@ -15,7 +15,7 @@ set(CMAKE_JOB_POOL_COMPILE framescale_compile)
 set(CMAKE_JOB_POOL_LINK framescale_link)
 
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Widgets Multimedia MultimediaWidgets)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Widgets Multimedia MultimediaWidgets Network)
 
 qt_standard_project_setup()
 
@@ -56,7 +56,7 @@ qt_add_executable(FrameScale
 
 add_dependencies(FrameScale FrameScaleBrandResources)
 target_include_directories(FrameScale PRIVATE src)
-target_link_libraries(FrameScale PRIVATE Qt6::Widgets Qt6::Multimedia Qt6::MultimediaWidgets)
+target_link_libraries(FrameScale PRIVATE Qt6::Widgets Qt6::Multimedia Qt6::MultimediaWidgets Qt6::Network)
 
 target_compile_definitions(FrameScale PRIVATE
     FRAMESCALE_VERSION="${PROJECT_VERSION}"
@@ -203,7 +203,7 @@ qt_add_executable(FrameScaleUiSmoke
 )
 add_dependencies(FrameScaleUiSmoke FrameScaleBrandResources)
 target_include_directories(FrameScaleUiSmoke PRIVATE src)
-target_link_libraries(FrameScaleUiSmoke PRIVATE Qt6::Widgets Qt6::Multimedia Qt6::MultimediaWidgets)
+target_link_libraries(FrameScaleUiSmoke PRIVATE Qt6::Widgets Qt6::Multimedia Qt6::MultimediaWidgets Qt6::Network)
 target_compile_definitions(FrameScaleUiSmoke PRIVATE
     FRAMESCALE_VERSION="${PROJECT_VERSION}"
 )
@@ -318,3 +318,15 @@ set_tests_properties(FrameScaleLayerStateTests PROPERTIES
     ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     TIMEOUT 30)
 add_dependencies(framescale-tests FrameScaleLayerStateTests)
+
+add_executable(FrameScaleUrlImageTests EXCLUDE_FROM_ALL
+    tests/url_image_tests.cpp src/platform/WindowBackdrop.cpp
+    src/processing/RuntimePaths.cpp)
+target_include_directories(FrameScaleUrlImageTests PRIVATE src)
+target_link_libraries(FrameScaleUrlImageTests PRIVATE Qt6::Widgets Qt6::Network)
+if(WIN32)
+    target_link_libraries(FrameScaleUrlImageTests PRIVATE dwmapi)
+endif()
+add_test(NAME FrameScaleUrlImageTests COMMAND FrameScaleUrlImageTests)
+set_tests_properties(FrameScaleUrlImageTests PROPERTIES
+    ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 20)
