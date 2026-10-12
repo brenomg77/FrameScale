@@ -2,6 +2,13 @@
 
 Primeira versão de teste para Windows x64. O programa está em desenvolvimento e pode conter erros.
 
+Atualizada em 12 de outubro de 2026, mantendo a mesma pré-release:
+
+- Abrir por URL aceita imagens por link direto, incluindo redirecionamentos e links sem extensão.
+- Campo de URL com texto simplificado.
+- Balão do caminho do ficheiro com o estilo do programa.
+- Barra de Preview alinhada com a base do painel de processamento.
+
 ## Instalar
 
 Baixe **FrameScale-0.1.0-Windows-x64-Setup.exe** nos arquivos desta release e execute o instalador.
