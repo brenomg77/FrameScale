@@ -354,11 +354,12 @@ MediaPreviewWidget::MediaPreviewWidget(QWidget* parent)
     // actual fitted percentage whenever the viewport changes.
     auto* dock = new PreviewDock(this);
     dock_ = dock;
+    dock->installEventFilter(this);
     dock->setObjectName("previewDock");
     dock->setAutoFillBackground(false);
     dock->setProperty("appearanceManaged", true);
     auto* dockLayout = new QVBoxLayout(dock);
-    dockLayout->setContentsMargins(8, 5, 8, 6);
+    dockLayout->setContentsMargins(8, 5, 8, 16);
     dockLayout->setSpacing(13);
     layout->addWidget(dock);
     auto* zoomBar = new QWidget(dock);
@@ -1494,6 +1495,17 @@ void MediaPreviewWidget::showImage(const QImage& image)
 
 bool MediaPreviewWidget::eventFilter(QObject* watched, QEvent* event)
 {
+    if (watched == dock_ && event->type() == QEvent::LayoutRequest) {
+        // Timeline cards include ten pixels below their painted surface.
+        // Without a timeline the preview controls need the full panel inset.
+        const auto* editor=dock_->findChild<QWidget*>("layerEditor");
+        const bool hasTimeline=(timeline_ && !timeline_->isHidden())
+            || (editor && !editor->isHidden());
+        auto* dockLayout=dock_->layout();
+        const int bottom=hasTimeline ? 6 : 16;
+        if(dockLayout && dockLayout->contentsMargins().bottom()!=bottom)
+            dockLayout->setContentsMargins(8,5,8,bottom);
+    }
     if (event->type()==QEvent::MouseButtonPress && timeline_ && audioTrack_ && isVisible()) {
         auto* widget=qobject_cast<QWidget*>(watched);
         if (widget && widget->window()==window() && !qobject_cast<QMenu*>(widget)) {
