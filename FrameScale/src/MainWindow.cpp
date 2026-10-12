@@ -1,6 +1,7 @@
 #include "ui/LayerEditor.h"
 #include "ui/HelpPopover.h"
 #include "ui/VideoDownloadDialog.h"
+#include "ui/KeyboardShortcutsPage.h"
 #include <QShortcut>
 #include <QClipboard>
 #include <QDir>
@@ -1105,7 +1106,7 @@ void MainWindow::showSettings()
     dialog.setObjectName("settingsDialog");
     dialog.setWindowTitle(tr("Configurações"));
     dialog.setWindowIcon(windowIcon());
-    dialog.resize(520, 400);
+    dialog.resize(760, 540);
     auto* root = new QVBoxLayout(&dialog);
     root->setContentsMargins(16, 16, 16, 16);
     root->setSpacing(16);
@@ -1119,7 +1120,14 @@ void MainWindow::showSettings()
     sections->setAutoDefault(false);
     sections->setFixedHeight(24);
     sections->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
-    row->addWidget(sections, 0, Qt::AlignTop);
+    auto* navigation=new QVBoxLayout;
+    navigation->setSpacing(8);
+    navigation->addWidget(sections,0,Qt::AlignLeft);
+    auto* shortcutSection=new QPushButton(tr("Keyboard Shortcuts"),&dialog);
+    shortcutSection->setCheckable(true);shortcutSection->setAutoExclusive(true);
+    shortcutSection->setAutoDefault(false);shortcutSection->setFixedHeight(24);
+    navigation->addWidget(shortcutSection,0,Qt::AlignLeft);
+    navigation->addStretch();row->addLayout(navigation);
     auto* settingsCard = new QWidget(&dialog);
     auto* content = new QVBoxLayout(settingsCard);
     content->setContentsMargins(12, 4, 12, 12);
@@ -1164,7 +1172,20 @@ void MainWindow::showSettings()
     });
     content->addWidget(transparency);
     content->addStretch();
-    row->addWidget(settingsCard, 1);
+    auto* settingsPages=new QStackedWidget(&dialog);
+    settingsPages->addWidget(settingsCard);
+    settingsPages->addWidget(keyboardShortcutsPage(settingsPages));
+    row->addWidget(settingsPages,1);
+    auto selectSection=[&dialog,settingsPages,sections,shortcutSection](int index){
+        settingsPages->setCurrentIndex(index);
+        sections->setProperty("variant",index==0 ? "primary" : "");
+        shortcutSection->setProperty("variant",index==1 ? "primary" : "");
+        for(auto* button:{sections,shortcutSection}) {
+            button->style()->unpolish(button);button->style()->polish(button);button->update();
+        }
+    };
+    connect(sections,&QPushButton::clicked,&dialog,[selectSection]{selectSection(0);});
+    connect(shortcutSection,&QPushButton::clicked,&dialog,[selectSection]{selectSection(1);});
     root->addLayout(row, 1);
     auto* buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
     buttons->button(QDialogButtonBox::Ok)->setText("OK");
