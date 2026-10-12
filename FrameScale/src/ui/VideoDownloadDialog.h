@@ -29,7 +29,7 @@ public:
         setObjectName("urlDownloadDialog");setWindowTitle(tr("Abrir por URL"));setMinimumWidth(480);resize(520,230);setFont(QApplication::font());
         auto* layout=new QVBoxLayout(this);layout->setContentsMargins(16,12,16,16);layout->setSpacing(8);
         layout->addWidget(new QLabel(tr("Link da imagem ou vídeo"),this));
-        url_=new QLineEdit(this);url_->setPlaceholderText(tr("Cole um link de imagem ou vídeo (HTTP/HTTPS)"));layout->addWidget(url_);
+        url_=new QLineEdit(this);url_->setPlaceholderText(tr("Cole um link de imagem ou vídeo"));layout->addWidget(url_);
         layout->addWidget(new QLabel(tr("Salvar em"),this));
         auto* row=new QHBoxLayout;row->setSpacing(8);folder_=new QLineEdit(QStandardPaths::writableLocation(QStandardPaths::DownloadLocation),this);
         row->addWidget(folder_);browse_=new QPushButton(tr("Escolher..."),this);row->addWidget(browse_);layout->addLayout(row);
