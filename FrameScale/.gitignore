@@ -1,0 +1,20 @@
+/build/
+/cmake-build-*/
+/.idea/
+/.vs/
+/.vscode/
+*.user
+*.autosave
+*.swp
+Thumbs.db
+.DS_Store
+
+# Re-downloadable runtime staging, never application inputs
+/runtime/downloads/
+/runtime/packages/
+
+# Generated installers
+/dist/
+
+# Machine-specific Qt/compiler paths
+/CMakeUserPresets.json

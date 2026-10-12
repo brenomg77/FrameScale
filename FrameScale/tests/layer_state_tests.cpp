@@ -17,6 +17,21 @@ int main(int argc, char** argv) {
     framescale::ProcessingOptions project;
     project.layered=true; project.layers={video,audio};
     {
+        auto exact=project;exact.layers[0].sourceFps=60;
+        LayerEditor editor;editor.setProject("missing-fixture.mp4",exact,true);
+        editor.setExportRange(0,1);
+        auto* timeline=dynamic_cast<TrimTimeline*>(editor.findChild<QWidget*>("layerTracks"));
+        check(std::abs(editor.exportEnd()-1)<1e-9,"one-second export range was not exact");
+        check(timeline && timeline->selectionFrameCount()==60,"one second at 60 FPS did not count 60 frames");
+        if(timeline) {
+            check(timeline->timecode(1)=="00:01.00","seconds and frames remain ambiguous");
+            check(timeline->timecode(1./60)=="00:00.01","one frame was mislabeled as one second");
+        }
+        editor.setExportRange(.501,1.501);
+        check(std::abs(editor.exportStart()-.5)<1e-9 && std::abs(editor.exportEnd()-1.5)<1e-9,
+            "export range did not snap to source frame boundaries");
+    }
+    {
         LayerEditor editor;
         editor.setProject("missing-fixture.mp4",project,true);
         auto* timeline=dynamic_cast<TrimTimeline*>(editor.findChild<QWidget*>("layerTracks"));
@@ -146,6 +161,55 @@ int main(int argc, char** argv) {
         editor.undo();
         check(editor.layers().size()==2 && editor.layers()[0].link==7 && editor.layers()[1].link==7,"undo did not restore the complete linked group");
         check(std::abs(editor.layers()[0].out-1.5)<.01,"undo deletion lost linked trim");
+    }
+    const QString ffmpeg=framescale::RuntimePaths().tool("ffmpeg");
+    if(QFileInfo::exists(ffmpeg)) {
+        QTemporaryDir directory;
+        const QString input=directory.filePath("source.mp4"),output=directory.filePath("one-frame.mkv");
+        auto run=[&](const QString& tool,const QStringList& args) {
+            QProcess process;process.start(tool,args);
+            const bool ok=process.waitForFinished(30000)&&process.exitStatus()==QProcess::NormalExit&&process.exitCode()==0;
+            if(!ok)std::cerr<<process.readAllStandardError().toStdString()<<'\n';
+            return std::make_pair(ok,process.readAllStandardOutput());
+        };
+        const auto fixture=run(ffmpeg,{"-v","error","-y","-f","lavfi","-i","testsrc2=size=96x64:rate=60:duration=5","-c:v","libx264","-threads","1",input});
+        check(fixture.first,"could not generate ranged composition fixture");
+        auto layer=video;
+#ifdef _WIN32
+        layer.path=std::filesystem::path(input.toStdWString());
+#else
+        layer.path=std::filesystem::path(input.toStdString());
+#endif
+        layer.sourceFps=60;layer.sourceDuration=layer.out=5;
+        const auto plan=framescale::composeLayers({layer},output,false,4,4+1./60);
+        check(plan.error.isEmpty()&&std::abs(plan.duration-1./60)<1e-8,"single-frame range still composes full source");
+        check(plan.arguments.contains("-ss"),"late range does not seek before decoding");
+        check(run(ffmpeg,plan.arguments).first,"single-frame composition failed");
+        const auto probe=run(framescale::RuntimePaths().tool("ffprobe"),{"-v","error","-select_streams","v:0","-count_frames","-show_entries","stream=nb_read_frames","-of","csv=p=0",output});
+        check(probe.first&&probe.second.trimmed()=="1","single-frame composition produced the wrong frame count");
+        const auto pixels=run(ffmpeg,{"-v","error","-i",output,"-frames:v","1","-f","rawvideo","-pix_fmt","rgb24","pipe:1"});
+        int brightest=0;for(unsigned char value:pixels.second)brightest=std::max(brightest,int(value));
+        check(pixels.first&&brightest>100,"single-frame composition is black");
+        layer.sourceFps=30;
+        const auto first=framescale::composeLayers({layer},output,false,0,1./30);
+        check(run(ffmpeg,first.arguments).first,"first-frame composition failed");
+        const auto firstPixels=run(ffmpeg,{"-v","error","-i",output,"-frames:v","1","-f","rawvideo","-pix_fmt","rgb24","pipe:1"});
+        brightest=0;for(unsigned char value:firstPixels.second)brightest=std::max(brightest,int(value));
+        check(firstPixels.first&&brightest>100,"first-frame composition is black");
+        const QString shifted=directory.filePath("delayed-video.mkv");
+        check(run(ffmpeg,{"-v","error","-y","-itsoffset","0.161","-i",input,
+            "-f","lavfi","-i","anullsrc=r=48000:cl=mono","-map","0:v","-map","1:a",
+            "-t","5","-c:v","copy","-c:a","pcm_s16le",shifted}).first,"delayed-video fixture failed");
+#ifdef _WIN32
+        layer.path=std::filesystem::path(shifted.toStdWString());
+#else
+        layer.path=std::filesystem::path(shifted.toStdString());
+#endif
+        const auto delayed=framescale::composeLayers({layer},output,false,0,1./30);
+        check(run(ffmpeg,delayed.arguments).first,"delayed first-frame composition failed");
+        const auto delayedPixels=run(ffmpeg,{"-v","error","-i",output,"-frames:v","1","-f","rawvideo","-pix_fmt","rgb24","pipe:1"});
+        brightest=0;for(unsigned char value:delayedPixels.second)brightest=std::max(brightest,int(value));
+        check(delayedPixels.first&&brightest>100,"delayed video produces a black one-frame result");
     }
     if(argc>1) {
         LayerEditor editor;

@@ -1,3 +1,4 @@
+#include "ui/KeyboardBindings.h"
 #include <QGroupBox>
 #include <QClipboard>
 #include <QMimeData>
@@ -93,7 +94,7 @@ protected:
                 const QRectF surface(controls->mapTo(this, QPoint(0, 0)), controls->size());
                 GlassMaterial::paint(painter, surface,
                     window()->property("glassBackdrop").value<QImage>(),
-                    Appearance::light(), Appearance::light() ? 190 : 185, 12, true);
+                    Appearance::light(), Appearance::light() ? 155 : 185, 12, true);
             }
         }
 
@@ -183,7 +184,7 @@ MediaPreviewWidget::MediaPreviewWidget(QWidget* parent)
         "QSlider#previewSeekSlider::handle:horizontal { width: 10px; margin: "
         "-4px 0; background: #dedede; border-radius: 5px; }"));
 
-    spaceShortcut_ = new QShortcut(QKeySequence(Qt::Key_Space), this);
+    spaceShortcut_ = KeyboardBindings::bind("play", this);
     spaceShortcut_->setContext(Qt::WidgetWithChildrenShortcut);
     spaceShortcut_->setAutoRepeat(false);
     connect(spaceShortcut_, &QShortcut::activated, this, [this] {
@@ -207,7 +208,7 @@ MediaPreviewWidget::MediaPreviewWidget(QWidget* parent)
     zoomChoice_->setToolTip(tr("Duplo clique na prévia ou Ctrl+0 para ajustar à janela."));
     zoomChoice_->setStyleSheet("QComboBox {padding:1px 8px;min-height:18px;background:#292929;color:#ededed;border:1px solid #505050;border-radius:6px;} QComboBox::down-arrow {image:url(:/brand/chevron-dark.svg);width:12px;height:8px;}");
     connect(zoomChoice_, &QComboBox::currentIndexChanged, this, [this] { setZoom(zoomChoice_->currentData().toDouble()); });
-    auto* fit = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_0), this);
+    auto* fit = KeyboardBindings::bind("fit", this);
     fit->setContext(Qt::WidgetWithChildrenShortcut);
     connect(fit, &QShortcut::activated, this, [this] { zoomChoice_->setCurrentIndex(0); setZoom(0); });
 
@@ -458,10 +459,10 @@ MediaPreviewWidget::MediaPreviewWidget(QWidget* parent)
         const int next=qRound(seconds*1000), delta=next-videoTimelineStartMs_;
         setVideoTimelineStart(next); setAudioOffset(audioOffsetMs_-delta);
     };
-    auto* undo = new QShortcut(QKeySequence::Undo, this);
+    auto* undo = KeyboardBindings::bind("undo", this);
     undo->setObjectName("timelineUndo"); undo->setContext(Qt::WindowShortcut);
     connect(undo, &QShortcut::activated, this, &MediaPreviewWidget::undoTimeline);
-    auto* redo = new QShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_Z), this);
+    auto* redo = KeyboardBindings::bind("redo", this);
     redo->setObjectName("timelineRedo"); redo->setContext(Qt::WindowShortcut);
     connect(redo, &QShortcut::activated, this, &MediaPreviewWidget::redoTimeline);
     audioTrack_->offsetEdited = [this](int ms) { setAudioOffset(ms); };

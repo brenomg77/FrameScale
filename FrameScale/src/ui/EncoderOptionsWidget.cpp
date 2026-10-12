@@ -37,22 +37,22 @@
 #include <QVBoxLayout>
 
 namespace {
-class PresetIconButton final : public QPushButton {
+class PresetActionButton final : public QPushButton {
 public:
     using QPushButton::QPushButton;
 protected:
     void paintEvent(QPaintEvent*) override {
         QPainter painter(this);
         painter.setRenderHint(QPainter::Antialiasing);
-        QColor background=palette().color(QPalette::Button);
-        if(isDown()) background=background.darker(115);
-        else if(underMouse() && isEnabled()) background=background.lighter(110);
-        painter.setBrush(background);
-        painter.setPen(QPen(palette().color(hasFocus() ? QPalette::Highlight : QPalette::Mid),1));
-        painter.drawRoundedRect(QRectF(rect()).adjusted(.5,.5,-.5,-.5),6,6);
-        const QSize size(18,18);
-        const QRect target((width()-size.width())/2,(height()-size.height())/2,size.width(),size.height());
-        icon().paint(&painter,target,Qt::AlignCenter,isEnabled() ? QIcon::Normal : QIcon::Disabled);
+        const QRectF face=QRectF(rect()).adjusted(.5,.5,-.5,-.5);
+        GlassMaterial::paint(painter,face,{},Appearance::light(),
+            isDown()?160:underMouse()&&isEnabled()?130:100,5,true);
+        painter.setBrush(Qt::NoBrush);
+        painter.setPen(QPen(hasFocus()?palette().color(QPalette::Highlight):
+            Appearance::light()?QColor(70,70,75,65):QColor(255,255,255,55),1));
+        painter.drawRoundedRect(face,5,5);
+        const QRect target((width()-16)/2,(height()-16)/2,16,16);
+        icon().paint(&painter,target,Qt::AlignCenter,isEnabled()?QIcon::Normal:QIcon::Disabled);
     }
 };
 }
@@ -222,19 +222,19 @@ EncoderOptionsWidget::EncoderOptionsWidget(QWidget* parent)
     presets_->setMinimumWidth(0);
     presets_->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
     presets_->setMinimumContentsLength(1);
-    presets_->setFixedHeight(32);
+    presets_->setFixedHeight(24);
     presetLayout->addWidget(presets_,1,Qt::AlignVCenter);
-    auto* save = new PresetIconButton(tr("Guardar preset"), this);
+    auto* save = new PresetActionButton(tr("Guardar preset"), this);
     save->setObjectName("saveEncoderPreset");
     save->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     save->setFixedHeight(24);
     presetLayout->addWidget(save);
-    auto* load = new PresetIconButton(tr("Abrir preset de arquivo…"), this);
+    auto* load = new PresetActionButton(tr("Abrir preset de arquivo…"), this);
     load->setObjectName("importEncoderPreset");
     load->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     load->setFixedHeight(24);
 
-    auto* removePreset = new PresetIconButton(tr("Remover preset"), this);
+    auto* removePreset = new PresetActionButton(tr("Remover preset"), this);
     removePreset->setObjectName("removeEncoderPreset");
     removePreset->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     removePreset->setFixedHeight(24);
@@ -247,13 +247,15 @@ EncoderOptionsWidget::EncoderOptionsWidget(QWidget* parent)
         button->setAccessibleName(button->text());
         button->setText({});
         button->setIcon(ControlSymbols::icon(presetSymbols[symbolIndex++]));
-        button->setIconSize(QSize(18,18));
-        button->setFixedSize(34,32);
+        button->setIconSize(QSize(16,16));
+        button->setFixedSize(24,24);
         button->setProperty("presetIconOnly",true);
         button->setAutoDefault(false);
         presetLayout->setAlignment(button,Qt::AlignVCenter);
-        button->setProperty("appearanceManaged",true);
-        button->setStyleSheet("QPushButton {margin:0;padding:0;min-width:0;min-height:0;border:1px solid palette(mid);border-radius:6px;}");
+        // QSS polishing also changes minimum dimensions: zero here allowed
+        // the layout to shrink a fixed-size button. 22 px content + 2 px border
+        // keeps the actual outer box square and equal to the 24 px preset.
+        button->setStyleSheet("QPushButton {margin:0;padding:0;min-width:22px;max-width:22px;min-height:22px;max-height:22px;border:1px solid palette(mid);border-radius:6px;} QPushButton:focus {border-color:palette(highlight);}");
     }
     removePreset->setEnabled(presets_->currentIndex()>0);
     connect(presets_,&QComboBox::currentIndexChanged,removePreset,[this,removePreset](int index){removePreset->setEnabled(index>0);});

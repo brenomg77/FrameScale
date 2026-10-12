@@ -1,3 +1,4 @@
+#include "ui/KeyboardBindings.h"
 #pragma once
 #include "processing/LayerComposition.h"
 #include "processing/RuntimePaths.h"
@@ -39,8 +40,8 @@ class LayerEditor final : public QWidget {
         bool event(QEvent* e) override {
             if(e->type()==QEvent::ShortcutOverride) {
                 auto* key=static_cast<QKeyEvent*>(e);
-                if(key->matches(QKeySequence::Undo) || key->matches(QKeySequence::Redo)
-                    || key->key()==Qt::Key_Delete || key->key()==Qt::Key_Space) { e->accept(); return true; }
+                if(KeyboardBindings::matches(key,"undo") || KeyboardBindings::matches(key,"redo")
+                    || KeyboardBindings::matches(key,"delete") || KeyboardBindings::matches(key,"play")) { e->accept(); return true; }
             }
             return TrimTimeline::event(e);
         }
@@ -66,10 +67,10 @@ class LayerEditor final : public QWidget {
         void leaveEvent(QEvent* e) override { unsetCursor(); TrimTimeline::leaveEvent(e); }
         void contextMenuEvent(QContextMenuEvent* e) override { if(suppressContext_) { suppressContext_=false; e->accept(); return; } owner->context(e->pos(), e->globalPos()); }
         void keyPressEvent(QKeyEvent* e) override {
-            if (e->key() == Qt::Key_Delete) { owner->removeSelected(); e->accept(); }
-            else if (e->matches(QKeySequence::Undo)) { owner->undo(); e->accept(); }
-            else if (e->matches(QKeySequence::Redo)) { owner->redo(); e->accept(); }
-            else if (e->key() == Qt::Key_Space && owner->playRequested) { owner->playRequested(); e->accept(); }
+            if (KeyboardBindings::matches(e,"delete")) { owner->removeSelected(); e->accept(); }
+            else if (KeyboardBindings::matches(e,"undo")) { owner->undo(); e->accept(); }
+            else if (KeyboardBindings::matches(e,"redo")) { owner->redo(); e->accept(); }
+            else if (KeyboardBindings::matches(e,"play") && owner->playRequested) { owner->playRequested(); e->accept(); }
             else TrimTimeline::keyPressEvent(e);
         }
         void wheelEvent(QWheelEvent* e) override {
@@ -89,9 +90,9 @@ public:
         layout->addWidget(tracks_);
         renderTimer_.setSingleShot(true); renderTimer_.setInterval(350);
         connect(&renderTimer_, &QTimer::timeout, this, [this] { renderPreview(); });
-        auto* undoShortcut=new QShortcut(QKeySequence::Undo,this);
+        auto* undoShortcut=KeyboardBindings::bind("undo",this);
         connect(undoShortcut,&QShortcut::activated,this,[this]{if(active_) undo();});
-        auto* redoShortcut=new QShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_Z),this);
+        auto* redoShortcut=KeyboardBindings::bind("redo",this);
         connect(redoShortcut,&QShortcut::activated,this,[this]{if(active_) redo();});
         qApp->installEventFilter(this);
         hide();
@@ -109,6 +110,13 @@ public:
     void selectLayer(int index) { selected_ = index>=0 && index<int(layers_.size()) ? index : -1; refresh(); }
     double exportStart() const { return workStart_; }
     double exportEnd() const { return workEnd_; }
+    void setExportRange(double start,double end) {
+        const double fps=tracks_->property("sourceFrameRate").toDouble();
+        const double step=1./std::max(1.,fps);
+        workStart_=std::clamp(std::round(start/step)*step,0.,std::max(0.,extent()-step));
+        workEnd_=end>0?std::clamp(std::round(end/step)*step,workStart_+step,extent()):0.;
+        updateRange();if(changed)changed();
+    }
     bool isLayerSelected(int index) const {
         return index>=0 && index<int(layers_.size()) && hasSelection() &&
             (index==selected_ || (layers_[index].link && layers_[index].link==layers_[selected_].link));
@@ -231,14 +239,14 @@ private:
         for(const auto& layer:layers_) if(layer.kind==Kind::Video) {fps=layer.sourceFps;break;}
         const qint64 whole=qFloor(std::max(0.,seconds)+1.e-7);
         const int frame=std::clamp(int(qRound64(seconds*fps)-qRound64(whole*fps)),0,qMax(0,qCeil(fps)-1));
-        QString text=QString("%1:%2:%3").arg(whole/60%60,2,10,QChar('0')).arg(whole%60,2,10,QChar('0')).arg(frame,2,10,QChar('0'));
+        QString text=QString("%1:%2.%3").arg(whole/60%60,2,10,QChar('0')).arg(whole%60,2,10,QChar('0')).arg(frame,2,10,QChar('0'));
         if(whole>=3600) text=QString("%1:").arg(whole/3600,2,10,QChar('0'))+text;
         return text;
     }
     void updateRange() {
-        if(drag_) return;
-        const double start=hasSelection() ? layers_[selected_].start : 0;
-        const double end=hasSelection() ? start+layers_[selected_].duration() : 0;
+        if(drag_ && drag_<4) return;
+        const double start=workStart_;
+        const double end=workEnd_;
         tracks_->setRange(extent(),start,end,position_);
     }
     void refresh() {
@@ -544,10 +552,11 @@ private:
             return;
         }
         if(drag_==4 || drag_==5) {
-            const double time=std::clamp(tracks_->timeAt(event->position().x()),0.,extent());
-            if(drag_==4) workStart_=std::min(time,(workEnd_>0 ? workEnd_ : extent())-.04);
-            else workEnd_=std::max(time,workStart_+.04);
-            tracks_->setCursor(Qt::SizeHorCursor); tracks_->update(); return;
+            const double fps=tracks_->property("sourceFrameRate").toDouble();
+            const double time=std::clamp(std::round(tracks_->timeAt(event->position().x())*fps)/fps,0.,extent());
+            if(drag_==4) workStart_=std::min(time,(workEnd_>0 ? workEnd_ : extent())-1./fps);
+            else workEnd_=std::max(time,workStart_+1./fps);
+            tracks_->setCursor(Qt::SizeHorCursor); updateRange(); tracks_->update(); return;
         }
         if(!hasSelection()) return;
         tracks_->setCursor(drag_==1 || drag_==2 ? Qt::SizeHorCursor : Qt::ArrowCursor);

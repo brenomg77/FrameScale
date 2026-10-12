@@ -11,8 +11,8 @@ enum class Mode {
 };
 
 Mode applyLightBackdrop(QWindow* window);
-// Refreshes native blur without changing the opacity of controls or media.
-bool applyGlass(QWidget* widget, bool enabled, bool dark);
+// Configures the native frame; translucency is composed by Qt, not OS effects.
+void configureGlassWindow(QWidget* widget, bool enabled, bool dark);
 void syncGlassRegion(QWidget* widget);
 const char* styleName(Mode mode);
 

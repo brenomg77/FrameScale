@@ -19,7 +19,7 @@ class QProcess;
 class ComparisonDialog final : public QDialog {
 public:
     ComparisonDialog(framescale::ProcessingOptions options, double position, double duration,
-        double fps, QWidget* parent = nullptr);
+        double fps, QWidget* parent = nullptr, const QString& sourceName = {});
     ~ComparisonDialog() override;
 
 protected:

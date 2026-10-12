@@ -431,8 +431,12 @@ void ProcessingJob::start()
         compositionDirectory_ = createTemporaryWorkspace();
         if (!compositionDirectory_->isValid()) { fail(tr("Não foi possível preparar as camadas.")); return; }
         compositionPath_ = compositionDirectory_->filePath("composition.mkv");
-        const auto plan = composeLayers(options_.layers, compositionPath_);
+        const auto plan = composeLayers(options_.layers, compositionPath_,false,
+            options_.trimStartSeconds,options_.trimEndSeconds);
         if (!plan.error.isEmpty()) { fail(plan.error); return; }
+        // The staged composition already contains only the requested interval.
+        // Do not apply the original project offsets a second time during probe.
+        options_.trimStartSeconds=options_.trimEndSeconds=0;
         composingLayers_ = true;
         emit progressChanged(0, tr("Compondo camadas"));
         if (!running_ || cancelling_) return;
@@ -938,7 +942,8 @@ bool ProcessingJob::prepareVideoSteps(QString& error)
 {
     const bool gifOutput = QFileInfo(fromPath(options_.outputPath)).suffix().compare(QStringLiteral("gif"), Qt::CaseInsensitive) == 0;
     const bool trimmed = trimStartFrame_ > 0 || options_.trimEndSeconds > 0.0;
-    const double sourcePlaybackFps = sourceFrameCount_ / durationSeconds_;
+    const double sourcePlaybackFps = (options_.layered || sourceFrameCount_==1)
+        ? sourceFps_ : sourceFrameCount_ / durationSeconds_;
     const bool reduce = options_.reductionFps > 0;
     const int outputFps = reduce ? options_.reductionFps : options_.targetFps;
     const QString cadenceFilter = reduce ? QString(",fps=%1:round=up").arg(outputFps) : QString();
@@ -1806,7 +1811,10 @@ void ProcessingJob::handleProcessFinished(
             return;
         }
         if (options_.mediaType == MediaType::Video) {
-            const double playbackRate = sourceFrameCount_ / durationSeconds_;
+            // A one-frame clip's container duration is often rounded to ms.
+            // 1 / 0.033 is 30.303, while its declared cadence is still 30 FPS.
+            const double playbackRate = (options_.layered || sourceFrameCount_==1)
+                ? sourceFps_ : sourceFrameCount_ / durationSeconds_;
             const double requestedEnd = options_.trimEndSeconds > 0.0
                 ? std::min(options_.trimEndSeconds, durationSeconds_)
                 : durationSeconds_;

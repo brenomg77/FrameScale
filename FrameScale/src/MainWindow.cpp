@@ -1,3 +1,4 @@
+#include "ui/KeyboardBindings.h"
 #include "ui/LayerEditor.h"
 #include "ui/HelpPopover.h"
 #include "ui/VideoDownloadDialog.h"
@@ -271,11 +272,12 @@ public:
         , kind_(kind)
     {
         setFixedSize(38, 24);
+        setAutoDefault(false);
         setObjectName(kind == 2 ? "windowCloseButton" : "windowCaptionButton");
         setAccessibleName(kind == 2 ? tr("Fechar")
                 : kind == 0         ? tr("Minimizar")
                                     : tr("Maximizar ou restaurar"));
-        if (kind != 2) setToolTip(accessibleName());
+        setToolTip(accessibleName());
     }
 
 protected:
@@ -432,20 +434,11 @@ MainWindow::MainWindow(QWidget* parent)
     materialTimer->setInterval(900);
     auto updateMaterial = [this] {
         if (!isVisible() || isMinimized()) return;
-        if (Appearance::theme()=="studio" || GlassMaterial::reduced()) return;
         const QImage source=preview_->currentFrame();
-        if (source.isNull()) {
-            if (property("glassSourceKey").isValid()) {
-                setProperty("glassSourceKey", QVariant());
-                setProperty("glassBackdrop", QVariant());
-                centralWidget()->update();
-            }
-            return;
+        if (GlassMaterial::updateBackdrop(this,source)) {
+            centralWidget()->update();
+            if (graphicsEffect()) graphicsEffect()->update();
         }
-        if (property("glassSourceKey").toLongLong()==source.cacheKey()) return;
-        setProperty("glassSourceKey",source.cacheKey());
-        setProperty("glassBackdrop",GlassMaterial::blur(source,96));
-        centralWidget()->update();
     };
     connect(materialTimer,&QTimer::timeout,this,updateMaterial);
     connect(preview_,&MediaPreviewWidget::mediaReady,this,updateMaterial);
@@ -469,7 +462,9 @@ void MainWindow::resizeEvent(QResizeEvent* event)
 void MainWindow::changeEvent(QEvent* event)
 {
     QMainWindow::changeEvent(event);
-    if (event->type()==QEvent::WindowStateChange) updateWindowCorners();
+    if (event->type()==QEvent::WindowStateChange) {
+        updateWindowCorners();
+    }
 }
 
 
@@ -477,6 +472,7 @@ QWidget* MainWindow::buildTitleBar()
 {
     auto* title = new TitleBar(this);
     title->setObjectName("titleBar");
+    title->setAttribute(Qt::WA_StyledBackground);
     title->setFixedHeight(24);
     auto* row = new QHBoxLayout(title);
     row->setContentsMargins(7, 0, 0, 0);
@@ -495,21 +491,26 @@ QWidget* MainWindow::buildTitleBar()
     menus->addMenu(file);
     file->menuAction()->setObjectName("fileMenuAction");
     newAction_ = file->addAction(tr("Novo"));
+    newAction_->setIcon(ControlSymbols::icon(ControlSymbols::Symbol::Plus));
     newAction_->setObjectName("newFileAction");
-    connect(new QShortcut(QKeySequence::New, this), &QShortcut::activated, newAction_, &QAction::trigger);
+    connect(KeyboardBindings::bind("new", this), &QShortcut::activated, newAction_, &QAction::trigger);
     openAction_ = file->addAction(tr("Abrir"));
-    connect(new QShortcut(QKeySequence::Open, this), &QShortcut::activated, openAction_, &QAction::trigger);
+    openAction_->setIcon(ControlSymbols::icon(ControlSymbols::Symbol::Folder));
+    connect(KeyboardBindings::bind("open", this), &QShortcut::activated, openAction_, &QAction::trigger);
     auto* download = file->addAction(tr("Abrir por URL"));
+    download->setIcon(ControlSymbols::icon(ControlSymbols::Symbol::Import));
     connect(download, &QAction::triggered, this, &MainWindow::openUrl);
     file->addSeparator();
     auto* quit = file->addAction(tr("Sair"));
+    quit->setIcon(ControlSymbols::icon(ControlSymbols::Symbol::Exit));
     quit->setObjectName("quitAction");
-    for (const auto& key : { QKeySequence(Qt::CTRL | Qt::Key_Q), QKeySequence(Qt::ALT | Qt::Key_F4) })
-        connect(new QShortcut(key, this), &QShortcut::activated, quit, &QAction::trigger);
+    connect(KeyboardBindings::bind("quit", this), &QShortcut::activated, quit, &QAction::trigger);
     auto* settings = new SelectionMenu(menus);
     settings->setTitle(tr("Configurações"));
     menus->addMenu(settings);
     auto* preferences = settings->addAction(tr("Geral"));
+    preferences->setIcon(ControlSymbols::icon(ControlSymbols::Symbol::Sliders));
+    for(auto* action:{newAction_,openAction_,download,quit,preferences}) action->setIconVisibleInMenu(true);
     preferences->setObjectName("preferencesAction");
     menus->setFixedWidth(240);
     menus->setContentsMargins(0, 0, 0, 0);
@@ -610,7 +611,7 @@ QWidget* MainWindow::buildWelcomePage()
     auto* body = new QWidget(scroll);
     body->setObjectName("welcomeBody");
     auto* b = new QVBoxLayout(body);
-    b->setContentsMargins(65, 16, 65, 64);
+    b->setContentsMargins(65, 32, 65, 32);
     b->setSpacing(34);
     b->addStretch(1);
     auto* title = new QLabel(tr("Bem-vindo ao FrameScale"), body);
@@ -647,7 +648,6 @@ QWidget* MainWindow::buildWelcomePage()
     label(tr("Arraste e solte um ficheiro"), "dropTitle");
     label(tr("PNG, JPG, BMP, WebP, GIF  ·  MP4, MKV, AVI, MOV, WebM"),
         "dropSubtitle");
-    label(tr("Escolha uma imagem ou um vídeo"), "dropHint");
     auto* choose = new QPushButton(tr("Selecionar ficheiro"), drop);
     choose->setObjectName("chooseMediaButton");
     choose->setProperty("variant", "primary");
@@ -677,7 +677,7 @@ protected:
         QPainter painter(this);
         GlassMaterial::paint(painter, QRectF(rect()),
             window()->property("glassBackdrop").value<QImage>(),
-            Appearance::light(), Appearance::light() ? 190 : 185, 14, true);
+            Appearance::light(), Appearance::light() ? 155 : 165, 14, true);
     }
 };
 }
@@ -962,7 +962,7 @@ QWidget* MainWindow::buildEditorPage()
             if (!layers_->ready() || layers_->layers().empty()) { setStatusText(tr("Aguarde a atualização da prévia das camadas.")); return; }
             comparisonOptions.inputPath = toPath(preview_->mediaPath());
         }
-        ComparisonDialog comparison(comparisonOptions, preview_->positionMs()/1000., preview_->durationMs()/1000., preview_->frameRate(), this);
+        ComparisonDialog comparison(comparisonOptions, preview_->positionMs()/1000., preview_->durationMs()/1000., preview_->frameRate(), this, QFileInfo(inputPath_).fileName());
         comparison.exec();
     });
     v->addWidget(preview_, 0, 0);
@@ -1034,6 +1034,8 @@ void MainWindow::applyAppearance()
 {
     Appearance::palette();
     Appearance::apply(this, applicationStyle());
+    if (preview_ && GlassMaterial::updateBackdrop(this,preview_->currentFrame()))
+        centralWidget()->update();
     if (projectTabs_) {
         const bool light = Appearance::light();
         projectTabs_->setStyleSheet(QStringLiteral(
@@ -1106,28 +1108,38 @@ void MainWindow::showSettings()
     dialog.setObjectName("settingsDialog");
     dialog.setWindowTitle(tr("Configurações"));
     dialog.setWindowIcon(windowIcon());
-    dialog.resize(760, 540);
+    dialog.setFixedSize(520, 400);
     auto* root = new QVBoxLayout(&dialog);
     root->setContentsMargins(16, 16, 16, 16);
     root->setSpacing(16);
     auto* row = new QHBoxLayout;
     auto* sections = new QPushButton(tr("Geral"), &dialog);
     sections->setObjectName("settingsSections");
-    sections->setProperty("variant", "primary");
+    sections->setProperty("variant", "");
     sections->setCheckable(true);
     sections->setAutoExclusive(true);
     sections->setChecked(true);
     sections->setAutoDefault(false);
-    sections->setFixedHeight(24);
+    sections->setFixedHeight(30);
+    sections->setFixedWidth(100);
+    sections->setIcon(ControlSymbols::icon(ControlSymbols::Symbol::Sliders));
+    sections->setIconSize(QSize(14,14));
     sections->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
-    auto* navigation=new QVBoxLayout;
-    navigation->setSpacing(8);
+    auto* navigationPanel=new QWidget(&dialog);
+    navigationPanel->setObjectName("settingsNavigation");
+    navigationPanel->setStyleSheet("QWidget#settingsNavigation {background:rgba(128,128,128,16);border-radius:9px;} QWidget#settingsNavigation QPushButton {background:transparent;border:0;text-align:left;padding:3px 4px;} QWidget#settingsNavigation QPushButton:checked {background:rgba(128,128,128,30);font-weight:600;} QWidget#settingsNavigation QPushButton:hover {background:rgba(128,128,128,24);}");
+    auto* navigation=new QVBoxLayout(navigationPanel);
+    navigation->setContentsMargins(5,5,5,5);
+    navigation->setSpacing(4);
     navigation->addWidget(sections,0,Qt::AlignLeft);
-    auto* shortcutSection=new QPushButton(tr("Keyboard Shortcuts"),&dialog);
+    auto* shortcutSection=new QPushButton(tr("Editar"),&dialog);
     shortcutSection->setCheckable(true);shortcutSection->setAutoExclusive(true);
-    shortcutSection->setAutoDefault(false);shortcutSection->setFixedHeight(24);
+    shortcutSection->setAutoDefault(false);shortcutSection->setFixedHeight(30);
+    shortcutSection->setFixedWidth(100);
+    shortcutSection->setIcon(ControlSymbols::icon(ControlSymbols::Symbol::Pencil));
+    shortcutSection->setIconSize(QSize(14,14));
     navigation->addWidget(shortcutSection,0,Qt::AlignLeft);
-    navigation->addStretch();row->addLayout(navigation);
+    row->addWidget(navigationPanel,0,Qt::AlignTop);
     auto* settingsCard = new QWidget(&dialog);
     auto* content = new QVBoxLayout(settingsCard);
     content->setContentsMargins(12, 4, 12, 12);
@@ -1174,12 +1186,25 @@ void MainWindow::showSettings()
     content->addStretch();
     auto* settingsPages=new QStackedWidget(&dialog);
     settingsPages->addWidget(settingsCard);
-    settingsPages->addWidget(keyboardShortcutsPage(settingsPages));
+    auto* editCard=new QWidget(settingsPages);
+    auto* editLayout=new QVBoxLayout(editCard);editLayout->setContentsMargins(12,4,12,12);editLayout->setSpacing(16);
+    auto* editTitle=new QLabel(tr("Editar"),editCard);
+    editTitle->setStyleSheet(QString("font-family:\"%1\";font-size:22px;font-weight:600;background:transparent;").arg(Typography::displayFamily));
+    editLayout->addWidget(editTitle);
+    auto* keyboardOption=new QPushButton(tr("Atalhos de teclado"),editCard);
+    keyboardOption->setIcon(ControlSymbols::icon(ControlSymbols::Symbol::Keyboard));
+    keyboardOption->setIconSize(QSize(16,16));keyboardOption->setAutoDefault(false);
+    keyboardOption->setMinimumHeight(32);keyboardOption->setStyleSheet("text-align:left;padding:4px 10px;");
+    editLayout->addWidget(keyboardOption);editLayout->addStretch();
+    settingsPages->addWidget(editCard);
+    auto* shortcutsPage=keyboardShortcutsPage(settingsPages);
+    settingsPages->addWidget(shortcutsPage);
+    connect(keyboardOption,&QPushButton::clicked,&dialog,[settingsPages]{settingsPages->setCurrentIndex(2);});
     row->addWidget(settingsPages,1);
     auto selectSection=[&dialog,settingsPages,sections,shortcutSection](int index){
         settingsPages->setCurrentIndex(index);
-        sections->setProperty("variant",index==0 ? "primary" : "");
-        shortcutSection->setProperty("variant",index==1 ? "primary" : "");
+        sections->setProperty("variant", "");
+        shortcutSection->setProperty("variant", "");
         for(auto* button:{sections,shortcutSection}) {
             button->style()->unpolish(button);button->style()->polish(button);button->update();
         }
@@ -1191,7 +1216,10 @@ void MainWindow::showSettings()
     buttons->button(QDialogButtonBox::Ok)->setText("OK");
     buttons->button(QDialogButtonBox::Ok)->setProperty("variant", "primary");
     buttons->button(QDialogButtonBox::Cancel)->setText(tr("Cancelar"));
-    connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+    connect(buttons, &QDialogButtonBox::accepted, &dialog, [&dialog,shortcutsPage,selectSection,shortcutSection]{
+        if(saveKeyboardShortcuts(shortcutsPage)) dialog.accept();
+        else {shortcutSection->setChecked(true);selectSection(2);}
+    });
     connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
     root->addWidget(buttons);
     Appearance::apply(&dialog);
@@ -1241,7 +1269,7 @@ void MainWindow::chooseInputFile()
 bool MainWindow::eventFilter(QObject* watched, QEvent* event)
 {
     if (event->type() == QEvent::KeyPress
-        && static_cast<QKeyEvent*>(event)->matches(QKeySequence::Paste)) {
+        && KeyboardBindings::matches(static_cast<QKeyEvent*>(event),"paste")) {
         auto* active = QApplication::activeWindow();
         const bool editorActive = active == this || (welcomeDialog_ && active == welcomeDialog_);
         bool editing = false;

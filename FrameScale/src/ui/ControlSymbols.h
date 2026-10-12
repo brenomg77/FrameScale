@@ -8,7 +8,7 @@
 // Small, scalable monochrome symbols; no emoji or platform font dependency.
 namespace ControlSymbols {
 enum class Symbol { None, Expand, Frames, Sparkle, Chip, Layers, Sliders, Noise,
-    Contrast, Color, Grid, Gradient, Eye, Queue, Plus, Reset, Folder, Save, Export, Audio, Scale, FrameRate, Sharpen, Denoise, Import, Zoom, RotateLeft, RotateRight, FlipHorizontal, FlipVertical, Link, Unlink, Trash, Info };
+    Contrast, Color, Grid, Gradient, Eye, Queue, Plus, Minus, Pencil, Keyboard, Exit, ReduceFrames, Speed, Reset, Folder, Save, Export, Audio, Scale, FrameRate, Sharpen, Denoise, Import, Zoom, RotateLeft, RotateRight, FlipHorizontal, FlipVertical, Link, Unlink, Trash, Info };
 
 inline Symbol forControl(const QString& name)
 {
@@ -19,6 +19,8 @@ inline Symbol forControl(const QString& name)
     if (name == "upscaleFactor") return Symbol::Scale;
     if (name == "enableInterpolation") return Symbol::Frames;
     if (name == "targetFps") return Symbol::FrameRate;
+    if (name == "reductionFps") return Symbol::ReduceFrames;
+    if (name == "playbackSpeed") return Symbol::Speed;
     if (name == "enableEnhancement") return Symbol::Sparkle;
     if (name == "enhanceSharpen") return Symbol::Sharpen;
     if (name == "upscaleEngine" || name == "videoCodec") return Symbol::Chip;
@@ -107,6 +109,18 @@ inline void paint(QPainter& p, QRectF area, Symbol symbol, const QColor& ink)
         p.drawEllipse(QRectF(7,7,6,6));break; }
     case Symbol::Queue: for(int y: {5,10,15}){line(7,y,17,y);p.drawPoint(QPointF(3,y));}break;
     case Symbol::Plus: line(10,3,10,17);line(3,10,17,10);break;
+    case Symbol::Minus: line(3,10,17,10);break;
+    case Symbol::ReduceFrames:
+        box(1,3,10,14);line(4,3,4,17);for(int y:{6,10,14})p.drawPoint(QPointF(2.5,y));
+        line(16,4,16,16);line(13,13,16,16);line(16,16,19,13);break;
+    case Symbol::Speed:
+        p.drawArc(QRectF(2,3,16,16),0,180*16);line(10,11,15,6);line(3,15,5,15);line(15,15,17,15);p.drawEllipse(QRectF(9,10,2,2));break;
+    case Symbol::Pencil: {
+        QPolygonF pencil;pencil<<QPointF(3,13)<<QPointF(13,3)<<QPointF(17,7)<<QPointF(7,17)<<QPointF(2,18);p.drawPolygon(pencil);line(11,5,15,9);break;
+    }
+    case Symbol::Keyboard:
+        box(1,4,18,12);for(int y:{7,10})for(int x:{4,7,10,13,16})p.drawPoint(QPointF(x,y));line(6,13,14,13);break;
+    case Symbol::Exit: line(8,3,3,3);line(3,3,3,17);line(3,17,8,17);line(8,10,18,10);line(14,6,18,10);line(18,10,14,14);break;
     case Symbol::Reset: p.drawArc(QRectF(3,3,14,14),140*16,-295*16);line(3,3,3,7);line(3,7,7,7);break;
     case Symbol::Folder: {QPainterPath path;path.moveTo(2,6);path.lineTo(2,4);path.lineTo(8,4);path.lineTo(10,6);path.lineTo(18,6);path.lineTo(18,16);path.lineTo(2,16);path.closeSubpath();p.drawPath(path);break;}
     case Symbol::Save: box(3,3,14,14);box(6,3,8,5);box(6,12,8,5);break;
@@ -138,6 +152,7 @@ public:
     QIconEngine* clone() const override {return new Engine(symbol,white);}
     void paint(QPainter* p,const QRect& r,QIcon::Mode mode,QIcon::State) override {
         QColor ink = white ? QColor(Qt::white) : qApp->palette().color(QPalette::ButtonText);
+        if(mode==QIcon::Selected) ink=qApp->palette().color(QPalette::HighlightedText);
         if(mode==QIcon::Disabled) ink=qApp->palette().color(QPalette::Disabled,QPalette::ButtonText);
         // Leave four pixels after the symbol, in addition to Qt's text gap.
         const int side = qMin(r.width(),r.height());

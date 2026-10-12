@@ -85,6 +85,10 @@ inline void adaptLocal(QWidget* widget)
     if (light()) style += " QLabel {color:#29282d;} QToolButton:checked {color:#222126;} QPushButton#comparePreviewButton {color:white;} QComboBox::down-arrow,QSpinBox::down-arrow,QDoubleSpinBox::down-arrow {image:url(:/brand/chevron-ink.svg);} QSpinBox::up-arrow,QDoubleSpinBox::up-arrow {image:url(:/brand/chevron-up-ink.svg);}";
     if (theme() != "studio")
         style += QString(" QWidget#mediaPreview, QWidget#previewToolbar, QWidget#previewTrimBar, QWidget#comparisonHeader, QLabel#previewPlaceholder {background:%1;}").arg(theme() != "studio" && !GlassMaterial::reduced() ? "transparent" : (light() ? "#fafafa" : "#292929"));
+    if(widget->objectName()=="settingsNavigation" && theme()!="studio" && !GlassMaterial::reduced()) {
+        style+=QString("QWidget#settingsNavigation QPushButton:checked {background:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 %1,stop:0.45 %2,stop:1 %3);border:1px solid %4;border-radius:7px;}")
+            .arg(light()?"rgba(255,255,255,112)":"rgba(255,255,255,40)",light()?"rgba(255,255,255,92)":"rgba(130,135,145,32)",light()?"rgba(248,249,252,78)":"rgba(75,77,83,35)",light()?"rgba(255,255,255,170)":"rgba(255,255,255,50)");
+    }
     if (widget->styleSheet() != style) widget->setStyleSheet(style);
 }
 class SurfaceFilter final : public QObject {
@@ -100,7 +104,7 @@ public:
                     widget->setStyleSheet(QString("QMessageBox {background:%1;color:%2;} QMessageBox QLabel {background:transparent;color:%2;} QMessageBox QPushButton {background:%1;color:%2;border:1px solid #888;border-radius:6px;padding:3px 12px;min-height:20px;}").arg(bg, fg));
                 }
                 if (widget->isWindow() && widget->property("roundedWindowInstalled").toBool()) {
-                    widget->setProperty("nativeGlassActive", framescale::window_backdrop::applyGlass(widget, widget->property("glassWindowSurface").toBool(), !light()));
+                    framescale::window_backdrop::configureGlassWindow(widget, widget->property("glassWindowSurface").toBool(), !light());
                     widget->update();
                 }
             }
@@ -170,8 +174,8 @@ QProgressBar::chunk {background:#0968cf;border-radius:5px;}
     if (widget->isWindow() && widget->property("roundedWindowInstalled").toBool()) {
         const bool glass = theme() != "studio" && !GlassMaterial::reduced();
         widget->setProperty("glassWindowSurface", glass);
-        widget->setProperty("nativeGlassActive", framescale::window_backdrop::applyGlass(widget, glass, !light()));
-        if (theme() == "studio") widget->setProperty("glassBackdrop", QImage());
+        framescale::window_backdrop::configureGlassWindow(widget, glass, !light());
+        if (!glass) GlassMaterial::updateBackdrop(widget,{});
     }
     if (theme() == "studio") {
         // The controls now have compact measured geometry in every theme.
@@ -311,6 +315,7 @@ QToolTip {background:%2;color:%4;border:1px solid %3;padding:6px;border-radius:6
         style += QString(" QWidget#mediaPreview, QWidget#previewToolbar, QWidget#previewTrimBar, QWidget#comparisonHeader, QLabel#previewPlaceholder {background:%1;}").arg(theme() != "studio" && !GlassMaterial::reduced() ? "transparent" : (light() ? "#fafafa" : "#292929"));
     if (widget->property("glassWindowSurface").toBool())
         style += "QMainWindow, QDialog, QDialog#comparisonDialog, QFrame#canvasPanel, QWidget#welcomePage, QWidget#welcomeBody, QWidget#welcomeRail {background:transparent;}";
+    style += QString("QWidget#titleBar {background:%1;border:0;}").arg(light()?"#ececef":"#29292c");
     style += QString(R"(
 QPushButton#welcomeOpenButton, QPushButton#welcomeUrlButton, QPushButton#welcomeNewButton {font-size:13px;font-weight:500;padding:1px 8px;min-height:18px;border-radius:6px;}
 QPushButton#welcomeNewButton, QPushButton#welcomeOpenButton, QPushButton#welcomeUrlButton {background:transparent;color:%1;border:1px solid %3;}
@@ -324,6 +329,23 @@ QDialog#urlDownloadDialog QProgressBar::chunk {background:#007aff;border-radius:
     style += R"(
 QFrame#mediaDropZone, QFrame#mediaDropZone[dragActive="true"] {background:transparent;border:0;border-radius:18px;}
 QFrame#mediaDropZone QLabel#dropTitle, QFrame#mediaDropZone QLabel#dropSubtitle, QFrame#mediaDropZone QLabel#dropHint {color:#292929;background:transparent;}
+)";
+    if (theme()!="studio" && !GlassMaterial::reduced()) {
+        const QString face=light()
+            ? "qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 rgba(255,255,255,108),stop:0.45 rgba(255,255,255,88),stop:1 rgba(248,249,252,76))"
+            : "qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 rgba(255,255,255,52),stop:0.45 rgba(100,103,112,42),stop:1 rgba(42,44,50,70))";
+        style+=QString("QPushButton,QComboBox,QSpinBox,QDoubleSpinBox,QLineEdit,QDialog QDialogButtonBox QPushButton {background:%1;border-top-color:%2;border-bottom-color:%3;}")
+            .arg(face,light()?"rgba(255,255,255,190)":"rgba(255,255,255,65)",light()?"rgba(100,105,115,45)":"rgba(0,0,0,65)");
+        style+="QPushButton[variant=\"primary\"],QDialog QDialogButtonBox QPushButton[variant=\"primary\"] {background:#007aff;border-color:#1686ff;color:white;} QPushButton[variant=\"text\"] {background:transparent;}";
+    }
+    // Confirmation-specific rules otherwise outrank the shared primary hover
+    // style. Keep these after the glass face so feedback survives both themes.
+    style += R"(
+QDialog#exitConfirmation QDialogButtonBox QPushButton[variant="primary"]:hover {background:#0064d2;border-color:#0064d2;color:white;}
+QDialog#exitConfirmation QDialogButtonBox QPushButton[variant="primary"]:pressed {background:#0054b0;border-color:#0054b0;color:white;}
+QWidget#enhancementPanel QPushButton:checked {background:#007aff;border-color:#1686ff;color:white;}
+QWidget#enhancementPanel QPushButton:checked:hover {background:#0064d2;border-color:#0064d2;color:white;}
+QWidget#enhancementPanel QPushButton:checked:pressed {background:#0054b0;border-color:#0054b0;color:white;}
 )";
     if (widget->styleSheet() != style) widget->setStyleSheet(style);
     for (auto* button : widget->findChildren<QAbstractButton*>()) {

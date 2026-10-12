@@ -1,3 +1,4 @@
+#include "ui/KeyboardBindings.h"
 #pragma once
 #include <QImage>
 #include <QContextMenuEvent>
@@ -109,7 +110,7 @@ public:
         // Dividing by a rounded nominal FPS drifts for 23.976/29.97 sources.
         const qint64 whole = qFloor(std::max(0., seconds) + 1.e-7);
         const int within = std::clamp(int(frameNumber(seconds) - frameNumber(whole)), 0, qMax(0, qCeil(fps_) - 1));
-        QString result = QString("%1:%2").arg(whole % 60, 2, 10, QChar('0')).arg(within, 2, 10, QChar('0'));
+        QString result = QString("%1.%2").arg(whole % 60, 2, 10, QChar('0')).arg(within, 2, 10, QChar('0'));
         result = QString("%1:").arg(whole / 60 % 60, 2, 10, QChar('0')) + result;
         if (whole >= 3600) result = QString("%1:").arg(whole / 3600, 2, 10, QChar('0')) + result;
         return result;
@@ -356,20 +357,20 @@ protected:
     }
     void keyPressEvent(QKeyEvent* e) override
     {
-        if (e->key() == Qt::Key_Plus || e->key() == Qt::Key_Equal || e->key() == Qt::Key_Minus || e->key() == Qt::Key_0) {
-            if (e->key() == Qt::Key_0) resetView();
-            else setZoom(zoom_ * (e->key() == Qt::Key_Minus ? .5 : 2.));
+        if (KeyboardBindings::matches(e,"zoomIn") || (KeyboardBindings::sequence("zoomIn") == KeyboardBindings::defaults("zoomIn") && e->key() == Qt::Key_Equal && e->modifiers()==Qt::NoModifier) || KeyboardBindings::matches(e,"zoomOut") || KeyboardBindings::matches(e,"resetView")) {
+            if (KeyboardBindings::matches(e,"resetView")) resetView();
+            else setZoom(zoom_ * (KeyboardBindings::matches(e,"zoomOut") ? .5 : 2.));
             e->accept(); return;
         }
-        if (e->key() == Qt::Key_Space && playbackRequested) {
+        if (KeyboardBindings::matches(e,"play") && playbackRequested) {
             if (!e->isAutoRepeat())
                 playbackRequested();
             e->accept();
             return;
         }
-        if (e->key() == Qt::Key_Left || e->key() == Qt::Key_Right) {
+        if (KeyboardBindings::matches(e,"previous") || KeyboardBindings::matches(e,"next")) {
             position_ = std::clamp(
-                position_ + (e->key() == Qt::Key_Right ? 1. / fps_ : -1. / fps_), 0., duration_);
+                position_ + (KeyboardBindings::matches(e,"next") ? 1. / fps_ : -1. / fps_), 0., duration_);
             if (position_+videoStart_ < viewStart_) viewStart_ = position_+videoStart_;
             else if (position_+videoStart_ > viewStart_ + visibleDuration()) viewStart_ = position_+videoStart_ - visibleDuration();
             updateView();

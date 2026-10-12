@@ -89,14 +89,15 @@ public:
             tr("Restaura desenhos e anime.\nDefine contornos, mas pode simplificar detalhes."),
             tr("Limpa anime com ruído ou compressão.\nCompare as linhas e texturas em Preview.") };
         for (int i = 0; i < modelNames.size(); ++i) {
-            auto* button = new QToolButton(fields_);
+            auto* button = new QPushButton(fields_);
             button->setObjectName(QString("enhancementModel%1").arg(i));
             button->setText(modelNames[i]);
             button->setAccessibleName(modelNames[i]);
             button->setToolTip(helpToolTip(modelNames[i], modelHints[i]));
             button->setCheckable(true);
+            button->setAutoDefault(false);
             button->setFixedHeight(28);
-            button->setStyleSheet("QToolButton {font-size:12px;padding:2px 3px;border-radius:6px;} QToolButton:hover {background:rgba(0,0,0,40);}");
+            button->setStyleSheet("QPushButton {font-size:12px;padding:2px 3px;min-width:0;min-height:0;border-radius:6px;}");
             button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
             models_->addButton(button, i);
             grid->addWidget(button, i / 2, i % 2);
@@ -145,13 +146,11 @@ public:
             value->setObjectName(names[i]);
             value->setAccessibleName(labels[i]);
             const QString hint = helpToolTip(labels[i], hints[i]);
-            value->setToolTip(hint);
-            slider->setToolTip(hint);
             label->setToolTip(hint);
             label->setBuddy(value);
             label->setMinimumWidth(0);
             label->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-            filters->addWidget(label, i * 3, 0, 1, 2);
+            filters->addWidget(label, i * 3, 0, 1, 2, Qt::AlignLeft);
             filters->addWidget(slider, i * 3 + 1, 0);
             filters->addWidget(value, i * 3 + 1, 1);
             if (i < int(values_.size()) - 1) filters->setRowMinimumHeight(i * 3 + 2, 5);

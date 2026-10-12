@@ -1,3 +1,4 @@
+#include "ui/KeyboardBindings.h"
 #include "ExportDialog.h"
 #include "RoundedWindow.h"
 
@@ -323,7 +324,7 @@ ExportDialog::ExportDialog(const QString& inputPath,
         QDesktopServices::openUrl(
             QUrl::fromLocalFile(QFileInfo(outputPath()).absolutePath()));
     });
-    auto* deleteShortcut = new QShortcut(QKeySequence::Delete, table_);
+    auto* deleteShortcut = KeyboardBindings::bind("queueDelete", table_);
     deleteShortcut->setContext(Qt::WidgetWithChildrenShortcut);
     connect(deleteShortcut, &QShortcut::activated, this,
         &ExportDialog::removeSelectedItems);

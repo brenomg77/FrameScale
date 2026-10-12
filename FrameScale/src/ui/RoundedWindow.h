@@ -7,6 +7,7 @@
 #include <QPainterPath>
 #include <QDialog>
 #include <QEvent>
+#include <QDynamicPropertyChangeEvent>
 #include <QBoxLayout>
 #include <QLabel>
 #include <QPushButton>
@@ -33,6 +34,10 @@ public:
 protected:
     bool eventFilter(QObject* watched, QEvent* event) override {
         if (watched == window_) {
+            if (event->type()==QEvent::DynamicPropertyChange) {
+                const auto property=static_cast<QDynamicPropertyChangeEvent*>(event)->propertyName();
+                if (property=="glassBackdrop" || property=="glassWindowSurface") update();
+            }
             if (event->type()==QEvent::Show && window_->isWindow() && !window_->inherits("QMainWindow")
                 && !QSettings().value("reduceMotion",false).toBool()) {
                 reveal_.stop(); reveal_.setStartValue(0.); reveal_.setEndValue(1.); reveal_.start();
@@ -69,20 +74,14 @@ protected:
         mask.save();
         mask.setCompositionMode(QPainter::CompositionMode_SourceOver);
         mask.translate(-offset);
-        if (window_->property("glassWindowSurface").toBool()) {
+        if (window_->property("glassWindowSurface").toBool() && !GlassMaterial::reduced()) {
             const bool light = QSettings().value("appearance", "macos-light").toString() != "macos-dark";
-            const bool native = window_->property("nativeGlassActive").toBool();
             if (window_->property("stableSurface").toBool()) {
                 // An opaque neutral base keeps the welcome surface independent
                 // of activation, desktop colors and partially repainted children.
                 mask.fillRect(window_->rect(), light ? QColor(242,242,244) : QColor(40,40,42));
-            } else if (native) {
-                mask.fillRect(window_->rect(), light ? QColor(255,255,255,160) : QColor(35,35,35,166));
             } else {
-                QImage backdrop = window_->property("glassBackdrop").value<QImage>();
-                if (backdrop.isNull() && window_->parentWidget())
-                    backdrop = window_->parentWidget()->window()->property("glassBackdrop").value<QImage>();
-                GlassMaterial::paint(mask, window_->rect(), backdrop, light, light ? 140 : 150, 0, true);
+                GlassMaterial::paintWindowSurface(mask,window_->rect(),light);
             }
         } else {
             // A solid base also covers areas whose child styles are transparent
@@ -99,17 +98,24 @@ protected:
             alpha_=QImage(pixmap.size(),QImage::Format_ARGB32_Premultiplied);
             alpha_.setDevicePixelRatio(pixmap.devicePixelRatio());alpha_.fill(Qt::transparent);
             QPainterPath path;
-            path.addRoundedRect(QRectF(QPointF(-offset),QSizeF(window_->size())),rounded ? 12 : 0,rounded ? 12 : 0);
+            path.addRoundedRect(QRectF(QPointF(-offset),QSizeF(window_->size())),rounded ? 14 : 0,rounded ? 14 : 0);
             QPainter shape(&alpha_);shape.setRenderHint(QPainter::Antialiasing);shape.fillPath(path,Qt::white);
             offset_=offset; rounded_=rounded;
         }
-        mask.drawImage(QPoint(),alpha_);
         if (window_->property("glassWindowSurface").toBool() && rounded) {
             mask.setCompositionMode(QPainter::CompositionMode_SourceOver);
             mask.setBrush(Qt::NoBrush);
-            mask.setPen(QPen(QColor(128,128,128,35),1));
-            mask.drawRoundedRect(QRectF(QPointF(-offset),QSizeF(window_->size())).adjusted(.5,.5,-.5,-.5),11.5,11.5);
+            const bool light=QSettings().value("appearance","macos-light").toString()!="macos-dark";
+            QLinearGradient rim(0,0,0,window_->height());
+            rim.setColorAt(0,light?QColor(255,255,255,100):QColor(255,255,255,45));
+            rim.setColorAt(1,QColor(128,128,128,20));
+            mask.setPen(QPen(QBrush(rim),1));
+            mask.drawRoundedRect(QRectF(QPointF(-offset),QSizeF(window_->size())).adjusted(.5,.5,-.5,-.5),13.5,13.5);
         }
+        // Clip the rim as well as the content so it cannot leave stray pixels
+        // outside the smooth, antialiased alpha corners.
+        mask.setCompositionMode(QPainter::CompositionMode_DestinationIn);
+        mask.drawImage(QPoint(),alpha_);
         mask.end();
         painter->save();
         painter->setCompositionMode(QPainter::CompositionMode_Source);

@@ -319,6 +319,20 @@ set_tests_properties(FrameScaleLayerStateTests PROPERTIES
     TIMEOUT 30)
 add_dependencies(framescale-tests FrameScaleLayerStateTests)
 
+add_executable(FrameScaleKeyboardBindingsTests EXCLUDE_FROM_ALL tests/keyboard_bindings_tests.cpp)
+target_include_directories(FrameScaleKeyboardBindingsTests PRIVATE src)
+target_link_libraries(FrameScaleKeyboardBindingsTests PRIVATE Qt6::Widgets)
+add_test(NAME FrameScaleKeyboardBindingsTests COMMAND FrameScaleKeyboardBindingsTests)
+set_tests_properties(FrameScaleKeyboardBindingsTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 30)
+add_dependencies(framescale-tests FrameScaleKeyboardBindingsTests)
+
+add_executable(FrameScaleGlassMaterialTests EXCLUDE_FROM_ALL tests/glass_material_tests.cpp)
+target_include_directories(FrameScaleGlassMaterialTests PRIVATE src)
+target_link_libraries(FrameScaleGlassMaterialTests PRIVATE Qt6::Widgets)
+add_test(NAME FrameScaleGlassMaterialTests COMMAND FrameScaleGlassMaterialTests)
+set_tests_properties(FrameScaleGlassMaterialTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 30)
+add_dependencies(framescale-tests FrameScaleGlassMaterialTests)
+
 add_executable(FrameScaleUrlImageTests EXCLUDE_FROM_ALL
     tests/url_image_tests.cpp src/platform/WindowBackdrop.cpp
     src/processing/RuntimePaths.cpp)

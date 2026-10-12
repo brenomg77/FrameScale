@@ -1,3 +1,4 @@
+#include "ui/KeyboardBindings.h"
 #include <QJsonArray>
 #include "ComparisonDialog.h"
 #include "Appearance.h"
@@ -72,7 +73,7 @@ QString text(const std::filesystem::path& value)
 }
 
 ComparisonDialog::ComparisonDialog(framescale::ProcessingOptions options, double position,
-    double duration, double fps, QWidget* parent)
+    double duration, double fps, QWidget* parent, const QString& sourceName)
     : QDialog(parent)
     , options_(std::move(options))
     , temporary_(comparisonDirectory())
@@ -106,7 +107,7 @@ ComparisonDialog::ComparisonDialog(framescale::ProcessingOptions options, double
         auto* label = new QLabel(title, header);
         label->setStyleSheet("font-weight:600;font-size:13px;");
         headerLayout->addWidget(label);
-        auto* filename = new QLabel(QFileInfo(text(options_.inputPath)).fileName(), header);
+        auto* filename = new QLabel(sourceName.isEmpty()?QFileInfo(text(options_.inputPath)).fileName():sourceName, header);
         filename->setTextFormat(Qt::PlainText);
         filename->setMinimumWidth(0);
         filename->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
@@ -158,7 +159,7 @@ ComparisonDialog::ComparisonDialog(framescale::ProcessingOptions options, double
         connect(player,&MediaPreviewWidget::videoMetadataReady,this,[this] {
             if (ready_ && original_->durationMs()>0 && processed_->durationMs()>0) seekBoth(seekPosition_);
         });
-    auto* space = new QShortcut(QKeySequence(Qt::Key_Space), this);
+    auto* space = KeyboardBindings::bind("play", this);
     space->setAutoRepeat(false);
     connect(space, &QShortcut::activated, this, &ComparisonDialog::togglePlayback);
     clock_ = new QTimer(this);
@@ -335,7 +336,7 @@ void ComparisonDialog::render()
         prepareClip(std::move(options));
         return;
     }
-    if (options.mediaType == framescale::MediaType::Video)
+    if (!options.layered && options.mediaType == framescale::MediaType::Video)
         options.trimStartSeconds = options.trimEndSeconds = 0;
     startJob(std::move(options));
 }

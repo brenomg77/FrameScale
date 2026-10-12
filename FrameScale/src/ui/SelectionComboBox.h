@@ -48,13 +48,13 @@ QMenu#selectionPopup::separator {height:1px;background:rgba(128,128,140,55);marg
 )").arg(ink, parentWidget()->font().family());
         const bool compactMenuBar = qobject_cast<QMenuBar*>(parentWidget()) != nullptr;
         if (compactMenuBar)
-            style += "QMenu#selectionPopup {padding:11px 12px 14px;} QMenu#selectionPopup::item {padding:4px 10px;min-height:18px;min-width:0;}";
+            style += "QMenu#selectionPopup {padding:11px 12px 14px;} QMenu#selectionPopup::item {padding:4px 10px 4px 32px;min-height:18px;min-width:0;}";
         setStyleSheet(style);
         if (compactMenuBar) {
             int textWidth = 0;
             for (auto* action : actions())
                 if (!action->isSeparator()) textWidth = qMax(textWidth, fontMetrics().horizontalAdvance(action->text().remove('&')));
-            setFixedWidth(textWidth + 48);
+            setFixedWidth(textWidth + 70);
         }
     }
     std::function<void(quint64)> outsidePress;
@@ -152,9 +152,9 @@ protected:
                 p.setBrush(QColor(0, 0, 0, 3 + (8-i)/2));
                 p.drawRoundedRect(body.adjusted(-i, -i+3, i, i+3), 8+i, 8+i);
             }
-            GlassMaterial::paint(p,body,backdrop_,Appearance::light(),Appearance::light()?170:185,8,true);
+            GlassMaterial::paint(p,body,backdrop_,Appearance::light(),Appearance::light()?155:165,8,true);
             p.setBrush(Qt::NoBrush);
-            p.setPen(QPen(Appearance::light() ? QColor(255,255,255,235) : QColor(255,255,255,60), 1));
+            p.setPen(QPen(Appearance::light() ? QColor(255,255,255,45) : QColor(255,255,255,18), 1));
             p.drawRoundedRect(body, 8, 8);
         }
         if (qobject_cast<QMenuBar*>(parentWidget())) {
@@ -178,7 +178,10 @@ protected:
                     p.drawRoundedRect(row, 5, 5);
                 }
                 p.setPen(action == activeAction() ? Qt::white : palette().color(QPalette::WindowText));
-                p.drawText(row.adjusted(6,0,-6,0), Qt::AlignLeft | Qt::AlignVCenter,
+                const bool hasIcon=!action->icon().isNull();
+                if(hasIcon) action->icon().paint(&p,QRect(row.left()+6,row.center().y()-7,15,15),Qt::AlignCenter,
+                    !action->isEnabled()?QIcon::Disabled:action==activeAction()?QIcon::Selected:QIcon::Normal);
+                p.drawText(row.adjusted(hasIcon?28:6,0,-6,0), Qt::AlignLeft | Qt::AlignVCenter,
                     action->text().remove('&'));
             }
             return;

@@ -80,58 +80,44 @@ void syncGlassRegion(QWidget* widget)
     if (!widget || !widget->isWindow() || !widget->testAttribute(Qt::WA_WState_Created)
         || QApplication::platformName() != "windows") return;
     const auto hwnd = reinterpret_cast<HWND>(widget->winId());
-    const bool rounded = widget->property("nativeGlassActive").toBool()
-        && !widget->isMaximized() && !widget->isFullScreen();
-    const qreal scale = widget->devicePixelRatioF();
-    const QSize pixels(qRound(widget->width()*scale), qRound(widget->height()*scale));
-    if (widget->property("glassRegionSize").toSize() == pixels
-        && widget->property("glassRegionRounded").isValid()
-        && widget->property("glassRegionRounded").toBool() == rounded) return;
-    // Accent blur otherwise paints an opaque rectangle behind Qt's alpha corners.
-    // Windows owns the region after a successful SetWindowRgn call.
-    HRGN region = rounded ? CreateRoundRectRgn(0, 0, pixels.width()+1, pixels.height()+1,
-        qRound(24*scale), qRound(24*scale)) : nullptr;
-    if (SetWindowRgn(hwnd, region, TRUE)) {
-        widget->setProperty("glassRegionSize", pixels);
-        widget->setProperty("glassRegionRounded", rounded);
-    } else if (region) DeleteObject(region);
+    if (widget->property("glassRegionCleared").toBool()) return;
+    // Native HRGN edges are binary and cut away Qt's partially transparent
+    // corner pixels. With native accent blur removed, the alpha mask alone
+    // defines the window edge and remains smooth at different display scales.
+    if(SetWindowRgn(hwnd,nullptr,TRUE)) widget->setProperty("glassRegionCleared",true);
 #else
     Q_UNUSED(widget);
 #endif
 }
 
-bool applyGlass(QWidget* widget, bool enabled, bool dark)
+void configureGlassWindow(QWidget* widget, bool enabled, bool dark)
 {
+    if (!widget) return;
+    widget->setProperty("glassWindowSurface",enabled);
+    widget->setProperty("nativeGlassActive",false);
 #ifdef _WIN32
-    if (!widget || QApplication::platformName() != "windows") return false;
-    // Win10 compatibility path. Resolve at runtime because this entry point
-    // and accent policy are not an SDK contract; fall back if unavailable.
+    if (QApplication::platformName() != "windows") return;
+    // Request blur behind the live window, without an acrylic colour layer.
+    // Qt's per-pixel alpha remains transparent even when native blur is absent.
     struct AccentPolicy { int state; DWORD flags; DWORD color; int animation; };
     struct CompositionData { int attribute; void* data; SIZE_T size; };
     using SetComposition = BOOL (WINAPI*)(HWND, CompositionData*);
     static auto setComposition = reinterpret_cast<SetComposition>(
         GetProcAddress(GetModuleHandleW(L"user32.dll"), "SetWindowCompositionAttribute"));
-    if (!setComposition) return false;
-    BOOL composited = FALSE;
-    if (FAILED(DwmIsCompositionEnabled(&composited)) || !composited) return false;
     const auto hwnd = reinterpret_cast<HWND>(widget->winId());
-    // Layered dialogs use our cached backdrop and alpha edge. Applying the
-    // accent compositor behind them creates a second, jagged native outline.
-    enabled = enabled && widget->inherits("QMainWindow");
-    AccentPolicy policy { enabled ? 3 : 0, 0, 0, 0 };
+    const bool blur = enabled && !widget->property("stableSurface").toBool();
+    AccentPolicy policy { blur ? 3 : 0, 0, 0, 0 };
     CompositionData data {19, &policy, sizeof(policy)};
-    const bool applied = setComposition(hwnd, &data);
+    if (setComposition)
+        widget->setProperty("nativeGlassActive",setComposition(hwnd, &data) && blur);
     const BOOL darkCaption = dark;
     DwmSetWindowAttribute(hwnd, immersiveDarkModeAttribute, &darkCaption, sizeof(darkCaption));
     // Qt draws the single smooth outline; do not add a second DWM border.
     const DWORD noBorder = 0xfffffffe;
     DwmSetWindowAttribute(hwnd, 34, &noBorder, sizeof(noBorder));
-    widget->setProperty("nativeGlassActive", enabled && applied);
     syncGlassRegion(widget);
-    return enabled && applied;
 #else
-    Q_UNUSED(widget); Q_UNUSED(enabled); Q_UNUSED(dark);
-    return false;
+    Q_UNUSED(dark);
 #endif
 }
 
