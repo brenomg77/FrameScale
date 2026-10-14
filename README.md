@@ -1,4 +1,23 @@
-# FrameScale 0.1.0
+<div align="center">
+
+<img src="FrameScale/assets/framescale-symbol.png" width="110" height="110" alt="Logo do FrameScale" />
+<br />
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/branding/wordmark-dark.svg" />
+  <img src=".github/branding/wordmark-light.svg" width="520" alt="FrameScale" />
+</picture>
+
+**Amplie, restaure e interpole vídeos e imagens com inteligência artificial.**
+
+<a href="https://github.com/brenomg77/FrameScale/releases/tag/v0.1.0-alpha.1"><img src="https://img.shields.io/badge/release-v0.1.0--alpha.1-007aff" alt="Release v0.1.0-alpha.1" /></a>
+<a href="https://github.com/brenomg77/FrameScale/releases/download/v0.1.0-alpha.1/FrameScale-0.1.0-Windows-x64-Setup.exe"><img src="https://img.shields.io/badge/baixar-Windows_x64-28a745" alt="Baixar para Windows x64" /></a>
+<a href="https://github.com/brenomg77/FrameScale/releases"><img src="https://img.shields.io/github/downloads/brenomg77/FrameScale/total?label=downloads&amp;color=007aff" alt="Total de downloads" /></a>
+<a href="FrameScale/README.md"><img src="https://img.shields.io/badge/documenta%C3%A7%C3%A3o-FrameScale-59636e" alt="Documentação" /></a>
+<a href="FrameScale/THIRD_PARTY_NOTICES.md"><img src="https://img.shields.io/badge/licen%C3%A7as-de_terceiros-59636e" alt="Licenças de terceiros" /></a>
+
+</div>
+
+---
 
 Aplicação Windows para edição, ampliação e interpolação de vídeos e imagens, desenvolvida em C++ e Qt.
 
