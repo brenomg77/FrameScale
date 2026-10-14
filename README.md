@@ -83,28 +83,42 @@ O resultado depende do material de origem, do modelo e dos ajustes escolhidos. U
 
 ## 🎬 Demonstrações
 
-Comparações geradas pelo processamento real do FrameScale com uma cena própria de teste. Clique nas prévias para abrir os vídeos. A [galeria completa](docs/DEMOS.md) reúne **24 demonstrações**, com parâmetros e arquivos de origem.
+Comparações geradas pelo processamento real do FrameScale com cenas de teste próprias e um trecho de vídeo fornecido pelo usuário. Clique nas prévias para abrir os vídeos. A [galeria completa](docs/DEMOS.md) reúne **25 demonstrações**, com parâmetros e arquivos de origem.
 
 ### 🔍 Ampliação de resolução
 
 [![Ampliação com Real-ESRGAN: entrada e resultado](docs/media/upscale-esrgan.gif)](docs/media/upscale-esrgan.mp4)
 
-**192 × 108 → 384 × 216, escala 2×.** [▶ Real-ESRGAN](docs/media/upscale-esrgan.mp4) · [▶ Real-CUGAN](docs/media/upscale-cugan.mp4) · [▶ Anime4K](docs/media/upscale-anime4k.mp4)
+**Full HD → 4K UHD (3840 × 2160).** [▶ Comparar Real-ESRGAN](docs/media/upscale-esrgan.mp4) · [▶ Comparar Real-CUGAN](docs/media/upscale-cugan.mp4) · [▶ Comparar Anime4K](docs/media/upscale-anime4k.mp4)
+
+Saídas completas em 4K: [Real-ESRGAN](docs/media/upscale-esrgan-full.mp4) · [Real-CUGAN](docs/media/upscale-cugan-full.mp4) · [Anime4K](docs/media/upscale-anime4k-full.mp4)
 
 ### 🎞️ Interpolação de frames
 
 [![Interpolação com RIFE: 8 FPS para 16 FPS](docs/media/interpolation.gif)](docs/media/interpolation.mp4)
 
-**8 FPS → 16 FPS com RIFE.** [▶ Assistir à interpolação](docs/media/interpolation.mp4) · [▶ Ampliação e interpolação combinadas](docs/media/combined.mp4)
+**Full HD de 24 FPS para 60 e 120 FPS com RIFE.** [▶ Comparar 60 FPS](docs/media/interpolation-60.mp4) · [▶ Comparar 120 FPS](docs/media/interpolation.mp4)
+
+Saídas completas: [Full HD a 60 FPS](docs/media/interpolation-60-full.mp4) · [Full HD a 120 FPS](docs/media/interpolation-full.mp4)
+
+### ✨ 4K a 120 FPS
+
+[![Real-ESRGAN e RIFE: Full HD a 24 FPS para 4K a 120 FPS](docs/media/combined.gif)](docs/media/combined.mp4)
+
+**1920 × 1080 / 24 FPS → 3840 × 2160 / 120 FPS.** [▶ Comparar entrada e saída](docs/media/combined.mp4) · [▶ Abrir o resultado completo em 4K a 120 FPS](docs/media/combined-full.mp4)
+
+Também disponível: [resultado em 4K a 60 FPS](docs/media/fps-reduction-full.mp4), produzido pela redução de FPS do FrameScale.
+
+Os GIFs são prévias leves a **12 FPS**; a prévia da interpolação usa câmera lenta de 4× para mostrar os frames intermediários. Para conferir 60 ou 120 FPS em velocidade normal, abra o MP4 correspondente; o player e a tela também precisam suportar a cadência escolhida.
 
 ### 🧩 Modelos de restauração
 
-Os três modelos abaixo processam a mesma entrada com ruído, mantendo a resolução de saída em **1×**. A comparação mostra o comportamento de cada modelo nesta cena sintética.
+Os três modelos abaixo processam o mesmo trecho de vídeo HD com ruído acrescentado para demonstração, mantendo **1280 × 720 a 24 FPS**. Clique na imagem para comparar entrada e resultado.
 
 | Real-ESRGAN Plus | Real-ESRGAN Anime | Real-CUGAN SE |
 | :---: | :---: | :---: |
 | [![Restauração com Real-ESRGAN Plus](docs/media/restore-plus.png)](docs/media/restore-plus.mp4) | [![Restauração com Real-ESRGAN Anime](docs/media/restore-anime.png)](docs/media/restore-anime.mp4) | [![Restauração com Real-CUGAN SE](docs/media/restore-cugan.png)](docs/media/restore-cugan.mp4) |
-| [▶ Assistir ao vídeo](docs/media/restore-plus.mp4) | [▶ Assistir ao vídeo](docs/media/restore-anime.mp4) | [▶ Assistir ao vídeo](docs/media/restore-cugan.mp4) |
+| [▶ Comparação](docs/media/restore-plus.mp4) · [Saída HD](docs/media/restore-plus-full.mp4) | [▶ Comparação](docs/media/restore-anime.mp4) · [Saída HD](docs/media/restore-anime-full.mp4) | [▶ Comparação](docs/media/restore-cugan.mp4) · [Saída HD](docs/media/restore-cugan-full.mp4) |
 
 ### 🎛️ Mais recursos em vídeo
 

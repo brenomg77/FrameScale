@@ -1,189 +1,5 @@
 [
   {
-    "id": "upscale-esrgan",
-    "title": "Ampliação · Real-ESRGAN",
-    "detail": "192 × 108 → 384 × 216 · escala 2×",
-    "input": "source.mp4",
-    "output": "upscale-esrgan.mp4",
-    "output_metadata": {
-      "programs": [],
-      "stream_groups": [],
-      "streams": [
-        {
-          "width": 384,
-          "height": 216,
-          "avg_frame_rate": "8/1",
-          "nb_read_frames": "24"
-        }
-      ],
-      "format": {
-        "duration": "3.000000"
-      }
-    },
-    "demo_duration": 3
-  },
-  {
-    "id": "upscale-cugan",
-    "title": "Ampliação · Real-CUGAN",
-    "detail": "192 × 108 → 384 × 216 · escala 2×",
-    "input": "source.mp4",
-    "output": "upscale-cugan.mp4",
-    "output_metadata": {
-      "programs": [],
-      "stream_groups": [],
-      "streams": [
-        {
-          "width": 384,
-          "height": 216,
-          "avg_frame_rate": "8/1",
-          "nb_read_frames": "24"
-        }
-      ],
-      "format": {
-        "duration": "3.000000"
-      }
-    },
-    "demo_duration": 3
-  },
-  {
-    "id": "upscale-anime4k",
-    "title": "Ampliação · Anime4K",
-    "detail": "192 × 108 → 384 × 216 · escala 2×",
-    "input": "source.mp4",
-    "output": "upscale-anime4k.mp4",
-    "output_metadata": {
-      "programs": [],
-      "stream_groups": [],
-      "streams": [
-        {
-          "width": 384,
-          "height": 216,
-          "avg_frame_rate": "8/1",
-          "nb_read_frames": "24"
-        }
-      ],
-      "format": {
-        "duration": "3.000000"
-      }
-    },
-    "demo_duration": 3
-  },
-  {
-    "id": "interpolation",
-    "title": "Interpolação · RIFE",
-    "detail": "8 FPS → 16 FPS · sem alterar a resolução",
-    "input": "clean.mp4",
-    "output": "interpolation.mp4",
-    "output_metadata": {
-      "programs": [],
-      "stream_groups": [],
-      "streams": [
-        {
-          "width": 384,
-          "height": 216,
-          "avg_frame_rate": "16/1",
-          "nb_read_frames": "48"
-        }
-      ],
-      "format": {
-        "duration": "3.000000"
-      }
-    },
-    "demo_duration": 3
-  },
-  {
-    "id": "combined",
-    "title": "Ampliação + interpolação",
-    "detail": "192 × 108 / 8 FPS → 384 × 216 / 16 FPS",
-    "input": "source.mp4",
-    "output": "combined.mp4",
-    "output_metadata": {
-      "programs": [],
-      "stream_groups": [],
-      "streams": [
-        {
-          "width": 384,
-          "height": 216,
-          "avg_frame_rate": "16/1",
-          "nb_read_frames": "48"
-        }
-      ],
-      "format": {
-        "duration": "3.000000"
-      }
-    },
-    "demo_duration": 3
-  },
-  {
-    "id": "restore-plus",
-    "title": "Restauração · Real-ESRGAN Plus",
-    "detail": "Restauração em 1× · modelo Plus · origem com ruído",
-    "input": "noisy.mp4",
-    "output": "restore-plus.mp4",
-    "output_metadata": {
-      "programs": [],
-      "stream_groups": [],
-      "streams": [
-        {
-          "width": 192,
-          "height": 108,
-          "avg_frame_rate": "8/1",
-          "nb_read_frames": "24"
-        }
-      ],
-      "format": {
-        "duration": "3.000000"
-      }
-    },
-    "demo_duration": 3
-  },
-  {
-    "id": "restore-anime",
-    "title": "Restauração · Real-ESRGAN Anime",
-    "detail": "Restauração em 1× · modelo Anime · origem com ruído",
-    "input": "noisy.mp4",
-    "output": "restore-anime.mp4",
-    "output_metadata": {
-      "programs": [],
-      "stream_groups": [],
-      "streams": [
-        {
-          "width": 192,
-          "height": 108,
-          "avg_frame_rate": "8/1",
-          "nb_read_frames": "24"
-        }
-      ],
-      "format": {
-        "duration": "3.000000"
-      }
-    },
-    "demo_duration": 3
-  },
-  {
-    "id": "restore-cugan",
-    "title": "Restauração · Real-CUGAN SE",
-    "detail": "Restauração em 1× · modelo SE · origem com ruído",
-    "input": "noisy.mp4",
-    "output": "restore-cugan.mp4",
-    "output_metadata": {
-      "programs": [],
-      "stream_groups": [],
-      "streams": [
-        {
-          "width": 192,
-          "height": 108,
-          "avg_frame_rate": "8/1",
-          "nb_read_frames": "24"
-        }
-      ],
-      "format": {
-        "duration": "3.000000"
-      }
-    },
-    "demo_duration": 3
-  },
-  {
     "id": "denoise",
     "title": "Filtro · redução de ruído",
     "detail": "Somente filtros · redução de ruído: 65",
@@ -368,29 +184,6 @@
     "demo_duration": 3
   },
   {
-    "id": "fps-reduction",
-    "title": "Redução de FPS",
-    "detail": "8 FPS → 4 FPS · mesma duração",
-    "input": "clean.mp4",
-    "output": "fps-reduction.mp4",
-    "output_metadata": {
-      "programs": [],
-      "stream_groups": [],
-      "streams": [
-        {
-          "width": 384,
-          "height": 216,
-          "avg_frame_rate": "4/1",
-          "nb_read_frames": "12"
-        }
-      ],
-      "format": {
-        "duration": "3.000000"
-      }
-    },
-    "demo_duration": 3
-  },
-  {
     "id": "trim",
     "title": "Corte na timeline",
     "detail": "Intervalo: 1 s → 2 s · saída com 8 frames",
@@ -486,5 +279,260 @@
     "detail": "24 arquivos PNG exportados pelo FrameScale · 8 FPS",
     "input": "clean.mp4",
     "output": "sequence-demo.mp4"
+  },
+  {
+    "id": "upscale-esrgan",
+    "title": "Real-ESRGAN · Full HD → 4K",
+    "detail": "1920 × 1080 → 3840 × 2160 · 24 FPS",
+    "input": "source-fullhd-24fps.mp4",
+    "output": "upscale-esrgan-full.mp4",
+    "output_metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 3840,
+          "height": 2160,
+          "avg_frame_rate": "24/1",
+          "nb_read_frames": "36"
+        }
+      ],
+      "format": {
+        "duration": "1.500000"
+      }
+    },
+    "demo_duration": 3,
+    "source": "Trecho fornecido pelo utilizador: Demon Slayer - S4E08 (120).mp4",
+    "presentation": "Comparação reduzida; saída completa disponível no arquivo -full.mp4",
+    "sha256": "65231e901c6cd9bac2c272504304e58dfc9053aeb58550d29ce1042a97f2d5f8"
+  },
+  {
+    "id": "upscale-cugan",
+    "title": "Real-CUGAN · Full HD → 4K",
+    "detail": "1920 × 1080 → 3840 × 2160 · 24 FPS",
+    "input": "source-fullhd-24fps.mp4",
+    "output": "upscale-cugan-full.mp4",
+    "output_metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 3840,
+          "height": 2160,
+          "avg_frame_rate": "24/1",
+          "nb_read_frames": "36"
+        }
+      ],
+      "format": {
+        "duration": "1.500000"
+      }
+    },
+    "demo_duration": 3,
+    "source": "Trecho fornecido pelo utilizador: Demon Slayer - S4E08 (120).mp4",
+    "presentation": "Comparação reduzida; saída completa disponível no arquivo -full.mp4",
+    "sha256": "cc06e7c61e134988bf43b184ed83a7bfb56de1138ba8704b3c8f10cb831ba822"
+  },
+  {
+    "id": "upscale-anime4k",
+    "title": "Anime4K · Full HD → 4K",
+    "detail": "1920 × 1080 → 3840 × 2160 · 24 FPS",
+    "input": "source-fullhd-24fps.mp4",
+    "output": "upscale-anime4k-full.mp4",
+    "output_metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 3840,
+          "height": 2160,
+          "avg_frame_rate": "24/1",
+          "nb_read_frames": "36"
+        }
+      ],
+      "format": {
+        "duration": "1.500000"
+      }
+    },
+    "demo_duration": 3,
+    "source": "Trecho fornecido pelo utilizador: Demon Slayer - S4E08 (120).mp4",
+    "presentation": "Comparação reduzida; saída completa disponível no arquivo -full.mp4",
+    "sha256": "420b46b36b233b625f656f1883eaf6285ccd4299bbcd9905c0c6dad2e915a789"
+  },
+  {
+    "id": "interpolation-60",
+    "title": "RIFE · Full HD a 60 FPS",
+    "detail": "1920 × 1080 · 24 FPS → 60 FPS",
+    "input": "source-fullhd-24fps.mp4",
+    "output": "interpolation-60-full.mp4",
+    "output_metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 1920,
+          "height": 1080,
+          "avg_frame_rate": "60/1",
+          "nb_read_frames": "90"
+        }
+      ],
+      "format": {
+        "duration": "1.500000"
+      }
+    },
+    "demo_duration": 3,
+    "source": "Trecho fornecido pelo utilizador: Demon Slayer - S4E08 (120).mp4",
+    "presentation": "Comparação reduzida; saída completa disponível no arquivo -full.mp4",
+    "sha256": "29796fcb118fb09c02e8a9f16adf05120deb9b5f5afb4612b308fc7f5452df96"
+  },
+  {
+    "id": "interpolation",
+    "title": "RIFE · Full HD a 120 FPS",
+    "detail": "1920 × 1080 · 24 FPS → 120 FPS",
+    "input": "source-fullhd-24fps.mp4",
+    "output": "interpolation-full.mp4",
+    "output_metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 1920,
+          "height": 1080,
+          "avg_frame_rate": "120/1",
+          "nb_read_frames": "180"
+        }
+      ],
+      "format": {
+        "duration": "1.500000"
+      }
+    },
+    "demo_duration": 3,
+    "source": "Trecho fornecido pelo utilizador: Demon Slayer - S4E08 (120).mp4",
+    "presentation": "Comparação reduzida; saída completa disponível no arquivo -full.mp4",
+    "sha256": "490db069b2de8713666f03c92292c75cff62d0801090e097dce241a896413bc8"
+  },
+  {
+    "id": "combined",
+    "title": "Real-ESRGAN + RIFE · 4K a 120 FPS",
+    "detail": "1080p / 24 FPS → 4K / 120 FPS",
+    "input": "source-fullhd-24fps.mp4",
+    "output": "combined-full.mp4",
+    "output_metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 3840,
+          "height": 2160,
+          "avg_frame_rate": "120/1",
+          "nb_read_frames": "180"
+        }
+      ],
+      "format": {
+        "duration": "1.500000"
+      }
+    },
+    "demo_duration": 3,
+    "source": "Trecho fornecido pelo utilizador: Demon Slayer - S4E08 (120).mp4",
+    "presentation": "Comparação reduzida; saída completa disponível no arquivo -full.mp4",
+    "sha256": "1c0d012830ed338330b201aab10b9a19d7c24b5bada52e39302dd696e416e693"
+  },
+  {
+    "id": "restore-plus",
+    "title": "Real-ESRGAN Plus · restauração HD",
+    "detail": "1280 × 720 · 24 FPS · restauração em resolução nativa · ruído acrescentado na entrada",
+    "input": "source-hd-noisy.mp4",
+    "output": "restore-plus-full.mp4",
+    "output_metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 1280,
+          "height": 720,
+          "avg_frame_rate": "24/1",
+          "nb_read_frames": "24"
+        }
+      ],
+      "format": {
+        "duration": "1.000000"
+      }
+    },
+    "demo_duration": 3,
+    "source": "Trecho fornecido pelo utilizador; ruído e compressão acrescentados para demonstrar restauração.",
+    "sha256": "18717c7a0cffd5a4c86d3715f9e3014cd20d0665b46f4b7f45f7865c0ed1101b"
+  },
+  {
+    "id": "restore-anime",
+    "title": "Real-ESRGAN Anime · restauração HD",
+    "detail": "1280 × 720 · 24 FPS · restauração em resolução nativa · ruído acrescentado na entrada",
+    "input": "source-hd-noisy.mp4",
+    "output": "restore-anime-full.mp4",
+    "output_metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 1280,
+          "height": 720,
+          "avg_frame_rate": "24/1",
+          "nb_read_frames": "24"
+        }
+      ],
+      "format": {
+        "duration": "1.000000"
+      }
+    },
+    "demo_duration": 3,
+    "source": "Trecho fornecido pelo utilizador; ruído e compressão acrescentados para demonstrar restauração.",
+    "sha256": "6ddf12cafaf1c325d40ec9e1158b998f8b837ff1935d11400aceb7264e9f9411"
+  },
+  {
+    "id": "restore-cugan",
+    "title": "Real-CUGAN SE · restauração HD",
+    "detail": "1280 × 720 · 24 FPS · restauração em resolução nativa · ruído acrescentado na entrada",
+    "input": "source-hd-noisy.mp4",
+    "output": "restore-cugan-full.mp4",
+    "output_metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 1280,
+          "height": 720,
+          "avg_frame_rate": "24/1",
+          "nb_read_frames": "24"
+        }
+      ],
+      "format": {
+        "duration": "1.000000"
+      }
+    },
+    "demo_duration": 3,
+    "source": "Trecho fornecido pelo utilizador; ruído e compressão acrescentados para demonstrar restauração.",
+    "sha256": "174250fd6b60f2ddd2ee356f224780508977eb592977c5d3d80221458a832bb3"
+  },
+  {
+    "id": "fps-reduction",
+    "title": "Redução de FPS · 4K a 120 FPS → 4K a 60 FPS",
+    "detail": "3840 × 2160 preservado · 120 FPS → 60 FPS · mesma duração",
+    "input": "combined-full.mp4",
+    "output": "fps-reduction-full.mp4",
+    "output_metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 3840,
+          "height": 2160,
+          "avg_frame_rate": "60/1",
+          "nb_read_frames": "90"
+        }
+      ],
+      "format": {
+        "duration": "1.500000"
+      }
+    },
+    "demo_duration": 3,
+    "sha256": "606fb5eeda48c16b25fcdcc2e0e88e7b9712e155fda685272d65580e51c13b15"
   }
 ]
