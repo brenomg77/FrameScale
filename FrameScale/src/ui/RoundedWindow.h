@@ -76,13 +76,7 @@ protected:
         mask.translate(-offset);
         if (window_->property("glassWindowSurface").toBool() && !GlassMaterial::reduced()) {
             const bool light = QSettings().value("appearance", "macos-light").toString() != "macos-dark";
-            if (window_->property("stableSurface").toBool()) {
-                // An opaque neutral base keeps the welcome surface independent
-                // of activation, desktop colors and partially repainted children.
-                mask.fillRect(window_->rect(), light ? QColor(242,242,244) : QColor(40,40,42));
-            } else {
-                GlassMaterial::paintWindowSurface(mask,window_->rect(),light);
-            }
+            GlassMaterial::paintWindowSurface(mask,window_->rect(),light);
         } else {
             // A solid base also covers areas whose child styles are transparent
             // after switching from a glass theme to Studio.
@@ -185,7 +179,7 @@ protected:
         if (child && qobject_cast<QAbstractButton*>(child)) return false;
         // Welcome uses client dragging: native caption dragging enables Aero
         // Shake, which can minimize background windows during rapid movement.
-        *result = window()->property("stableSurface").toBool() ? HTCLIENT : HTCAPTION;
+        *result = window()->property("clientCaptionDrag").toBool() ? HTCLIENT : HTCAPTION;
         return true;
 #else
         Q_UNUSED(message);

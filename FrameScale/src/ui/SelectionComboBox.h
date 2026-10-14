@@ -272,6 +272,13 @@ public:
         }
     }
 protected:
+    void focusInEvent(QFocusEvent* event) override
+    {
+        setProperty("keyboardFocus",event->reason()==Qt::TabFocusReason
+            || event->reason()==Qt::BacktabFocusReason || event->reason()==Qt::ShortcutFocusReason);
+        QComboBox::focusInEvent(event);
+        style()->unpolish(this);style()->polish(this);update();
+    }
     void mousePressEvent(QMouseEvent* event) override
     {
         if (Appearance::theme()=="studio" || event->button()!=Qt::LeftButton) {

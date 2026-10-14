@@ -69,7 +69,10 @@ protected:
         p.setPen(palette().color(isEnabled() ? QPalette::Active : QPalette::Disabled, QPalette::WindowText));
         const auto symbol = ControlSymbols::forControl(objectName());
         const int textInset = symbol == ControlSymbols::Symbol::None ? 0 : 26;
-        if (textInset) ControlSymbols::paint(p, QRectF(1,(height()-16)/2.,16,16), symbol, p.pen().color());
+        const QFontMetricsF metrics(font());
+        const qreal textCentre=QRectF(rect()).center().y()
+            +(metrics.ascent()-metrics.descent()-metrics.capHeight())/2.;
+        if (textInset) ControlSymbols::paint(p, QRectF(1,textCentre-8,16,16), symbol, p.pen().color());
         p.drawText(rect().adjusted(textInset, 0, -52, 0), Qt::AlignLeft | Qt::AlignVCenter, text());
         const QRectF track(width() - 42, (height() - 18) / 2., 40, 18);
         p.setPen(Qt::NoPen);

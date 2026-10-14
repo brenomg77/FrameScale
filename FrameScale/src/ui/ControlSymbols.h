@@ -180,7 +180,10 @@ protected:
         QLabel::paintEvent(event);
         if(symbol_==Symbol::None)return;
         QPainter p(this);auto ink=palette().color(isEnabled()?QPalette::Active:QPalette::Disabled,QPalette::WindowText);ink.setAlpha(190);
-        paint(p,QRectF(1,(height()-16)/2.,16,16),symbol_,ink);
+        const QFontMetricsF metrics(font());
+        const qreal textCentre=QRectF(contentsRect()).center().y()
+            +(metrics.ascent()-metrics.descent()-metrics.capHeight())/2.;
+        paint(p,QRectF(1,textCentre-8,16,16),symbol_,ink);
     }
 private:Symbol symbol_;
 };

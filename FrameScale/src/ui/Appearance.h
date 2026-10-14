@@ -315,7 +315,9 @@ QToolTip {background:%2;color:%4;border:1px solid %3;padding:6px;border-radius:6
         style += QString(" QWidget#mediaPreview, QWidget#previewToolbar, QWidget#previewTrimBar, QWidget#comparisonHeader, QLabel#previewPlaceholder {background:%1;}").arg(theme() != "studio" && !GlassMaterial::reduced() ? "transparent" : (light() ? "#fafafa" : "#292929"));
     if (widget->property("glassWindowSurface").toBool())
         style += "QMainWindow, QDialog, QDialog#comparisonDialog, QFrame#canvasPanel, QWidget#welcomePage, QWidget#welcomeBody, QWidget#welcomeRail {background:transparent;}";
-    style += QString("QWidget#titleBar {background:%1;border:0;}").arg(light()?"#ececef":"#29292c");
+    style += QString("QWidget#titleBar {background:%1;border:0;border-bottom:1px solid %2;}")
+        .arg(light()?"qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #e3e3e3,stop:1 #d0d0d0)":"qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #303030,stop:1 #262626)",
+             light()?"rgba(80,80,80,35)":"rgba(255,255,255,20)");
     style += QString(R"(
 QPushButton#welcomeOpenButton, QPushButton#welcomeUrlButton, QPushButton#welcomeNewButton {font-size:13px;font-weight:500;padding:1px 8px;min-height:18px;border-radius:6px;}
 QPushButton#welcomeNewButton, QPushButton#welcomeOpenButton, QPushButton#welcomeUrlButton {background:transparent;color:%1;border:1px solid %3;}
@@ -328,16 +330,20 @@ QDialog#urlDownloadDialog QProgressBar::chunk {background:#007aff;border-radius:
 )").arg(light()?"#292929":"#eeeeee",light()?"#dedee2":"#404044",light()?"#b5b5ba":"#66666b");
     style += R"(
 QFrame#mediaDropZone, QFrame#mediaDropZone[dragActive="true"] {background:transparent;border:0;border-radius:18px;}
-QFrame#mediaDropZone QLabel#dropTitle, QFrame#mediaDropZone QLabel#dropSubtitle, QFrame#mediaDropZone QLabel#dropHint {color:#292929;background:transparent;}
 )";
+    style += QString("QFrame#mediaDropZone QLabel#dropTitle, QFrame#mediaDropZone QLabel#dropSubtitle, QFrame#mediaDropZone QLabel#dropHint {color:%1;background:transparent;}").arg(light()?"#292929":"#eeeeee");
     if (theme()!="studio" && !GlassMaterial::reduced()) {
         const QString face=light()
-            ? "qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 rgba(255,255,255,108),stop:0.45 rgba(255,255,255,88),stop:1 rgba(248,249,252,76))"
-            : "qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 rgba(255,255,255,52),stop:0.45 rgba(100,103,112,42),stop:1 rgba(42,44,50,70))";
+            ? "qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 rgba(255,255,255,96),stop:0.45 rgba(255,255,255,86),stop:1 rgba(248,249,252,80))"
+            : "qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 rgba(255,255,255,24),stop:0.45 rgba(100,103,112,28),stop:1 rgba(42,44,50,30))";
         style+=QString("QPushButton,QComboBox,QSpinBox,QDoubleSpinBox,QLineEdit,QDialog QDialogButtonBox QPushButton {background:%1;border-top-color:%2;border-bottom-color:%3;}")
-            .arg(face,light()?"rgba(255,255,255,190)":"rgba(255,255,255,65)",light()?"rgba(100,105,115,45)":"rgba(0,0,0,65)");
+            .arg(face,light()?"rgba(255,255,255,85)":"rgba(255,255,255,30)",light()?"rgba(100,105,115,35)":"rgba(0,0,0,30)");
         style+="QPushButton[variant=\"primary\"],QDialog QDialogButtonBox QPushButton[variant=\"primary\"] {background:#007aff;border-color:#1686ff;color:white;} QPushButton[variant=\"text\"] {background:transparent;}";
     }
+    // Mouse/automatic focus should not look like a selected format. Preserve
+    // a visible focus ring when navigating the chooser with the keyboard.
+    if(theme()!="studio") style+=QString("QComboBox:focus {border:1px solid %1;} QComboBox[keyboardFocus=\"true\"]:focus {border:1px solid #70b6ff;}")
+        .arg(light()?"rgba(60,60,60,38)":"rgba(255,255,255,24)");
     // Confirmation-specific rules otherwise outrank the shared primary hover
     // style. Keep these after the glass face so feedback survives both themes.
     style += R"(

@@ -174,9 +174,8 @@ protected:
         Q_UNUSED(event);
         QPainter painter(this);
         painter.setRenderHint(QPainter::Antialiasing);
-        painter.setPen(Qt::NoPen);
-        painter.setBrush(QColor("#d6d6da"));
-        painter.drawRoundedRect(QRectF(rect()),18,18);
+        GlassMaterial::paint(painter,QRectF(rect()),{},Appearance::light(),
+            property("dragActive").toBool()?145:Appearance::light()?80:65,18,true);
     }
     QString localPath(const QMimeData* data) const
     {
@@ -231,7 +230,7 @@ protected:
         QPainter p(this);
         p.setRenderHint(QPainter::Antialiasing);
         p.setPen(
-            QPen(QColor("#292929"), 2.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+            QPen(palette().color(QPalette::WindowText), 2.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
         p.drawLine(QPointF(32, 39), QPointF(32, 12));
         p.drawPolyline(
             QPolygonF { QPointF(22, 22), QPointF(32, 12), QPointF(42, 22) });
@@ -640,7 +639,7 @@ QWidget* MainWindow::buildWelcomePage()
             l->setStyleSheet(QString("font-family:\"%1\";").arg(Typography::displayFamily));
         }
         l->setProperty("appearanceManaged", true);
-        l->setStyleSheet(l->styleSheet() + "color:#292929;background:transparent;");
+        l->setStyleSheet(l->styleSheet() + "background:transparent;");
         l->setAlignment(Qt::AlignCenter);
         l->setWordWrap(true);
         d->addWidget(l);
@@ -1065,7 +1064,7 @@ void MainWindow::showWelcome()
     if (!welcomeDialog_) {
         welcomeDialog_ = new QDialog(this);
         welcomeDialog_->setObjectName("welcomeDialog");
-        welcomeDialog_->setProperty("stableSurface", true);
+        welcomeDialog_->setProperty("clientCaptionDrag", true);
         welcomeDialog_->setWindowTitle(tr("Bem-vindo ao FrameScale"));
         welcomeDialog_->setWindowIcon(windowIcon());
         welcomeDialog_->setWindowModality(Qt::NonModal);
