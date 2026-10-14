@@ -2,10 +2,7 @@
 
 <img src="FrameScale/assets/framescale-symbol.png" width="110" height="110" alt="Logo do FrameScale" />
 <br />
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset=".github/branding/wordmark-dark.svg" />
-  <img src=".github/branding/wordmark-light.svg" width="520" alt="FrameScale" />
-</picture>
+<img src=".github/branding/wordmark.png" width="760" alt="FrameScale" />
 
 **Amplie, restaure e interpole vídeos e imagens com inteligência artificial.**
 
