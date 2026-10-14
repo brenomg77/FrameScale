@@ -1,0 +1,490 @@
+[
+  {
+    "id": "upscale-esrgan",
+    "title": "Ampliação · Real-ESRGAN",
+    "detail": "192 × 108 → 384 × 216 · escala 2×",
+    "input": "source.mp4",
+    "output": "upscale-esrgan.mp4",
+    "output_metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 384,
+          "height": 216,
+          "avg_frame_rate": "8/1",
+          "nb_read_frames": "24"
+        }
+      ],
+      "format": {
+        "duration": "3.000000"
+      }
+    },
+    "demo_duration": 3
+  },
+  {
+    "id": "upscale-cugan",
+    "title": "Ampliação · Real-CUGAN",
+    "detail": "192 × 108 → 384 × 216 · escala 2×",
+    "input": "source.mp4",
+    "output": "upscale-cugan.mp4",
+    "output_metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 384,
+          "height": 216,
+          "avg_frame_rate": "8/1",
+          "nb_read_frames": "24"
+        }
+      ],
+      "format": {
+        "duration": "3.000000"
+      }
+    },
+    "demo_duration": 3
+  },
+  {
+    "id": "upscale-anime4k",
+    "title": "Ampliação · Anime4K",
+    "detail": "192 × 108 → 384 × 216 · escala 2×",
+    "input": "source.mp4",
+    "output": "upscale-anime4k.mp4",
+    "output_metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 384,
+          "height": 216,
+          "avg_frame_rate": "8/1",
+          "nb_read_frames": "24"
+        }
+      ],
+      "format": {
+        "duration": "3.000000"
+      }
+    },
+    "demo_duration": 3
+  },
+  {
+    "id": "interpolation",
+    "title": "Interpolação · RIFE",
+    "detail": "8 FPS → 16 FPS · sem alterar a resolução",
+    "input": "clean.mp4",
+    "output": "interpolation.mp4",
+    "output_metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 384,
+          "height": 216,
+          "avg_frame_rate": "16/1",
+          "nb_read_frames": "48"
+        }
+      ],
+      "format": {
+        "duration": "3.000000"
+      }
+    },
+    "demo_duration": 3
+  },
+  {
+    "id": "combined",
+    "title": "Ampliação + interpolação",
+    "detail": "192 × 108 / 8 FPS → 384 × 216 / 16 FPS",
+    "input": "source.mp4",
+    "output": "combined.mp4",
+    "output_metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 384,
+          "height": 216,
+          "avg_frame_rate": "16/1",
+          "nb_read_frames": "48"
+        }
+      ],
+      "format": {
+        "duration": "3.000000"
+      }
+    },
+    "demo_duration": 3
+  },
+  {
+    "id": "restore-plus",
+    "title": "Restauração · Real-ESRGAN Plus",
+    "detail": "Restauração em 1× · modelo Plus · origem com ruído",
+    "input": "noisy.mp4",
+    "output": "restore-plus.mp4",
+    "output_metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 192,
+          "height": 108,
+          "avg_frame_rate": "8/1",
+          "nb_read_frames": "24"
+        }
+      ],
+      "format": {
+        "duration": "3.000000"
+      }
+    },
+    "demo_duration": 3
+  },
+  {
+    "id": "restore-anime",
+    "title": "Restauração · Real-ESRGAN Anime",
+    "detail": "Restauração em 1× · modelo Anime · origem com ruído",
+    "input": "noisy.mp4",
+    "output": "restore-anime.mp4",
+    "output_metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 192,
+          "height": 108,
+          "avg_frame_rate": "8/1",
+          "nb_read_frames": "24"
+        }
+      ],
+      "format": {
+        "duration": "3.000000"
+      }
+    },
+    "demo_duration": 3
+  },
+  {
+    "id": "restore-cugan",
+    "title": "Restauração · Real-CUGAN SE",
+    "detail": "Restauração em 1× · modelo SE · origem com ruído",
+    "input": "noisy.mp4",
+    "output": "restore-cugan.mp4",
+    "output_metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 192,
+          "height": 108,
+          "avg_frame_rate": "8/1",
+          "nb_read_frames": "24"
+        }
+      ],
+      "format": {
+        "duration": "3.000000"
+      }
+    },
+    "demo_duration": 3
+  },
+  {
+    "id": "denoise",
+    "title": "Filtro · redução de ruído",
+    "detail": "Somente filtros · redução de ruído: 65",
+    "input": "noisy.mp4",
+    "output": "denoise.mp4",
+    "output_metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 192,
+          "height": 108,
+          "avg_frame_rate": "8/1",
+          "nb_read_frames": "24"
+        }
+      ],
+      "format": {
+        "duration": "3.000000"
+      }
+    },
+    "demo_duration": 3
+  },
+  {
+    "id": "sharpen",
+    "title": "Filtro · nitidez",
+    "detail": "Somente filtros · nitidez: 55",
+    "input": "source.mp4",
+    "output": "sharpen.mp4",
+    "output_metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 192,
+          "height": 108,
+          "avg_frame_rate": "8/1",
+          "nb_read_frames": "24"
+        }
+      ],
+      "format": {
+        "duration": "3.000000"
+      }
+    },
+    "demo_duration": 3
+  },
+  {
+    "id": "deblock",
+    "title": "Filtro · reduzir blocos",
+    "detail": "Somente filtros · reduzir blocos: 70",
+    "input": "source.mp4",
+    "output": "deblock.mp4",
+    "output_metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 192,
+          "height": 108,
+          "avg_frame_rate": "8/1",
+          "nb_read_frames": "24"
+        }
+      ],
+      "format": {
+        "duration": "3.000000"
+      }
+    },
+    "demo_duration": 3
+  },
+  {
+    "id": "deband",
+    "title": "Filtro · reduzir faixas de cor",
+    "detail": "Somente filtros · reduzir banding: 70",
+    "input": "bands.mp4",
+    "output": "deband.mp4",
+    "output_metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 192,
+          "height": 108,
+          "avg_frame_rate": "8/1",
+          "nb_read_frames": "24"
+        }
+      ],
+      "format": {
+        "duration": "3.000000"
+      }
+    },
+    "demo_duration": 3
+  },
+  {
+    "id": "grain",
+    "title": "Filtro · grão",
+    "detail": "Somente filtros · grão: 40",
+    "input": "source.mp4",
+    "output": "grain.mp4",
+    "output_metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 192,
+          "height": 108,
+          "avg_frame_rate": "8/1",
+          "nb_read_frames": "24"
+        }
+      ],
+      "format": {
+        "duration": "3.000000"
+      }
+    },
+    "demo_duration": 3
+  },
+  {
+    "id": "contrast",
+    "title": "Filtro · contraste",
+    "detail": "Somente filtros · contraste: +45",
+    "input": "source.mp4",
+    "output": "contrast.mp4",
+    "output_metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 192,
+          "height": 108,
+          "avg_frame_rate": "8/1",
+          "nb_read_frames": "24"
+        }
+      ],
+      "format": {
+        "duration": "3.000000"
+      }
+    },
+    "demo_duration": 3
+  },
+  {
+    "id": "vibrance",
+    "title": "Filtro · intensidade das cores",
+    "detail": "Somente filtros · intensidade das cores: +65",
+    "input": "source.mp4",
+    "output": "vibrance.mp4",
+    "output_metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 192,
+          "height": 108,
+          "avg_frame_rate": "8/1",
+          "nb_read_frames": "24"
+        }
+      ],
+      "format": {
+        "duration": "3.000000"
+      }
+    },
+    "demo_duration": 3
+  },
+  {
+    "id": "speed",
+    "title": "Velocidade · movimento lento",
+    "detail": "Velocidade: 0,5× · saída com 6 segundos",
+    "input": "clean.mp4",
+    "output": "speed.mp4",
+    "output_metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 384,
+          "height": 216,
+          "avg_frame_rate": "8/1",
+          "nb_read_frames": "48"
+        }
+      ],
+      "format": {
+        "duration": "6.000000"
+      }
+    },
+    "demo_duration": 3
+  },
+  {
+    "id": "fps-reduction",
+    "title": "Redução de FPS",
+    "detail": "8 FPS → 4 FPS · mesma duração",
+    "input": "clean.mp4",
+    "output": "fps-reduction.mp4",
+    "output_metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 384,
+          "height": 216,
+          "avg_frame_rate": "4/1",
+          "nb_read_frames": "12"
+        }
+      ],
+      "format": {
+        "duration": "3.000000"
+      }
+    },
+    "demo_duration": 3
+  },
+  {
+    "id": "trim",
+    "title": "Corte na timeline",
+    "detail": "Intervalo: 1 s → 2 s · saída com 8 frames",
+    "input": "clean.mp4",
+    "output": "trim.mp4",
+    "output_metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 384,
+          "height": 216,
+          "avg_frame_rate": "8/1",
+          "nb_read_frames": "8"
+        }
+      ],
+      "format": {
+        "duration": "1.000000"
+      }
+    },
+    "demo_duration": 3
+  },
+  {
+    "id": "rotate",
+    "title": "Rotação de vídeo",
+    "detail": "Rotação: 90° · conteúdo ajustado para esta comparação",
+    "input": "clean.mp4",
+    "output": "rotate.mp4",
+    "output_metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 216,
+          "height": 384,
+          "avg_frame_rate": "8/1",
+          "nb_read_frames": "24"
+        }
+      ],
+      "format": {
+        "duration": "3.000000"
+      }
+    },
+    "demo_duration": 3
+  },
+  {
+    "id": "flip",
+    "title": "Espelhamento de vídeo",
+    "detail": "Espelhamento horizontal",
+    "input": "clean.mp4",
+    "output": "flip.mp4",
+    "output_metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 384,
+          "height": 216,
+          "avg_frame_rate": "8/1",
+          "nb_read_frames": "24"
+        }
+      ],
+      "format": {
+        "duration": "3.000000"
+      }
+    },
+    "demo_duration": 3
+  },
+  {
+    "id": "layers",
+    "title": "Composição de camadas",
+    "detail": "Vídeo base + camada espelhada a partir de 1,5 s + áudio",
+    "input": "clean.mp4",
+    "output": "layers-demo.mp4"
+  },
+  {
+    "id": "audio",
+    "title": "Exportação de áudio",
+    "detail": "WAV exportado pelo FrameScale · visualização da onda de áudio",
+    "input": "clean.mp4",
+    "output": "audio-wave.mp4"
+  },
+  {
+    "id": "gif",
+    "title": "Exportação em GIF",
+    "detail": "Animação GIF exportada pelo FrameScale",
+    "input": "clean.mp4",
+    "output": "exported.gif"
+  },
+  {
+    "id": "sequence",
+    "title": "Sequência de imagens",
+    "detail": "24 arquivos PNG exportados pelo FrameScale · 8 FPS",
+    "input": "clean.mp4",
+    "output": "sequence-demo.mp4"
+  }
+]

@@ -21,15 +21,21 @@
 ---
 
 <p align="center">
-  <a href="#instalação">Instalação</a> ·
-  <a href="#funcionalidades">Funcionalidades</a> ·
-  <a href="#como-usar">Como usar</a> ·
-  <a href="#requisitos">Requisitos</a> ·
-  <a href="#documentação">Documentação</a> ·
-  <a href="#desenvolvimento">Desenvolvimento</a>
+  <a href="#-instalação">Instalação</a> ·
+  <a href="#-funcionalidades">Funcionalidades</a> ·
+  <a href="#-como-usar">Como usar</a> ·
+  <a href="#-requisitos">Requisitos</a> ·
+  <a href="#-documentação">Documentação</a> ·
+  <a href="#-desenvolvimento">Desenvolvimento</a>
 </p>
 
-## Sobre o FrameScale
+## 🌟 Versão 0.1.0 Alpha 1
+
+A versão de teste para Windows reúne ampliação e restauração com IA, interpolação, projetos com camadas e comparação de resultados. Os ajustes recentes incluem atalhos personalizáveis, refinamentos do tema Liquid Glass e correções das prévias de intervalos curtos.
+
+[Baixar a versão de teste](https://github.com/brenomg77/FrameScale/releases/tag/v0.1.0-alpha.1) · [Ver demonstrações](docs/DEMOS.md)
+
+## ✨ Sobre o FrameScale
 
 O **FrameScale** é uma aplicação para Windows que reúne edição, ampliação, restauração e interpolação de vídeos e imagens em uma interface gráfica. Abra um arquivo, ajuste o processamento, compare o resultado na prévia e exporte pela fila.
 
@@ -37,7 +43,7 @@ O projeto é desenvolvido em **C++ e Qt** como parte de uma Prova de Aptidão Pr
 
 > **Versão alpha:** o FrameScale está em desenvolvimento. A versão disponível para download é experimental; reporte problemas com os passos necessários para reproduzi-los.
 
-## Instalação
+## 🪟 Instalação
 
 ### Windows x64
 
@@ -51,7 +57,7 @@ O pacote inclui **Qt, FFmpeg, ferramentas de processamento e modelos de IA**. Pa
 
 O instalador ainda não possui assinatura digital de editor. O arquivo `.sha256` publicado junto ao download permite conferir a integridade do pacote. Os arquivos **Source code** disponibilizados pelo GitHub são destinados ao desenvolvimento.
 
-## Funcionalidades
+## ⚙️ Funcionalidades
 
 | Área | O que você pode fazer |
 | :--- | :--- |
@@ -78,7 +84,43 @@ O instalador ainda não possui assinatura digital de editor. O arquivo `.sha256`
 
 O resultado depende do material de origem, do modelo e dos ajustes escolhidos. Use a prévia para comparar detalhes antes de processar o arquivo completo.
 
-## Como usar
+## 🎬 Demonstrações
+
+Comparações geradas pelo processamento real do FrameScale com uma cena própria de teste. Clique nas prévias para abrir os vídeos. A [galeria completa](docs/DEMOS.md) reúne **24 demonstrações**, com parâmetros e arquivos de origem.
+
+### 🔍 Ampliação de resolução
+
+[![Ampliação com Real-ESRGAN: entrada e resultado](docs/media/upscale-esrgan.gif)](docs/media/upscale-esrgan.mp4)
+
+**192 × 108 → 384 × 216, escala 2×.** [▶ Real-ESRGAN](docs/media/upscale-esrgan.mp4) · [▶ Real-CUGAN](docs/media/upscale-cugan.mp4) · [▶ Anime4K](docs/media/upscale-anime4k.mp4)
+
+### 🎞️ Interpolação de frames
+
+[![Interpolação com RIFE: 8 FPS para 16 FPS](docs/media/interpolation.gif)](docs/media/interpolation.mp4)
+
+**8 FPS → 16 FPS com RIFE.** [▶ Assistir à interpolação](docs/media/interpolation.mp4) · [▶ Ampliação e interpolação combinadas](docs/media/combined.mp4)
+
+### 🧩 Modelos de restauração
+
+Os três modelos abaixo processam a mesma entrada com ruído, mantendo a resolução de saída em **1×**. A comparação mostra o comportamento de cada modelo nesta cena sintética.
+
+| Real-ESRGAN Plus | Real-ESRGAN Anime | Real-CUGAN SE |
+| :---: | :---: | :---: |
+| [![Restauração com Real-ESRGAN Plus](docs/media/restore-plus.png)](docs/media/restore-plus.mp4) | [![Restauração com Real-ESRGAN Anime](docs/media/restore-anime.png)](docs/media/restore-anime.mp4) | [![Restauração com Real-CUGAN SE](docs/media/restore-cugan.png)](docs/media/restore-cugan.mp4) |
+| [▶ Assistir ao vídeo](docs/media/restore-plus.mp4) | [▶ Assistir ao vídeo](docs/media/restore-anime.mp4) | [▶ Assistir ao vídeo](docs/media/restore-cugan.mp4) |
+
+### 🎛️ Mais recursos em vídeo
+
+| Recurso | Demonstrações |
+| :--- | :--- |
+| **Filtros de imagem** | [Ruído](docs/media/denoise.mp4) · [Nitidez](docs/media/sharpen.mp4) · [Blocos](docs/media/deblock.mp4) · [Faixas de cor](docs/media/deband.mp4) · [Grão](docs/media/grain.mp4) · [Contraste](docs/media/contrast.mp4) · [Cores](docs/media/vibrance.mp4) |
+| **Timeline e movimento** | [Corte](docs/media/trim.mp4) · [Velocidade](docs/media/speed.mp4) · [Redução de FPS](docs/media/fps-reduction.mp4) · [Camadas](docs/media/layers.mp4) |
+| **Orientação** | [Rotação](docs/media/rotate.mp4) · [Espelhamento](docs/media/flip.mp4) |
+| **Exportação** | [Áudio](docs/media/audio.mp4) · [GIF](docs/media/gif.mp4) · [Sequência de imagens](docs/media/sequence.mp4) |
+
+[**Abrir a galeria com todas as prévias animadas →**](docs/DEMOS.md)
+
+## 🚀 Como usar
 
 1. **Abra o arquivo.** Arraste uma imagem ou vídeo para a janela de boas-vindas, use **Abrir** ou escolha **Abrir por URL**.
 2. **Prepare o trecho.** Ajuste os limites na timeline e organize as camadas de vídeo e áudio.
@@ -96,7 +138,7 @@ O resultado depende do material de origem, do modelo e dos ajustes escolhidos. U
 
 A prévia processada usa intermediários sem perda e serve para comparar o processamento. A compressão final depende das opções de codificação escolhidas para a exportação.
 
-## Formatos
+## 📦 Formatos
 
 | Tipo | Formatos disponíveis |
 | :--- | :--- |
@@ -108,7 +150,7 @@ A prévia processada usa intermediários sem perda e serve para comparar o proce
 
 As opções de codec e de áudio dependem do formato selecionado. A exportação de vídeo utiliza uma cadência constante de frames (CFR); entradas com cadência variável são normalizadas pelo processamento.
 
-## Requisitos
+## 🖥️ Requisitos
 
 | Componente | Requisito |
 | :--- | :--- |
@@ -123,7 +165,7 @@ O tempo de processamento e o uso de memória variam conforme a resolução, a du
 
 **Aparência:** Liquid Glass claro, Liquid Glass escuro e Estúdio.
 
-## Documentação
+## 📖 Documentação
 
 | Guia | Conteúdo |
 | :--- | :--- |
@@ -133,7 +175,7 @@ O tempo de processamento e o uso de memória variam conforme a resolução, a du
 | [Manifesto de dependências](FrameScale/runtime/manifest.json) | Arquivos, versões e hashes das ferramentas e modelos |
 | [Avisos de terceiros](FrameScale/THIRD_PARTY_NOTICES.md) | Licenças, atribuições e proveniência das dependências |
 
-## Perguntas frequentes
+## 💡 Perguntas frequentes
 
 <details>
 <summary><strong>Preciso instalar Python ou Qt para usar o FrameScale?</strong></summary>
@@ -163,7 +205,7 @@ A atualização dentro do programa ainda não está implementada. Consulte a pá
 
 </details>
 
-## Desenvolvimento
+## 🛠️ Desenvolvimento
 
 O código da aplicação fica em [`FrameScale/`](FrameScale/). O projeto utiliza **C++17, Qt 6, CMake e Ninja**; a compilação Windows validada usa Qt 6.11.2 e MinGW 13.1.
 
@@ -194,7 +236,7 @@ Os arquivos esperados e seus hashes estão no [manifesto de dependências](Frame
 
 Abra uma [issue](https://github.com/brenomg77/FrameScale/issues) e inclua a versão do FrameScale, as configurações usadas, o comportamento esperado e os passos para reproduzir o problema. Para falhas de processamento, informe também a GPU, o modelo selecionado e as características do arquivo de origem.
 
-## Licenças e créditos
+## ⚖️ Licenças e créditos
 
 O FrameScale integra ferramentas e modelos de terceiros que mantêm suas próprias licenças. As atribuições e os limites de proveniência estão nos [avisos de terceiros](FrameScale/THIRD_PARTY_NOTICES.md).
 
