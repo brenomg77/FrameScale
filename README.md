@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="FrameScale/assets/framescale-symbol.png" width="180" height="180" alt="Logo do FrameScale" />
+<img src="FrameScale/assets/framescale-symbol.png" width="240" height="240" alt="Logo do FrameScale" />
 <br />
-<img src=".github/branding/wordmark-compact.svg" width="700" alt="FrameScale" />
+<img src=".github/branding/wordmark-compact.svg" width="520" alt="FrameScale" />
 
 **Amplie, restaure e interpole vídeos e imagens com inteligência artificial.**
 
