@@ -17,44 +17,187 @@
 
 </div>
 
+
 ---
 
-Aplicação Windows para edição, ampliação e interpolação de vídeos e imagens, desenvolvida em C++ e Qt.
+<p align="center">
+  <a href="#instalação">Instalação</a> ·
+  <a href="#funcionalidades">Funcionalidades</a> ·
+  <a href="#como-usar">Como usar</a> ·
+  <a href="#requisitos">Requisitos</a> ·
+  <a href="#documentação">Documentação</a> ·
+  <a href="#desenvolvimento">Desenvolvimento</a>
+</p>
 
-**Estado: alpha, em desenvolvimento.** Ainda não existe uma versão estável.
+## Sobre o FrameScale
 
-## Baixar e instalar
+O **FrameScale** é uma aplicação para Windows que reúne edição, ampliação, restauração e interpolação de vídeos e imagens em uma interface gráfica. Abra um arquivo, ajuste o processamento, compare o resultado na prévia e exporte pela fila.
 
-Abra a [pré-release 0.1.0-alpha.1](https://github.com/brenomg77/FrameScale/releases/tag/v0.1.0-alpha.1) e baixe **FrameScale-0.1.0-Windows-x64-Setup.exe** na lista de arquivos.
+O projeto é desenvolvido em **C++ e Qt** como parte de uma Prova de Aptidão Profissional (PAP). A interface, a integração dos motores, os projetos, a fila e o fluxo de processamento são desenvolvidos no FrameScale; os modelos de inteligência artificial pertencem aos projetos indicados abaixo.
 
-O instalador inclui a aplicação, Qt, ferramentas de processamento e modelos. **Não precisa de copiar pastas, instalar Python ou compilar o código para usar o programa.** Requer Windows x64; as funções de IA precisam de GPU e driver com suporte a Vulkan.
+> **Versão alpha:** o FrameScale está em desenvolvimento. A versão disponível para download é experimental; reporte problemas com os passos necessários para reproduzi-los.
 
-Esta é uma versão experimental. O instalador ainda não possui assinatura digital de editor. Os arquivos “Source code” disponibilizados pelo GitHub destinam-se a desenvolvimento, não à instalação.
+## Instalação
 
-## Código e desenvolvimento
+### Windows x64
 
-O código está em [`FrameScale/`](FrameScale/). Consulte as [instruções de compilação](FrameScale/README.md) e os [avisos de terceiros](FrameScale/THIRD_PARTY_NOTICES.md).
+**[⬇ Baixar o instalador do FrameScale](https://github.com/brenomg77/FrameScale/releases/download/v0.1.0-alpha.1/FrameScale-0.1.0-Windows-x64-Setup.exe)**
 
-Este repositório começa com uma cópia do código atual. O histórico anterior, que inclui grandes binários e arquivos locais, permanece no computador original.
+1. Baixe `FrameScale-0.1.0-Windows-x64-Setup.exe` na [página da release](https://github.com/brenomg77/FrameScale/releases/tag/v0.1.0-alpha.1).
+2. Execute o instalador e escolha a pasta de instalação.
+3. Abra o FrameScale pelo atalho criado pelo instalador.
 
-As ferramentas de processamento e os modelos estão no instalador da release, mas não no histórico Git, para evitar centenas de megabytes de binários em cada cópia do código. Os arquivos e hashes necessários estão em [`runtime/manifest.json`](FrameScale/runtime/manifest.json). É possível compilar a interface sem esses arquivos, mas o processamento e a criação de instaladores exigem as dependências completas.
+O pacote inclui **Qt, FFmpeg, ferramentas de processamento e modelos de IA**. Para usar o programa, basta instalar esse pacote; a preparação de um ambiente de desenvolvimento é opcional.
 
-**Apenas para desenvolvimento:** depois de instalar o FrameScale, copie as pastas `bin/runtime/bin` e `bin/models` da instalação para `FrameScale/runtime/bin` e `FrameScale/models` neste repositório. Também pode usar as pastas correspondentes da máquina de desenvolvimento original. Valide-as com:
+O instalador ainda não possui assinatura digital de editor. O arquivo `.sha256` publicado junto ao download permite conferir a integridade do pacote. Os arquivos **Source code** disponibilizados pelo GitHub são destinados ao desenvolvimento.
+
+## Funcionalidades
+
+| Área | O que você pode fazer |
+| :--- | :--- |
+| **Ampliação** | Aumentar a resolução de imagens, vídeos e GIFs com Real-ESRGAN, Real-CUGAN ou Anime4K; escolher a escala final, incluindo valores fracionários. |
+| **Restauração** | Usar modelos compatíveis para tratar imagens e vídeos com ruído ou compressão. |
+| **Interpolação** | Criar frames intermediários com RIFE e combinar a interpolação com ampliação e corte. |
+| **Ajustes de imagem** | Controlar redução de ruído, nitidez, blocos de compressão, faixas de cor, grão, contraste e intensidade das cores. |
+| **Timeline** | Trabalhar com camadas de vídeo e áudio, cortar trechos, mover pistas, ajustar velocidade e escolher o intervalo de exportação. |
+| **Prévia** | Comparar a origem com um trecho processado, navegar por frames e ajustar o zoom. |
+| **Projetos e presets** | Alternar entre projetos em abas e guardar configurações em presets `.fspreset`. |
+| **Fila de exportação** | Adicionar trabalhos com configurações independentes, acompanhar o progresso, pausar ou cancelar o processamento. |
+| **Abrir por URL** | Baixar vídeos de serviços compatíveis e imagens por links diretos. |
+| **Personalização** | Escolher idioma e aparência, configurar atalhos e restaurar as combinações originais. |
+
+### Motores de processamento
+
+| Motor | Utilização no FrameScale |
+| :--- | :--- |
+| [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN) | Ampliação e restauração, com modelos voltados a conteúdo real e anime. |
+| [Real-CUGAN](https://github.com/bilibili/ailab/tree/main/Real-CUGAN) | Ampliação e restauração de anime e ilustrações. |
+| [Anime4K](https://github.com/bloc97/Anime4K) | Processamento com shaders por meio de mpv/libplacebo. |
+| [RIFE](https://github.com/hzwer/ECCV2022-RIFE) | Interpolação de frames de vídeo. |
+| [FFmpeg](https://ffmpeg.org/) | Leitura, composição, filtros, áudio e codificação dos arquivos. |
+
+O resultado depende do material de origem, do modelo e dos ajustes escolhidos. Use a prévia para comparar detalhes antes de processar o arquivo completo.
+
+## Como usar
+
+1. **Abra o arquivo.** Arraste uma imagem ou vídeo para a janela de boas-vindas, use **Abrir** ou escolha **Abrir por URL**.
+2. **Prepare o trecho.** Ajuste os limites na timeline e organize as camadas de vídeo e áudio.
+3. **Escolha o processamento.** Ative ampliação, interpolação ou melhoria de imagem e selecione os modelos e parâmetros.
+4. **Compare na prévia.** Clique em **Preview** para conferir o intervalo selecionado antes da exportação.
+5. **Configure a saída.** Na aba de codificação, escolha o formato, o codec e as opções disponíveis.
+6. **Exporte.** Adicione o trabalho à fila e acompanhe o progresso.
+
+### Escolhendo os ajustes
+
+- **Mais resolução:** comece pela ampliação e compare os modelos disponíveis para o seu tipo de conteúdo.
+- **Movimento mais fluido:** use interpolação. Ela exige pelo menos dois frames de origem.
+- **Imagem com ruído ou compressão:** experimente a restauração ou os filtros, aumentando a intensidade aos poucos.
+- **Somente corte, velocidade ou conversão:** configure a timeline e a saída conforme necessário.
+
+A prévia processada usa intermediários sem perda e serve para comparar o processamento. A compressão final depende das opções de codificação escolhidas para a exportação.
+
+## Formatos
+
+| Tipo | Formatos disponíveis |
+| :--- | :--- |
+| **Imagens individuais** | PNG, JPEG, WebP e BMP |
+| **Vídeo** | MP4, MKV, MOV e AVI |
+| **Animação** | GIF |
+| **Áudio** | MP3 e WAV |
+| **Sequência de imagens** | PNG e JPEG |
+
+As opções de codec e de áudio dependem do formato selecionado. A exportação de vídeo utiliza uma cadência constante de frames (CFR); entradas com cadência variável são normalizadas pelo processamento.
+
+## Requisitos
+
+| Componente | Requisito |
+| :--- | :--- |
+| **Sistema** | Windows x64 — plataforma da distribuição validada |
+| **GPU** | GPU e driver com suporte a Vulkan para os motores de IA |
+| **Armazenamento** | Espaço para o programa, os modelos, os arquivos temporários e a saída |
+| **Internet** | Necessária para baixar o instalador e usar a abertura por URL |
+
+O tempo de processamento e o uso de memória variam conforme a resolução, a duração, o modelo e a GPU. O processamento de arquivos locais utiliza as ferramentas distribuídas com o instalador.
+
+**Idiomas:** português de Portugal, português do Brasil e inglês.
+
+**Aparência:** Liquid Glass claro, Liquid Glass escuro e Estúdio.
+
+## Documentação
+
+| Guia | Conteúdo |
+| :--- | :--- |
+| [Documentação do projeto](FrameScale/README.md) | Compilação, processamento, validação e estrutura técnica |
+| [Instalador Windows](FrameScale/docs/windows-installer.md) | Empacotamento e verificação do instalador |
+| [Abertura por URL](FrameScale/docs/url-downloads.md) | Comportamento, serviços e limites dos downloads |
+| [Manifesto de dependências](FrameScale/runtime/manifest.json) | Arquivos, versões e hashes das ferramentas e modelos |
+| [Avisos de terceiros](FrameScale/THIRD_PARTY_NOTICES.md) | Licenças, atribuições e proveniência das dependências |
+
+## Perguntas frequentes
+
+<details>
+<summary><strong>Preciso instalar Python ou Qt para usar o FrameScale?</strong></summary>
+
+O instalador Windows inclui as dependências de execução. Python, Qt Creator e CMake são ferramentas de desenvolvimento e não são necessários para usar a aplicação instalada.
+
+</details>
+
+<details>
+<summary><strong>Por que a prévia mostra uma resolução diferente da origem?</strong></summary>
+
+A visualização das camadas pode usar uma cópia reduzida para tornar a navegação mais leve. O processamento das camadas para exportação utiliza as fontes originais.
+
+</details>
+
+<details>
+<summary><strong>Um frame é o mesmo que um segundo?</strong></summary>
+
+Um vídeo de 30 FPS contém 30 frames por segundo. Na timeline, `00:00.01` representa um frame e `00:01.00` representa um segundo: o campo após o ponto indica os frames dentro daquele segundo.
+
+</details>
+
+<details>
+<summary><strong>O programa atualiza automaticamente?</strong></summary>
+
+A atualização dentro do programa ainda não está implementada. Consulte a página de releases para baixar o instalador atualizado.
+
+</details>
+
+## Desenvolvimento
+
+O código da aplicação fica em [`FrameScale/`](FrameScale/). O projeto utiliza **C++17, Qt 6, CMake e Ninja**; a compilação Windows validada usa Qt 6.11.2 e MinGW 13.1.
+
+Consulte as [instruções de compilação e testes](FrameScale/README.md) para preparar o ambiente.
+
+<details>
+<summary><strong>Preparar ferramentas e modelos para desenvolvimento</strong></summary>
+
+Os binários e modelos estão no instalador, mas são ignorados pelo Git. Depois de instalar o programa, copie:
+
+| Pasta da instalação | Destino no projeto |
+| :--- | :--- |
+| `bin/runtime/bin` | `FrameScale/runtime/bin` |
+| `bin/models` | `FrameScale/models` |
+
+Confira a integridade dos arquivos:
 
 ```powershell
 cd FrameScale
 powershell -NoProfile -File scripts/verify-runtime.ps1
 ```
 
-Essas pastas são ignoradas pelo Git. Não envie executáveis, vídeos pessoais, resultados de testes ou instaladores como código-fonte.
+Os arquivos esperados e seus hashes estão no [manifesto de dependências](FrameScale/runtime/manifest.json).
 
-## Versões
+</details>
 
-- Versão atual: **0.1.0**, em desenvolvimento.
-- Os commits guardam alterações sem criar uma versão para download.
-- Primeira versão de teste: `v0.1.0-alpha.1`.
-- A publicação automática de instaladores e a atualização dentro do programa ainda não estão configuradas.
+### Reportar problemas e sugerir melhorias
 
-## Licenças
+Abra uma [issue](https://github.com/brenomg77/FrameScale/issues) e inclua a versão do FrameScale, as configurações usadas, o comportamento esperado e os passos para reproduzir o problema. Para falhas de processamento, informe também a GPU, o modelo selecionado e as características do arquivo de origem.
 
-As dependências e modelos conservam as respetivas licenças; consulte os [avisos de terceiros](FrameScale/THIRD_PARTY_NOTICES.md), incluindo os limites documentados de proveniência. A disponibilização do código próprio para consulta não concede uma licença de reutilização: ainda não foi escolhida uma licença para o FrameScale.
+## Licenças e créditos
+
+O FrameScale integra ferramentas e modelos de terceiros que mantêm suas próprias licenças. As atribuições e os limites de proveniência estão nos [avisos de terceiros](FrameScale/THIRD_PARTY_NOTICES.md).
+
+O código próprio do FrameScale ainda não possui uma licença definida.
+
+Obrigado aos projetos **Qt, FFmpeg, Real-ESRGAN, Real-CUGAN, Anime4K, RIFE, ncnn, mpv, libplacebo, yt-dlp e Deno**, que fornecem componentes utilizados pelo programa.
