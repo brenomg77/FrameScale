@@ -33,13 +33,29 @@ for engine, repo, tag, filename in packages:
     (bin_dir / engine).chmod(0o755)
     model_root = root / 'models' / {'realesrgan-ncnn-vulkan': 'realesrgan', 'realcugan-ncnn-vulkan': 'realcugan', 'rife-ncnn-vulkan': 'rife'}[engine]
     model_root.mkdir(parents=True, exist_ok=True)
+    assets = executable.parent
+    expected = 'models' if engine == 'realesrgan-ncnn-vulkan' else 'models-se' if engine == 'realcugan-ncnn-vulkan' else 'rife-v4.6'
+    if not (assets / expected).is_dir():
+        # Some upstream Ubuntu archives contain only the ELF runner. NCNN
+        # weights are platform independent; take matching weights from the
+        # same release's complete archive, never its Windows executables.
+        model_url = url.replace('-ubuntu.zip', '-windows.zip')
+        model_archive = cache / filename.replace('-ubuntu.zip', '-weights.zip')
+        urllib.request.urlretrieve(model_url, model_archive)
+        model_assets = cache / (engine + '-weights')
+        with zipfile.ZipFile(model_archive) as z:
+            for entry in z.infolist():
+                if entry.filename.endswith(('.param', '.bin')):
+                    z.extract(entry, model_assets)
+        assets = next(p for p in model_assets.rglob(expected) if p.is_dir()).parent
+        records.append(dict(id=engine+'-weights', version=tag, source=model_url, sha256=hashlib.sha256(model_archive.read_bytes()).hexdigest(), license='See bundled model licenses'))
     if engine == 'realesrgan-ncnn-vulkan':
-        shutil.copytree(executable.parent / 'models', model_root, dirs_exist_ok=True)
+        shutil.copytree(assets / 'models', model_root, dirs_exist_ok=True)
     elif engine == 'realcugan-ncnn-vulkan':
-        for directory in executable.parent.glob('models-*'):
+        for directory in assets.glob('models-*'):
             shutil.copytree(directory, model_root / directory.name, dirs_exist_ok=True)
     else:
-        directory = executable.parent / 'rife-v4.6'
+        directory = assets / 'rife-v4.6'
         shutil.copytree(directory, model_root / directory.name, dirs_exist_ok=True)
     records.append(dict(id=engine, version=tag, source=url, sha256=hashlib.sha256(archive.read_bytes()).hexdigest(), license='MIT'))
 for name in ['ffmpeg', 'ffprobe', 'mpv']:
