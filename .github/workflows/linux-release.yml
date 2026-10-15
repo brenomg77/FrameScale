@@ -32,6 +32,9 @@ jobs:
         env:
           APPIMAGE_EXTRACT_AND_RUN: '1'
           EXTRA_QT_MODULES: 'svg'
+          # Self-contained executables (notably PyInstaller) carry data after
+          # the ELF sections; stripping would remove their embedded payload.
+          NO_STRIP: '1'
         run: |
           mkdir -p AppDir/usr/bin AppDir/usr/share/applications AppDir/usr/share/icons/hicolor/256x256/apps
           cp FrameScale/build/Linux/FrameScale AppDir/usr/bin/
@@ -64,6 +67,9 @@ jobs:
           python3 -c 'import pathlib,json,hashlib; root=pathlib.Path("squashfs-root/usr/bin"); m=json.loads((root/"runtime/manifest.json").read_text()); assert all(hashlib.sha256((root/a["path"]).read_bytes()).hexdigest()==a["sha256"] for a in m["artifacts"]), "Packaged runtime hashes differ"'
           export LD_LIBRARY_PATH="$PWD/squashfs-root/usr/lib"
           runtime="$PWD/squashfs-root/usr/bin"
+          "$runtime/runtime/bin/yt-dlp" --version
+          "$runtime/runtime/bin/deno" --version
+          "$runtime/runtime/bin/mpv" --version
           "$runtime/runtime/bin/ffmpeg" -v error -f lavfi -i testsrc2=size=32x32:duration=0.04 -frames:v 1 test.png
           "$runtime/runtime/bin/realesrgan-ncnn-vulkan" -i test.png -o esrgan.png -s 2 -n realesr-animevideov3-x2 -m "$runtime/models/realesrgan" -t 32
           "$runtime/runtime/bin/realcugan-ncnn-vulkan" -i test.png -o cugan.png -s 2 -n 0 -m "$runtime/models/realcugan/models-se" -t 32
