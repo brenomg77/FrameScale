@@ -8,6 +8,7 @@
 
 <a href="https://github.com/brenomg77/FrameScale/releases/tag/v0.1.0-alpha.1"><img src="https://img.shields.io/badge/release-v0.1.0--alpha.1-007aff" alt="Release v0.1.0-alpha.1" /></a>
 <a href="https://github.com/brenomg77/FrameScale/releases/download/v0.1.0-alpha.1/FrameScale-0.1.0-Windows-x64-Setup.exe"><img src="https://img.shields.io/badge/baixar-Windows_x64-28a745" alt="Baixar para Windows x64" /></a>
+<a href="https://github.com/brenomg77/FrameScale/releases/download/v0.1.0-alpha.1/FrameScale-0.1.0-Linux-x86_64.AppImage"><img src="https://img.shields.io/badge/baixar-Linux_x86__64-fcc624" alt="Baixar para Linux x86_64" /></a>
 <a href="https://github.com/brenomg77/FrameScale/releases"><img src="https://img.shields.io/github/downloads/brenomg77/FrameScale/total?label=downloads&amp;color=007aff" alt="Total de downloads" /></a>
 <a href="FrameScale/README.md"><img src="https://img.shields.io/badge/documenta%C3%A7%C3%A3o-FrameScale-59636e" alt="Documentação" /></a>
 <a href="FrameScale/THIRD_PARTY_NOTICES.md"><img src="https://img.shields.io/badge/licen%C3%A7as-de_terceiros-59636e" alt="Licenças de terceiros" /></a>
@@ -28,13 +29,13 @@
 
 ## 🌟 Versão 0.1.0 Alpha 1
 
-A versão de teste para Windows reúne ampliação e restauração com IA, interpolação, projetos com camadas e comparação de resultados. Os ajustes recentes incluem atalhos personalizáveis, refinamentos do tema Liquid Glass e correções das prévias de intervalos curtos.
+A versão de teste para Windows e Linux reúne ampliação e restauração com IA, interpolação, projetos com camadas e comparação de resultados. Os ajustes recentes incluem atalhos personalizáveis, refinamentos do tema Liquid Glass e correções das prévias de intervalos curtos.
 
 [Baixar a versão de teste](https://github.com/brenomg77/FrameScale/releases/tag/v0.1.0-alpha.1) · [Ver demonstrações](docs/DEMOS.md)
 
 ## ✨ Sobre o FrameScale
 
-O **FrameScale** é uma aplicação para Windows que reúne edição, ampliação, restauração e interpolação de vídeos e imagens em uma interface gráfica. Abra um arquivo, ajuste o processamento, compare o resultado na prévia e exporte pela fila.
+O **FrameScale** é uma aplicação para Windows e Linux que reúne edição, ampliação, restauração e interpolação de vídeos e imagens em uma interface gráfica. Abra um arquivo, ajuste o processamento, compare o resultado na prévia e exporte pela fila.
 
 O projeto é desenvolvido em **C++ e Qt** como parte de uma Prova de Aptidão Profissional (PAP). A interface, a integração dos motores, os projetos, a fila e o fluxo de processamento são desenvolvidos no FrameScale; os modelos de inteligência artificial pertencem aos projetos indicados abaixo.
 
@@ -53,6 +54,19 @@ O projeto é desenvolvido em **C++ e Qt** como parte de uma Prova de Aptidão Pr
 O pacote inclui **Qt, FFmpeg, ferramentas de processamento e modelos de IA**. Para usar o programa, basta instalar esse pacote; a preparação de um ambiente de desenvolvimento é opcional.
 
 O instalador ainda não possui assinatura digital de editor. O arquivo `.sha256` publicado junto ao download permite conferir a integridade do pacote. Os arquivos **Source code** disponibilizados pelo GitHub são destinados ao desenvolvimento.
+
+### 🐧 Linux x86_64
+
+**[⬇ Baixar o AppImage do FrameScale](https://github.com/brenomg77/FrameScale/releases/download/v0.1.0-alpha.1/FrameScale-0.1.0-Linux-x86_64.AppImage)**
+
+Para Ubuntu 24.04 ou distribuições x86_64 com glibc 2.39 ou mais recente. Qt, ferramentas e modelos já estão incluídos; a GPU precisa de um driver Vulkan compatível.
+
+```bash
+chmod +x FrameScale-0.1.0-Linux-x86_64.AppImage
+./FrameScale-0.1.0-Linux-x86_64.AppImage
+```
+
+O pacote Linux é experimental, com compilação e testes automáticos no Ubuntu 24.04. [Veja a instalação sem FUSE, os requisitos e como o pacote é gerado](FrameScale/docs/linux-package.md). A aparência do vidro depende do compositor do sistema.
 
 ## ⚙️ Funcionalidades
 
@@ -165,7 +179,7 @@ As opções de codec e de áudio dependem do formato selecionado. A exportação
 
 | Componente | Requisito |
 | :--- | :--- |
-| **Sistema** | Windows x64 — plataforma da distribuição validada |
+| **Sistema** | Windows x64; Linux x86_64 com glibc ≥ 2.39 (AppImage experimental) |
 | **GPU** | GPU e driver com suporte a Vulkan para os motores de IA |
 | **Armazenamento** | Espaço para o programa, os modelos, os arquivos temporários e a saída |
 | **Internet** | Necessária para baixar o instalador e usar a abertura por URL |
