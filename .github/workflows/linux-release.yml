@@ -16,7 +16,7 @@ jobs:
       - uses: jurplel/install-qt-action@v4
         with:
           version: '6.8.3'
-          modules: 'qtmultimedia qtimageformats'
+          modules: 'qtmultimedia qtimageformats qtsvg'
           cache: true
       - name: Prepare native Linux engines and models
         run: python3 FrameScale/scripts/prepare-linux-runtime.py
@@ -31,7 +31,7 @@ jobs:
       - name: Bundle AppImage
         env:
           APPIMAGE_EXTRACT_AND_RUN: '1'
-          EXTRA_QT_MODULES: 'multimedia;multimediawidgets;svg'
+          EXTRA_QT_MODULES: 'svg'
         run: |
           mkdir -p AppDir/usr/bin AppDir/usr/share/applications AppDir/usr/share/icons/hicolor/256x256/apps
           cp FrameScale/build/Linux/FrameScale AppDir/usr/bin/
@@ -61,6 +61,11 @@ jobs:
           AppDir/usr/bin/runtime/bin/realesrgan-ncnn-vulkan -i test.png -o esrgan.png -s 2 -n realesr-animevideov3-x2 -m AppDir/usr/bin/models/realesrgan -t 32
           AppDir/usr/bin/runtime/bin/realcugan-ncnn-vulkan -i test.png -o cugan.png -s 2 -n 0 -m AppDir/usr/bin/models/realcugan/models-se -t 32
           AppDir/usr/bin/runtime/bin/ffprobe -v error -show_entries stream=width,height -of csv=p=0 cugan.png | grep -x '64,64'
+          mkdir rife-input rife-output
+          cp test.png rife-input/00000001.png
+          cp test.png rife-input/00000002.png
+          AppDir/usr/bin/runtime/bin/rife-ncnn-vulkan -i rife-input -o rife-output -n 4 -m AppDir/usr/bin/models/rife/rife-v4.6 -f '%08d.png' -j 1:1:1
+          test "$(find rife-output -name '*.png' | wc -l)" -eq 4
       - uses: actions/upload-artifact@v4
         with:
           name: FrameScale-Linux-x86_64

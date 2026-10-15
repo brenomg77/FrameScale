@@ -5,6 +5,7 @@ import json
 import shutil
 import stat
 import subprocess
+import tarfile
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -59,7 +60,16 @@ for engine, repo, tag, filename in packages:
         directory = assets / 'rife-v4.6'
         shutil.copytree(directory, model_root / directory.name, dirs_exist_ok=True)
     records.append(dict(id=engine, version=tag, source=url, sha256=hashlib.sha256(archive.read_bytes()).hexdigest(), license='MIT'))
-for name in ['ffmpeg', 'ffprobe', 'mpv']:
+ffmpeg_url = 'https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-10-14-13-03/ffmpeg-n8.1-latest-linux64-gpl-8.1.tar.xz'
+ffmpeg_archive = cache/'ffmpeg-linux.tar.xz'
+urllib.request.urlretrieve(ffmpeg_url, ffmpeg_archive)
+with tarfile.open(ffmpeg_archive) as tar:
+    for name in ('ffmpeg', 'ffprobe'):
+        member = next(m for m in tar.getmembers() if m.name.endswith('/bin/'+name))
+        (bin_dir/name).write_bytes(tar.extractfile(member).read())
+        (bin_dir/name).chmod(0o755)
+records.append(dict(id='ffmpeg', version='8.1 (2026-10-14 build)', source=ffmpeg_url, sha256=hashlib.sha256(ffmpeg_archive.read_bytes()).hexdigest(), license='GPL-3.0-or-later'))
+for name in ['mpv']:
     path = shutil.which(name)
     if not path:
         raise RuntimeError(f'Missing Linux dependency: {name}')
