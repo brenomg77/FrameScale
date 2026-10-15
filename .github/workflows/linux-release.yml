@@ -23,7 +23,7 @@ jobs:
       - name: Build
         run: |
           cmake -S FrameScale -B FrameScale/build/Linux -G Ninja -DCMAKE_BUILD_TYPE=Release
-          cmake --build FrameScale/build/Linux --target FrameScale FrameScaleCoreTests FrameScaleLayerStateTests FrameScaleGlassMaterialTests FrameScaleKeyboardBindingsTests -j2
+          cmake --build FrameScale/build/Linux --target FrameScale FrameScaleProcessingSmoke FrameScaleCoreTests FrameScaleLayerStateTests FrameScaleGlassMaterialTests FrameScaleKeyboardBindingsTests -j2
       - name: Nonvisual regression tests
         env:
           QT_QPA_PLATFORM: offscreen
@@ -50,7 +50,7 @@ jobs:
           chmod +x linuxdeploy*.AppImage
           extra=()
           for executable in AppDir/usr/bin/runtime/bin/*; do
-            if file "$executable" | grep -q ELF; then extra+=(--executable "$executable"); fi
+            if file "$executable" | grep -q ELF; then extra+=(--deploy-deps-only "$executable"); fi
           done
           export QMAKE="$(command -v qmake)"
           export OUTPUT=FrameScale-0.1.0-Linux-x86_64.AppImage
@@ -65,8 +65,13 @@ jobs:
         run: |
           ./FrameScale-0.1.0-Linux-x86_64.AppImage --appimage-extract > /dev/null
           python3 -c 'import pathlib,json,hashlib; root=pathlib.Path("squashfs-root/usr/bin"); m=json.loads((root/"runtime/manifest.json").read_text()); assert all(hashlib.sha256((root/a["path"]).read_bytes()).hexdigest()==a["sha256"] for a in m["artifacts"]), "Packaged runtime hashes differ"'
-          export LD_LIBRARY_PATH="$PWD/squashfs-root/usr/lib"
+          unset LD_LIBRARY_PATH QT_PLUGIN_PATH QML2_IMPORT_PATH
           runtime="$PWD/squashfs-root/usr/bin"
+          for engine in realesrgan-ncnn-vulkan realcugan-ncnn-vulkan rife-ncnn-vulkan; do
+            patchelf --print-rpath "$runtime/runtime/bin/$engine" | grep -F '$ORIGIN/../../../lib'
+            ldd "$runtime/runtime/bin/$engine" > "$engine.ldd"
+            ! grep -q 'not found' "$engine.ldd"
+          done
           "$runtime/runtime/bin/yt-dlp" --version
           "$runtime/runtime/bin/deno" --version
           "$runtime/runtime/bin/mpv" --version
@@ -79,6 +84,18 @@ jobs:
           cp test.png rife-input/00000002.png
           "$runtime/runtime/bin/rife-ncnn-vulkan" -i rife-input -o rife-output -n 4 -m "$runtime/models/rife/rife-v4.6" -f '%08d.png' -j 1:1:1
           test "$(find rife-output -name '*.png' | wc -l)" -eq 4
+          # Use the same ProcessingJob as Preview, with native paths and no
+          # loader environment injected by the build machine.
+          cp FrameScale/build/Linux/FrameScaleProcessingSmoke "$runtime/_ProcessingCheck"
+          patchelf --set-rpath '$ORIGIN/../lib' "$runtime/_ProcessingCheck"
+          work="$(mktemp -d)"
+          "$runtime/runtime/bin/ffmpeg" -v error -f lavfi -i testsrc2=size=32x32:rate=30:duration=0.1 -c:v libx264 "$work/source.mp4"
+          cp test.png "$work/source.png"
+          cd "$work"
+          timeout 120s "$runtime/_ProcessingCheck" "$work/source.png" "$work/upscale.png" image upscale cugan realcugan-se 2 60 0
+          timeout 120s "$runtime/_ProcessingCheck" "$work/source.mp4" "$work/interpolation.mp4" video interpolate esrgan realesr-animevideov3 2 60 0 --no-audio --crf=0 --pixel-format=yuv444p --preset=ultrafast
+          python3 -c 'import json,pathlib; p=pathlib.Path("source.mp4").resolve(); pathlib.Path("layers.json").write_text(json.dumps([dict(path=str(p),kind="video",duration=.1,fps=30,width=32,height=32)]))'
+          timeout 120s "$runtime/_ProcessingCheck" "$work/source.mp4" "$work/layered-preview.mp4" video both esrgan realesr-animevideov3 2 60 0 --layers="$work/layers.json" --trim-end=0.066666666 --no-audio --crf=0 --pixel-format=yuv444p --preset=ultrafast
       - uses: actions/upload-artifact@v4
         with:
           name: FrameScale-Linux-x86_64
