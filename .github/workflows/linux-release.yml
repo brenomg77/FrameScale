@@ -16,7 +16,7 @@ jobs:
       - uses: jurplel/install-qt-action@v4
         with:
           version: '6.8.3'
-          modules: 'qtmultimedia qtimageformats qtsvg'
+          modules: 'qtmultimedia qtimageformats'
           cache: true
       - name: Prepare native Linux engines and models
         run: python3 FrameScale/scripts/prepare-linux-runtime.py
