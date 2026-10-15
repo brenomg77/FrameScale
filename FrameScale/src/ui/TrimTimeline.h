@@ -24,7 +24,8 @@ public:
     {
         setObjectName("trimTimeline");
         setAutoFillBackground(false);
-        setAttribute(Qt::WA_OpaquePaintEvent, true);
+        // Only the rounded card is painted; its gutters reveal the canvas.
+        setAttribute(Qt::WA_OpaquePaintEvent, false);
         setAttribute(Qt::WA_StyledBackground, false);
         setMinimumHeight(160);
         setMaximumHeight(160);
@@ -49,7 +50,7 @@ public:
     void setSeekingOnly(bool enabled)
     {
         seekingOnly_ = enabled;
-        setAttribute(Qt::WA_OpaquePaintEvent, !enabled);
+        setAttribute(Qt::WA_OpaquePaintEvent, false);
         if (enabled) {
             setAccessibleName(tr("Timeline da comparação"));
             setToolTip(QString());
@@ -173,7 +174,6 @@ protected:
     void paintEvent(QPaintEvent*) override
     {
         QPainter p(this);
-        if (!seekingOnly_) p.fillRect(rect(), QColor("#181818"));
         p.setRenderHint(QPainter::Antialiasing);
         const bool light = palette().color(QPalette::Window).lightnessF() > .5;
         const QColor background = palette().color(QPalette::Window);

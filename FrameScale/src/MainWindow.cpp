@@ -686,7 +686,7 @@ QWidget* MainWindow::buildInspector()
     inspector_ = new QWidget(this);
     inspector_->setObjectName("inspectorPanel");
     inspector_->setProperty("appearanceManaged", true);
-    inspector_->setStyleSheet("QWidget#inspectorPanel {background:#181818;border:0;}");
+    inspector_->setStyleSheet("QWidget#inspectorPanel {background:transparent;border:0;}");
     inspector_->setFixedWidth(300);
     auto* surround = new QVBoxLayout(inspector_);
     // Match the 16-pixel document and timeline insets; the canvas supplies the left gap.
@@ -874,10 +874,11 @@ QWidget* MainWindow::buildEditorPage()
     auto* row = new QHBoxLayout(page);
     row->setContentsMargins(0, 0, 0, 0);
     row->setSpacing(0);
-    auto* splitter = new QSplitter(Qt::Horizontal, page);
+    auto* splitter = new QWidget(page);
     splitter->setProperty("appearanceManaged",true);
-    splitter->setHandleWidth(0);
-    splitter->setStyleSheet("QSplitter::handle {background:transparent;border:0;width:0px;}");
+    auto* editorLayers = new QGridLayout(splitter);
+    editorLayers->setContentsMargins(0,0,0,0);
+    editorLayers->setSpacing(0);
     auto* canvas = new DropZone(
         [this](const QString& path) { trySetInputFile(path); }, splitter);
     canvas->setObjectName("canvasPanel");
@@ -890,7 +891,8 @@ QWidget* MainWindow::buildEditorPage()
     document->setProperty("appearanceManaged", true);
     document->setStyleSheet("QWidget#documentBar, QTabBar#projectTabs {background:transparent;border:0;}");
     auto* d = new QHBoxLayout(document);
-    d->setContentsMargins(14, 14, 16, 0);
+    // The tab adds its own 4 px margin: 12 + 4 matches the timeline's 16 px inset.
+    d->setContentsMargins(12, 14, 316, 0);
     d->setSpacing(0);
     projectTabs_ = new ProjectTabBar(document);
     projectTabs_->setObjectName("projectTabs");
@@ -1010,12 +1012,10 @@ QWidget* MainWindow::buildEditorPage()
     layerClock->start();
     v->addWidget(document, 0, 0, Qt::AlignTop);
     document->raise();
-    splitter->addWidget(canvas);
-    splitter->addWidget(buildInspector());
-    splitter->setChildrenCollapsible(false);
-    splitter->setStretchFactor(0, 1);
-    splitter->setStretchFactor(1, 0);
-    splitter->setSizes({ 1050, 286 });
+    editorLayers->addWidget(canvas,0,0);
+    editorLayers->addWidget(buildInspector(),0,0,Qt::AlignRight);
+    preview_->setRightOverlayInset(inspector_->width());
+    inspector_->raise();
     pageLayout->addWidget(splitter, 1);
     row->addLayout(pageLayout);
     connect(preview_, &MediaPreviewWidget::previewError, this,
@@ -1094,7 +1094,7 @@ void MainWindow::enterDocument()
 {
     setProperty("documentOpen", true);
     preview_->setEmptyPromptVisible(true);
-    inspector_->setStyleSheet("QWidget#inspectorPanel {background:#181818;border:0;}");
+    inspector_->setStyleSheet("QWidget#inspectorPanel {background:transparent;border:0;}");
     preview_->update();
     // Close before loading media; never stretch a translucent window snapshot
     // over the editor or keep it visible while the first frame is decoded.

@@ -38,6 +38,7 @@ public:
     std::function<QString()> projectDetails;
     void setMedia(const QString& path, qint64 initialPosition = 0);
     void setProjectMediaInfo(const QString& path, const QSize& size) { projectPath_=path; projectSize_=size; updateMediaDimensions(); }
+    void setRightOverlayInset(int pixels);
     QString mediaPath() const { return mediaPath_; }
     QImage currentFrame() const;
     void setOrientation(const framescale::VideoOrientation& orientation);
@@ -103,12 +104,16 @@ signals:
     void trimChanged(double startSeconds, double endSeconds);
 
 protected:
+    bool event(QEvent* event) override;
     void paintEvent(QPaintEvent* event) override;
     void changeEvent(QEvent* event) override;
     void updateVolumeIcon();
     bool eventFilter(QObject* watched, QEvent* event) override;
 
 private:
+    QRectF mediaViewRect() const;
+    QWidget* canvasSlot_ = nullptr;
+    int rightOverlayInset_ = 0;
     QMenu* createOrientationMenu(QMenu* parent);
     void prepareVideoPreview(bool forceProxy = false);
     void prepareSegment(qint64 position, bool prefetch = false);

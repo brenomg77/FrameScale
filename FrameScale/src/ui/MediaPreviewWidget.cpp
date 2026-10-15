@@ -87,8 +87,6 @@ protected:
     void paintEvent(QPaintEvent*) override {
         QPainter painter(this);
         painter.setRenderHint(QPainter::Antialiasing);
-        if (window()->property("documentOpen").toBool())
-            painter.fillRect(rect(), QColor("#181818"));
         if (Appearance::theme() != "studio" && !property("zoomOnly").toBool()) {
             if (auto* controls = findChild<QWidget*>("previewZoomBar")) {
                 const QRectF surface(controls->mapTo(this, QPoint(0, 0)), controls->size());
@@ -336,7 +334,12 @@ MediaPreviewWidget::MediaPreviewWidget(QWidget* parent)
     videoWidget_->setMinimumSize(1, 1);
     videoWidget_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
     stack_->addWidget(videoSurface_);
-    layout->addWidget(stack_, 1);
+    // Reserve the original fit area, while drawing on a separate canvas that
+    // continues behind the floating controls and timeline.
+    canvasSlot_ = new QWidget(this);
+    canvasSlot_->setMinimumSize(1,1);
+    canvasSlot_->setAttribute(Qt::WA_TransparentForMouseEvents);
+    layout->addWidget(canvasSlot_, 1);
     dimensionsLabel_ = new QLabel(this);
     dimensionsLabel_->setObjectName("previewDimensions");
     dimensionsLabel_->setProperty("appearanceManaged", true);
@@ -1480,9 +1483,40 @@ void MediaPreviewWidget::updateVideoGeometry()
     QSize size = videoWidget_->videoSink()->videoFrame().size();
     if (!size.isValid()) size = sourceSize_;
     if (!size.isValid()) return;
-    size.scale(videoSurface_->size(), Qt::KeepAspectRatio);
-    videoWidget_->setGeometry(QRect(QPoint((videoSurface_->width()-size.width())/2,
-        (videoSurface_->height()-size.height())/2), size));
+    const QRect area = mediaViewRect().toAlignedRect();
+    size.scale(area.size(), Qt::KeepAspectRatio);
+    videoWidget_->setGeometry(QRect(QPoint(area.x()+(area.width()-size.width())/2,
+        area.y()+(area.height()-size.height())/2), size));
+}
+
+void MediaPreviewWidget::setRightOverlayInset(int pixels)
+{
+    rightOverlayInset_ = qMax(0, pixels);
+    dimensionsLabel_->setContentsMargins(0,0,rightOverlayInset_,0);
+    auto margins = dock_->layout()->contentsMargins();
+    margins.setRight(8 + rightOverlayInset_);
+    dock_->layout()->setContentsMargins(margins);
+    layout()->invalidate();
+}
+
+QRectF MediaPreviewWidget::mediaViewRect() const
+{
+    if (!canvasSlot_ || compact_) return imageLabel_->contentsRect();
+    QRect area = canvasSlot_->geometry();
+    area.setWidth(qMax(1, area.width()-rightOverlayInset_));
+    return area;
+}
+
+bool MediaPreviewWidget::event(QEvent* event)
+{
+    const bool handled = QWidget::event(event);
+    if (canvasSlot_ && stack_ && (event->type()==QEvent::Resize || event->type()==QEvent::LayoutRequest)) {
+        stack_->setGeometry(compact_ ? canvasSlot_->geometry() : rect());
+        stack_->lower();
+        updateVideoGeometry();
+        updateImageSize();
+    }
+    return handled;
 }
 
 void MediaPreviewWidget::showImage(const QImage& image)
@@ -1505,7 +1539,7 @@ bool MediaPreviewWidget::eventFilter(QObject* watched, QEvent* event)
         auto* dockLayout=dock_->layout();
         const int bottom=hasTimeline ? 6 : 16;
         if(dockLayout && dockLayout->contentsMargins().bottom()!=bottom)
-            dockLayout->setContentsMargins(8,5,8,bottom);
+            dockLayout->setContentsMargins(8,5,8+rightOverlayInset_,bottom);
     }
     if (event->type()==QEvent::MouseButtonPress && timeline_ && audioTrack_ && isVisible()) {
         auto* widget=qobject_cast<QWidget*>(watched);
@@ -1562,7 +1596,7 @@ bool MediaPreviewWidget::eventFilter(QObject* watched, QEvent* event)
             const double value = std::clamp((comparisonZoom_ ? (zoom_ > 0 ? zoom_ : 1.) : actualZoom_) * (wheel->angleDelta().y() > 0 ? 1.25 : .8), .001, 64.);
             const auto* surface = qobject_cast<QWidget*>(watched);
             const QPointF anchor = surface->mapTo(stack_, wheel->position());
-            const QPointF center(stack_->width()/2., stack_->height()/2.);
+            const QPointF center = mediaViewRect().center();
             const QPointF previousPan = pan_;
             const double previousScale = actualZoom_;
             setViewZoom(value);
@@ -1659,7 +1693,8 @@ void MediaPreviewWidget::updateImageSize()
         && qAbs(imageAspect - double(reference.width()) / reference.height()) > .01)
         reference.transpose();
     if (orientation_.quarterTurns % 2 != 0) reference.transpose();
-    const double fittedScale = std::min(double(bounds.width()) / reference.width(), double(bounds.height()) / reference.height());
+    const QRectF view = mediaViewRect();
+    const double fittedScale = std::min(view.width() / reference.width(), view.height() / reference.height());
     const double scale = comparisonZoom_ ? fittedScale * (zoom_ > 0 ? zoom_ : 1.) : zoom_ > 0 ? zoom_ : fittedScale;
     actualZoom_ = scale;
     setProperty("zoomPercent", (comparisonZoom_ ? (zoom_ > 0 ? zoom_ : 1.) : scale) * 100.);
@@ -1674,7 +1709,7 @@ void MediaPreviewWidget::updateImageSize()
     pixels.fill(QColor("#181818"));
     QPainter painter(&pixels);
     painter.setRenderHint(QPainter::SmoothPixmapTransform);
-    painter.drawImage(QRectF(QPointF((bounds.width() - target.width()) / 2, (bounds.height() - target.height()) / 2) + pan_, target), orientedFrame(image_));
+    painter.drawImage(QRectF(view.center() - QPointF(target.width()/2, target.height()/2) + pan_, target), orientedFrame(image_));
     painter.end();
     imageLabel_->setPixmap(pixels);
 }
