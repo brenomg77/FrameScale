@@ -25,4 +25,6 @@ O pacote inclui Qt 6.8.3, FFmpeg/ffprobe, mpv, Real-ESRGAN, Real-CUGAN, RIFE, sh
 
 O workflow [Linux release package](../../.github/workflows/linux-release.yml) instala Qt, prepara os motores Linux, compila o programa e executa testes sem abrir janelas. Depois, usa linuxdeploy e seu plugin Qt para gerar o AppImage. O pacote é enviado como artefato do workflow; anexá-lo à release é uma operação separada, sem criar uma versão nova.
 
+Os motores permanecem em `usr/bin/runtime/bin/`, com os caminhos de bibliotecas ajustados nessa própria pasta. A validação não injeta `LD_LIBRARY_PATH`: ela executa também o processamento usado pela Preview, incluindo upscale, interpolação e um trecho com camadas, fora da pasta do projeto.
+
 As origens e os hashes dos downloads ficam em `usr/bin/runtime/manifest.json` dentro do AppImage. Os avisos e as licenças ficam em `usr/share/doc/framescale/`. Os motores são ferramentas nativas Linux, não executáveis Windows via Wine.
