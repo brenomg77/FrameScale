@@ -60,7 +60,7 @@ for engine, repo, tag, filename in packages:
         directory = assets / 'rife-v4.6'
         shutil.copytree(directory, model_root / directory.name, dirs_exist_ok=True)
     records.append(dict(id=engine, version=tag, source=url, sha256=hashlib.sha256(archive.read_bytes()).hexdigest(), license='MIT'))
-ffmpeg_url = 'https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-10-14-13-03/ffmpeg-n8.1-latest-linux64-gpl-8.1.tar.xz'
+ffmpeg_url = 'https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-10-14-13-03/ffmpeg-n8.1.3-18-g46d899d7a0-linux64-gpl-8.1.tar.xz'
 ffmpeg_archive = cache/'ffmpeg-linux.tar.xz'
 urllib.request.urlretrieve(ffmpeg_url, ffmpeg_archive)
 with tarfile.open(ffmpeg_archive) as tar:
