@@ -22,11 +22,13 @@ int main(int argc,char** argv) {
             if(got!=frame){failure="stale frame delivered";loop.quit();return;}
             image=value;loop.quit();
         });
+        auto failedConnection=QObject::connect(&reader,&PreviewFrameReader::failed,&loop,&QEventLoop::quit);
         QTimer timer;timer.setSingleShot(true);QObject::connect(&timer,&QTimer::timeout,&loop,&QEventLoop::quit);timer.start(30000);
         if(rapid){reader.request(4);reader.request(2);}
         reader.request(frame);
         if(image.isNull())loop.exec();
         QObject::disconnect(connection);
+        QObject::disconnect(failedConnection);
         std::cout<<"frame="<<frame<<" ms="<<elapsed.elapsed()<<" decoders="<<reader.decoderStarts()<<'\n';
         if(image.isNull())failure="timeout or empty frame: "+failure;
         return image;
@@ -35,10 +37,17 @@ int main(int argc,char** argv) {
         QProcess process;
         process.start(ffmpeg,{"-v","error","-threads","2","-i",path,
             "-filter_threads","1","-vf",QString("select=eq(n\\,%1),scale=w='min(iw,%2)':h='min(ih,%3)':force_original_aspect_ratio=decrease").arg(frame).arg(bounds.width()).arg(bounds.height()),
-            "-frames:v","1","-threads","1","-f","image2pipe","-c:v","ppm","pipe:1"});
+            "-frames:v","1","-threads","1","-pix_fmt","rgb24","-f","image2pipe","-c:v","ppm","pipe:1"});
         if(!process.waitForFinished(30000) || process.exitCode()!=0){failure="oracle failed";return QImage();}
         return QImage::fromData(process.readAllStandardOutput(),"PPM").convertToFormat(QImage::Format_RGB888);
     };
+    if(count==1) {
+        const auto image=read(0);
+        if(image.isNull() || image!=oracle(0) || !failure.isEmpty()) {
+            std::cerr<<"single-frame decode failed: "<<failure.toStdString()<<'\n';return 1;
+        }
+        std::cout<<"PASS: single-frame comparison decode\n";return 0;
+    }
     for(qint64 frame : {qint64(12),qint64(13),qint64(3),count-1}) {
         const auto image=read(frame);
         const auto expected=oracle(frame);

@@ -68,7 +68,7 @@ void PreviewFrameReader::start() {
     const QString filter=QString("scale=w='min(iw,%1)':h='min(ih,%2)':force_original_aspect_ratio=decrease").arg(bounds_.width()).arg(bounds_.height());
     process->start(ffmpeg_,{"-v","error","-nostdin","-threads","2","-ss",QString::number(std::max(0.,next_/fps_-0.000001),'f',9),
         "-i",path_,"-map","0:v:0","-an","-sn","-filter_threads","1","-vf",filter,
-        "-frames:v",QString::number(end_-next_),"-fps_mode","passthrough","-threads","1","-f","image2pipe","-c:v","ppm","pipe:1"});
+        "-frames:v",QString::number(end_-next_),"-fps_mode","passthrough","-threads","1","-pix_fmt","rgb24","-f","image2pipe","-c:v","ppm","pipe:1"});
 }
 void PreviewFrameReader::consume() {
     if(!process_)return;

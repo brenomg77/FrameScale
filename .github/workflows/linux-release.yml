@@ -23,11 +23,17 @@ jobs:
       - name: Build
         run: |
           cmake -S FrameScale -B FrameScale/build/Linux -G Ninja -DCMAKE_BUILD_TYPE=Release
-          cmake --build FrameScale/build/Linux --target FrameScale FrameScaleProcessingSmoke FrameScaleCoreTests FrameScaleLayerStateTests FrameScaleGlassMaterialTests FrameScaleKeyboardBindingsTests -j2
+          cmake --build FrameScale/build/Linux --target FrameScale FrameScalePreviewDecodeCheck FrameScaleProcessingSmoke FrameScaleCoreTests FrameScaleLayerStateTests FrameScaleGlassMaterialTests FrameScaleKeyboardBindingsTests -j2
       - name: Nonvisual regression tests
         env:
           QT_QPA_PLATFORM: offscreen
-        run: ctest --test-dir FrameScale/build/Linux --output-on-failure -R '^(FrameScaleCoreTests|FrameScaleLayerStateTests|FrameScaleGlassMaterialTests|FrameScaleKeyboardBindingsTests)$'
+        run: |
+          ctest --test-dir FrameScale/build/Linux --output-on-failure -R '^(FrameScaleCoreTests|FrameScaleLayerStateTests|FrameScaleGlassMaterialTests|FrameScaleKeyboardBindingsTests)$'
+          ffmpeg="$PWD/FrameScale/runtime/bin/ffmpeg"
+          "$ffmpeg" -v error -y -f lavfi -i testsrc2=size=128x72:rate=30 -frames:v 30 -c:v libx264 -pix_fmt yuv420p10le /tmp/preview-10bit.mp4
+          FrameScale/build/Linux/FrameScalePreviewDecodeCheck "$ffmpeg" /tmp/preview-10bit.mp4 30 30
+          "$ffmpeg" -v error -y -i /tmp/preview-10bit.mp4 -frames:v 1 -c:v libx264 -pix_fmt yuv420p10le /tmp/preview-10bit-single.mp4
+          FrameScale/build/Linux/FrameScalePreviewDecodeCheck "$ffmpeg" /tmp/preview-10bit-single.mp4 30 1
       - name: Bundle AppImage
         env:
           APPIMAGE_EXTRACT_AND_RUN: '1'
