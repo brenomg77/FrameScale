@@ -289,11 +289,11 @@ QSpinBox#targetFps {padding:1px 22px 1px 8px;min-width:58px;}
 
 QDialog#exportDialog QFrame#exportPanel, QDialog#exportDialog QFrame#exportRenderPanel {background:%2;border:1px solid %3;border-radius:12px;}
 QDialog#exportDialog QTableWidget QWidget {background:transparent;}
-QDialog#exportDialog QTableWidget {background:transparent;color:%4;border:0;border-radius:8px;selection-background-color:#0064d2;selection-color:white;}
+QDialog#exportDialog QTableWidget {background:transparent;color:%4;border:0;border-radius:8px;selection-background-color:transparent;selection-color:%4;}
 QDialog#exportDialog QHeaderView {background:transparent;}
 QDialog#exportDialog QHeaderView::section {background:transparent;color:%4;border:0;padding:6px;}
 QDialog#exportDialog QTableWidget::item {padding:0 6px;border-bottom:1px solid %3;}
-QDialog#exportDialog QTableWidget::item:hover {background:rgba(0,0,0,35);}
+QDialog#exportDialog QTableWidget::item:hover {background:transparent;}
 QDialog#exportDialog QPushButton {background:%2;color:%4;border:1px solid %3;border-radius:7px;padding:1px 8px;min-width:0;min-height:18px;font-weight:400;}
 QDialog#exportDialog QPushButton:hover {background:rgba(0,0,0,45);}
 QDialog#exportDialog QPushButton#exportStartButton {background:#007aff;color:white;border-color:#1686ff;}

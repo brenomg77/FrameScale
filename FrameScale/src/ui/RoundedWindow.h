@@ -16,6 +16,7 @@
 #include <QStyleOption>
 #include <QAbstractNativeEventFilter>
 #include <QApplication>
+#include <QTimer>
 #ifdef Q_OS_WIN
 #ifndef NOMINMAX
 #define NOMINMAX
@@ -43,6 +44,8 @@ protected:
                 reveal_.stop(); reveal_.setStartValue(0.); reveal_.setEndValue(1.); reveal_.start();
             }
             switch (event->type()) {
+            case QEvent::Move:
+            case QEvent::WinIdChange:
             case QEvent::Resize:
             case QEvent::Show:
             case QEvent::StyleChange:
@@ -50,6 +53,17 @@ protected:
             case QEvent::WindowStateChange:
             case QEvent::DevicePixelRatioChange:
                 if (window_->isWindow()) framescale::window_backdrop::syncGlassRegion(window_);
+                // Qt/Windows can update the layered window region after the
+                // event filter runs. Restore our outline after that update,
+                // including moves over other translucent controls.
+                if (window_->isWindow() && !regionUpdatePending_) {
+                    regionUpdatePending_=true;
+                    QTimer::singleShot(0,this,[this] {
+                        regionUpdatePending_=false;
+                        framescale::window_backdrop::syncGlassRegion(window_);
+                        update();
+                    });
+                }
                 alpha_ = {};
                 update();
                 break;
@@ -124,6 +138,7 @@ private:
     QImage alpha_;
     QPoint offset_;
     bool rounded_ = true;
+    bool regionUpdatePending_ = false;
 };
 class DialogCloseButton final : public QPushButton {
 public:

@@ -403,6 +403,12 @@ void ProcessingJob::start()
     videoOutputContract_ = { };
     lastProgress_ = 0;
 
+    if (usesOriginalLayerSource(options_)) {
+        // Keep the selected interval; the normal pipeline trims the original.
+        if(options_.layers.size()==1) options_.keepAudio=false;
+        options_.layered=false;
+        options_.layers.clear();
+    }
     const auto errors = validate(options_);
     if (!errors.empty()) {
         fail(QString::fromUtf8(errors.front().c_str()));

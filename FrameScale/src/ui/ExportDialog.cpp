@@ -45,9 +45,21 @@ protected:
     }
 };
 
-class QueueCheckDelegate final : public QStyledItemDelegate {
+class QueueItemDelegate : public QStyledItemDelegate {
 public:
     using QStyledItemDelegate::QStyledItemDelegate;
+protected:
+    void initStyleOption(QStyleOptionViewItem* option, const QModelIndex& index) const override {
+        QStyledItemDelegate::initStyleOption(option,index);
+        // Native styles can draw their own hover/focus rectangle even with a
+        // transparent stylesheet background. Keep interaction without that box.
+        option->state &= ~(QStyle::State_MouseOver | QStyle::State_HasFocus | QStyle::State_Selected);
+    }
+};
+
+class QueueCheckDelegate final : public QueueItemDelegate {
+public:
+    using QueueItemDelegate::QueueItemDelegate;
     void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override {
         QStyleOptionViewItem item(option);
         initStyleOption(&item, index);
@@ -133,12 +145,16 @@ ExportDialog::ExportDialog(const QString& inputPath,
     : QDialog(parent)
 {
     setObjectName("exportDialog");
+    // Windows accent blur can leave rectangular compositor pixels where this
+    // layered dialog overlaps the preview's translucent controls. Keep the
+    // material's alpha/tint, but do not attach native accent blur to the queue.
+    setProperty("stableSurface", true);
     setWindowTitle(tr("Fila de exportação"));
     setWindowFlag(Qt::WindowContextHelpButtonHint, false);
     setWindowFlag(Qt::WindowMinMaxButtonsHint, true);
     setAttribute(Qt::WA_DeleteOnClose, false);
-    setMinimumSize(760, 530);
-    resize(920, 580);
+    setMinimumSize(640, 340);
+    resize(720, 360);
     setModal(false);
     video_ = QStringList { "mp4", "mkv", "mov", "avi", "webm", "m4v", "gif" }.contains(
         QFileInfo(inputPath).suffix().toLower());
@@ -165,17 +181,19 @@ ExportDialog::ExportDialog(const QString& inputPath,
         QDialog#exportDialog QPushButton#exportStartButton:hover { background: #2684f4; border-color: #2684f4; }
         QDialog#exportDialog QPushButton#exportStartButton:disabled { background: #314860; color: #91a2b3; border-color: #314860; }
         QDialog#exportDialog QToolButton#exportTrashButton { background: transparent; border: 0; border-radius: 4px; padding: 5px; }
-        QDialog#exportDialog QToolButton#exportTrashButton:hover { background: #584043; }
-        QDialog#exportDialog QTableWidget { background: #202020; color: #eee; border: 0; gridline-color: #383838; selection-background-color: #354f70; padding:0; }
+        QDialog#exportDialog QToolButton#exportTrashButton:hover { background: #ff453a; }
+        QDialog#exportDialog QToolButton#exportTrashButton:pressed { background: #e5332a; }
+        QDialog#exportDialog QTableWidget { background: #202020; color: #eee; border: 0; gridline-color: #383838; selection-background-color: transparent; selection-color: #eee; padding:0; }
         QDialog#exportDialog QTableWidget::item {padding:0 6px;}
+        QDialog#exportDialog QTableWidget::item:hover {background:transparent;}
         QDialog#exportDialog QHeaderView::section { background: #292929; color: #bbb; border: 0; padding: 5px 8px; }
         QDialog#exportDialog QProgressBar { color:white; background:#292d34; border:1px solid #697383; border-radius:6px; min-height:26px; max-height:26px; text-align:center; }
         QDialog#exportDialog QProgressBar::chunk { background:#0968cf; border:none; border-radius:5px; }
     )"));
 
     auto* body = new QVBoxLayout(this);
-    body->setContentsMargins(20, 16, 20, 20);
-    body->setSpacing(16);
+    body->setContentsMargins(16, 12, 16, 16);
+    body->setSpacing(12);
     auto* queuePanel = new QFrame(this);
     queuePanel->setObjectName("exportPanel");
     auto* queue = new QVBoxLayout(queuePanel);
@@ -190,6 +208,7 @@ ExportDialog::ExportDialog(const QString& inputPath,
 
     table_ = new QueueTable(0, 4, queuePanel);
     table_->setObjectName("exportQueue");
+    table_->setItemDelegate(new QueueItemDelegate(table_));
     table_->setItemDelegateForColumn(0, new QueueCheckDelegate(table_));
     table_->setHorizontalHeaderLabels(
         { tr("Exportar"), tr("Arquivo"), tr("Estado"), { } });
@@ -210,7 +229,7 @@ ExportDialog::ExportDialog(const QString& inputPath,
     table_->setEditTriggers(QAbstractItemView::NoEditTriggers);
     table_->setShowGrid(false);
     table_->setAlternatingRowColors(false);
-    table_->setMinimumHeight(155);
+    table_->setMinimumHeight(90);
     table_->setMouseTracking(true);
     table_->viewport()->setAutoFillBackground(false);
     table_->setFrameShape(QFrame::NoFrame);
@@ -238,13 +257,16 @@ ExportDialog::ExportDialog(const QString& inputPath,
     browseButton_->setObjectName("exportBrowseButton");
     settings->addWidget(browseButton_, 1, 2);
     queue->addLayout(settings);
+    // The queue must keep room for its header, rows and destination controls
+    // when the progress panel is revealed below it.
+    queuePanel->setMinimumHeight(queue->minimumSize().height());
     body->addWidget(queuePanel, 1);
 
     auto* renderPanel = new QFrame(this);
     renderPanel->setObjectName("exportRenderPanel");
     auto* render = new QVBoxLayout(renderPanel);
-    render->setContentsMargins(20, 18, 20, 18);
-    render->setSpacing(17);
+    render->setContentsMargins(16, 14, 16, 14);
+    render->setSpacing(12);
     stageLabel_ = label({ }, "exportStage", renderPanel);
     stageLabel_->setWordWrap(true);
     render->addWidget(stageLabel_);
@@ -382,7 +404,6 @@ void ExportDialog::addItem(const framescale::ProcessingOptions& options,
         trash->setProperty("queueId", QVariant::fromValue(id));
         trash->setIcon(trashIcon());
         trash->setIconSize(QSize(18, 18));
-        trash->setToolTip(tr("Remover %1 da fila (Delete)").arg(filename));
         trash->setAccessibleName(tr("Remover %1 da fila").arg(filename));
         connect(trash, &QToolButton::clicked, this, [this, id] { removeItem(id); });
         table_->setCellWidget(row, 3, trash);
@@ -728,6 +749,15 @@ void ExportDialog::setRunning(bool running)
     }
     updateElapsed();
     updateControls();
+    // Revealing progress changes the required height. Expand before the first
+    // running frame instead of squeezing the queue into the compact idle size.
+    if (layout()) {
+        layout()->invalidate();
+        layout()->activate();
+        const QSize required=layout()->totalMinimumSize().expandedTo(QSize(640,340));
+        setMinimumSize(required);
+        resize(size().expandedTo(required));
+    }
 }
 
 void ExportDialog::finishItem(State state, const QString& detail)

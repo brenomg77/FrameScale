@@ -6,6 +6,18 @@
 #include <algorithm>
 
 namespace framescale {
+// An unedited video and its own audio need no full-resolution intermediate.
+inline bool usesOriginalLayerSource(const ProcessingOptions& options) {
+    if (!options.layered || options.layers.empty() || options.layers.size()>2) return false;
+    int video=0, audio=0;
+    for (const auto& layer:options.layers) {
+        if (layer.path!=options.inputPath || !layer.enabled || layer.start!=0 || layer.in!=0
+            || layer.out!=layer.sourceDuration || layer.sourceDuration<=0 || layer.speed!=1
+            || layer.audioTimeScale!=1) return false;
+        if(layer.kind==LayerKind::Video) ++video; else ++audio;
+    }
+    return video==1 && audio<=1;
+}
 inline QString layerPath(const std::filesystem::path& path) {
 #ifdef _WIN32
     return QString::fromStdWString(path.wstring());

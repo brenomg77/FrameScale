@@ -17,6 +17,20 @@ int main(int argc, char** argv) {
     framescale::ProcessingOptions project;
     project.layered=true; project.layers={video,audio};
     {
+        auto direct=project;direct.inputPath=video.path;
+        check(framescale::usesOriginalLayerSource(direct),"unedited source still requires composition");
+        direct.trimStartSeconds=.5;direct.trimEndSeconds=1;
+        check(framescale::usesOriginalLayerSource(direct),"export range should trim the original directly");
+        direct.layers[1].enabled=false;
+        check(!framescale::usesOriginalLayerSource(direct),"muted audio was ignored by direct source detection");
+        direct=project;direct.inputPath=video.path;direct.layers[0].speed=2;
+        check(!framescale::usesOriginalLayerSource(direct),"edited speed bypassed composition");
+        direct=project;direct.inputPath=video.path;direct.layers[0].in=.5;
+        check(!framescale::usesOriginalLayerSource(direct),"layer trim bypassed composition");
+        direct=project;direct.inputPath=video.path;direct.layers[1].path="different.mp4";
+        check(!framescale::usesOriginalLayerSource(direct),"external audio bypassed composition");
+    }
+    {
         auto exact=project;exact.layers[0].sourceFps=60;
         LayerEditor editor;editor.setProject("missing-fixture.mp4",exact,true);
         editor.setExportRange(0,1);

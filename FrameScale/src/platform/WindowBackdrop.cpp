@@ -3,6 +3,7 @@
 #include <QWindow>
 #include <QWidget>
 #include <QApplication>
+#include <cmath>
 
 #ifdef _WIN32
 #include <QDateTime>
@@ -93,8 +94,23 @@ void syncGlassRegion(QWidget* widget)
     const qreal scale = widget->devicePixelRatioF();
     const int width = qRound(widget->width() * scale);
     const int height = qRound(widget->height() * scale);
-    const int diameter = qRound(28 * scale);
-    HRGN region = CreateRoundRectRgn(0, 0, width + 1, height + 1, diameter, diameter);
+    const int radius = qMin(qRound(14 * scale),qMin(width,height)/2);
+    // Build symmetric pixel rows inside Qt's alpha outline. GDI's rounded
+    // rectangle uses different right/bottom endpoint rules and can leave tips.
+    HRGN region = CreateRectRgn(0,radius,width,height-radius);
+    for(int y=0;y<radius && region;++y) {
+        const double dy=radius-y-.5;
+        const int inset=qCeil(radius-std::sqrt(radius*radius-dy*dy));
+        HRGN row=CreateRectRgn(inset,y,width-inset,y+1);
+        if(row) {CombineRgn(region,region,row,RGN_OR);DeleteObject(row);}
+        row=CreateRectRgn(inset,height-y-1,width-inset,height-y);
+        if(row) {CombineRgn(region,region,row,RGN_OR);DeleteObject(row);}
+    }
+    // Avoid invalidating the native window when the outline is already right.
+    HRGN current=CreateRectRgn(0,0,0,0);
+    const bool unchanged=region && current && GetWindowRgn(hwnd,current)!=ERROR && EqualRgn(region,current);
+    if(current) DeleteObject(current);
+    if(unchanged) {DeleteObject(region);return;}
     // Windows owns the region only after a successful SetWindowRgn.
     if (region && !SetWindowRgn(hwnd, region, TRUE)) DeleteObject(region);
 #else
