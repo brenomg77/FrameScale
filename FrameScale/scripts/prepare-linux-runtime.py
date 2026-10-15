@@ -36,10 +36,11 @@ for engine, repo, tag, filename in packages:
     assets = executable.parent
     expected = 'models' if engine == 'realesrgan-ncnn-vulkan' else 'models-se' if engine == 'realcugan-ncnn-vulkan' else 'rife-v4.6'
     if not (assets / expected).is_dir():
-        # Some upstream Ubuntu archives contain only the ELF runner. NCNN
-        # weights are platform independent; take matching weights from the
-        # same release's complete archive, never its Windows executables.
+        # The runner release omits weights; the upstream model distribution
+        # provides the platform-independent NCNN weights separately.
         model_url = url.replace('-ubuntu.zip', '-windows.zip')
+        if engine == 'realesrgan-ncnn-vulkan':
+            model_url = 'https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesrgan-ncnn-vulkan-20220424-ubuntu.zip'
         model_archive = cache / filename.replace('-ubuntu.zip', '-weights.zip')
         urllib.request.urlretrieve(model_url, model_archive)
         model_assets = cache / (engine + '-weights')
@@ -48,7 +49,7 @@ for engine, repo, tag, filename in packages:
                 if entry.filename.endswith(('.param', '.bin')):
                     z.extract(entry, model_assets)
         assets = next(p for p in model_assets.rglob(expected) if p.is_dir()).parent
-        records.append(dict(id=engine+'-weights', version=tag, source=model_url, sha256=hashlib.sha256(model_archive.read_bytes()).hexdigest(), license='See bundled model licenses'))
+        records.append(dict(id=engine+'-weights', version='20220424' if engine=='realesrgan-ncnn-vulkan' else tag, source=model_url, sha256=hashlib.sha256(model_archive.read_bytes()).hexdigest(), license='See bundled model licenses'))
     if engine == 'realesrgan-ncnn-vulkan':
         shutil.copytree(assets / 'models', model_root, dirs_exist_ok=True)
     elif engine == 'realcugan-ncnn-vulkan':
@@ -77,7 +78,9 @@ for name, url, version in [
         shutil.copy2(archive, bin_dir/name)
     (bin_dir/name).chmod(0o755)
     records.append(dict(id=name, version=version, source=url, sha256=hashlib.sha256(archive.read_bytes()).hexdigest(), license='See bundled third-party notices'))
-manifest = dict(schemaVersion=2, platform='linux-x86_64', packages=records)
+artifacts = [dict(path=p.relative_to(root).as_posix(), sha256=hashlib.sha256(p.read_bytes()).hexdigest())
+             for directory in (bin_dir, root/'models') for p in sorted(directory.rglob('*')) if p.is_file()]
+manifest = dict(schemaVersion=2, platform='linux-x86_64', packages=records, artifacts=artifacts)
 (root/'runtime/manifest.json').write_text(json.dumps(manifest, indent=2)+'\n', encoding='utf-8')
 # The shaders are platform independent and tracked alongside the sources.
 assert (root/'models/libplacebo/anime4k-v4-a.glsl').is_file()
