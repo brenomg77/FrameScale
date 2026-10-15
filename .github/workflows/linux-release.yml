@@ -37,9 +37,10 @@ jobs:
           cp FrameScale/build/Linux/FrameScale AppDir/usr/bin/
           cp -a FrameScale/models FrameScale/runtime AppDir/usr/bin/
           cp FrameScale/packaging/linux/framescale.desktop AppDir/usr/share/applications/
-          cp FrameScale/assets/framescale-symbol.png AppDir/usr/share/icons/hicolor/256x256/apps/framescale.png
+          ffmpeg -v error -i FrameScale/assets/framescale-symbol.png -vf scale=256:256 AppDir/usr/share/icons/hicolor/256x256/apps/framescale.png
           mkdir -p AppDir/usr/share/doc/framescale
           cp FrameScale/THIRD_PARTY_NOTICES.md FrameScale/runtime/LICENSE-*.txt AppDir/usr/share/doc/framescale/
+          cp FrameScale/docs/linux-package.md AppDir/usr/share/doc/framescale/
           cp -a /usr/share/doc/ffmpeg /usr/share/doc/mpv AppDir/usr/share/doc/framescale/
           curl -fL https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage -o linuxdeploy-x86_64.AppImage
           curl -fL https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage -o linuxdeploy-plugin-qt-x86_64.AppImage
@@ -50,21 +51,27 @@ jobs:
           done
           export QMAKE="$(command -v qmake)"
           export OUTPUT=FrameScale-0.1.0-Linux-x86_64.AppImage
-          ./linuxdeploy-x86_64.AppImage --appdir AppDir --executable AppDir/usr/bin/FrameScale --desktop-file AppDir/usr/share/applications/framescale.desktop --icon-file AppDir/usr/share/icons/hicolor/256x256/apps/framescale.png "${extra[@]}" --plugin qt --output appimage
+          ./linuxdeploy-x86_64.AppImage --appdir AppDir --executable AppDir/usr/bin/FrameScale --desktop-file AppDir/usr/share/applications/framescale.desktop --icon-file AppDir/usr/share/icons/hicolor/256x256/apps/framescale.png "${extra[@]}" --plugin qt
+          # Deployment patches ELF search paths. Record hashes afterwards.
+          python3 -c 'import pathlib,json,hashlib; root=pathlib.Path("AppDir/usr/bin"); path=root/"runtime/manifest.json"; m=json.loads(path.read_text()); m["artifacts"]=[dict(path=p.relative_to(root).as_posix(),sha256=hashlib.sha256(p.read_bytes()).hexdigest()) for d in (root/"runtime/bin",root/"models") for p in sorted(d.rglob("*")) if p.is_file()]; path.write_text(json.dumps(m,indent=2)+"\n")'
+          ./linuxdeploy-x86_64.AppImage --appdir AppDir --output appimage
           sha256sum "$OUTPUT" > "$OUTPUT.sha256"
       - name: Validate bundled native tools
         env:
           QT_QPA_PLATFORM: offscreen
         run: |
-          export LD_LIBRARY_PATH="$PWD/AppDir/usr/lib:${LD_LIBRARY_PATH:-}"
-          AppDir/usr/bin/runtime/bin/ffmpeg -v error -f lavfi -i testsrc2=size=32x32:duration=0.04 -frames:v 1 test.png
-          AppDir/usr/bin/runtime/bin/realesrgan-ncnn-vulkan -i test.png -o esrgan.png -s 2 -n realesr-animevideov3-x2 -m AppDir/usr/bin/models/realesrgan -t 32
-          AppDir/usr/bin/runtime/bin/realcugan-ncnn-vulkan -i test.png -o cugan.png -s 2 -n 0 -m AppDir/usr/bin/models/realcugan/models-se -t 32
-          AppDir/usr/bin/runtime/bin/ffprobe -v error -show_entries stream=width,height -of csv=p=0 cugan.png | grep -x '64,64'
+          ./FrameScale-0.1.0-Linux-x86_64.AppImage --appimage-extract > /dev/null
+          python3 -c 'import pathlib,json,hashlib; root=pathlib.Path("squashfs-root/usr/bin"); m=json.loads((root/"runtime/manifest.json").read_text()); assert all(hashlib.sha256((root/a["path"]).read_bytes()).hexdigest()==a["sha256"] for a in m["artifacts"]), "Packaged runtime hashes differ"'
+          export LD_LIBRARY_PATH="$PWD/squashfs-root/usr/lib"
+          runtime="$PWD/squashfs-root/usr/bin"
+          "$runtime/runtime/bin/ffmpeg" -v error -f lavfi -i testsrc2=size=32x32:duration=0.04 -frames:v 1 test.png
+          "$runtime/runtime/bin/realesrgan-ncnn-vulkan" -i test.png -o esrgan.png -s 2 -n realesr-animevideov3-x2 -m "$runtime/models/realesrgan" -t 32
+          "$runtime/runtime/bin/realcugan-ncnn-vulkan" -i test.png -o cugan.png -s 2 -n 0 -m "$runtime/models/realcugan/models-se" -t 32
+          "$runtime/runtime/bin/ffprobe" -v error -show_entries stream=width,height -of csv=p=0 cugan.png | grep -x '64,64'
           mkdir rife-input rife-output
           cp test.png rife-input/00000001.png
           cp test.png rife-input/00000002.png
-          AppDir/usr/bin/runtime/bin/rife-ncnn-vulkan -i rife-input -o rife-output -n 4 -m AppDir/usr/bin/models/rife/rife-v4.6 -f '%08d.png' -j 1:1:1
+          "$runtime/runtime/bin/rife-ncnn-vulkan" -i rife-input -o rife-output -n 4 -m "$runtime/models/rife/rife-v4.6" -f '%08d.png' -j 1:1:1
           test "$(find rife-output -name '*.png' | wc -l)" -eq 4
       - uses: actions/upload-artifact@v4
         with:
