@@ -426,6 +426,17 @@ private:
         if(!active_ || pendingImports_) return;
         cancelRender();
         if(layers_.empty()) { if(previewReady) previewReady({}); return; }
+        // An untouched clip must be inspected from its original pixels, not a
+        // re-encoded layer proxy whose resolution is hidden by project metadata.
+        if (originalLayers() || (layers_.size()==1 && layers_[0].kind==framescale::LayerKind::Video
+            && layers_[0].enabled && layers_[0].start==0 && layers_[0].in==0
+            && layers_[0].out==layers_[0].sourceDuration && layers_[0].speed==1)) {
+            const auto previous = displayedPreview_;
+            if(previewReady) previewReady(framescale::layerPath(layers_[0].path));
+            QTimer::singleShot(1000, this, [previous] {});
+            displayedPreview_.reset();
+            return;
+        }
         pendingPreview_=std::make_shared<QTemporaryDir>();
         const QString output=pendingPreview_->filePath("layers.mp4");
         const auto plan=framescale::composeLayers(layers_,output,true);

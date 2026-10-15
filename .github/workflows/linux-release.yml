@@ -1,0 +1,70 @@
+name: Linux release package
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build and media dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build patchelf ffmpeg mpv libvulkan1 mesa-vulkan-drivers libxcb-cursor0 libxcb-xinerama0 libxkbcommon-x11-0 libegl1 libopengl0 libpulse0 libasound2t64 libgl1-mesa-dev
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.3'
+          modules: 'qtmultimedia qtimageformats'
+          cache: true
+      - name: Prepare native Linux engines and models
+        run: python3 FrameScale/scripts/prepare-linux-runtime.py
+      - name: Build
+        run: |
+          cmake -S FrameScale -B FrameScale/build/Linux -G Ninja -DCMAKE_BUILD_TYPE=Release
+          cmake --build FrameScale/build/Linux --target FrameScale FrameScaleCoreTests FrameScaleLayerStateTests FrameScaleGlassMaterialTests FrameScaleKeyboardBindingsTests -j2
+      - name: Nonvisual regression tests
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: ctest --test-dir FrameScale/build/Linux --output-on-failure -R '^(FrameScaleCoreTests|FrameScaleLayerStateTests|FrameScaleGlassMaterialTests|FrameScaleKeyboardBindingsTests)$'
+      - name: Bundle AppImage
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: '1'
+          EXTRA_QT_MODULES: 'multimedia;multimediawidgets;svg'
+        run: |
+          mkdir -p AppDir/usr/bin AppDir/usr/share/applications AppDir/usr/share/icons/hicolor/256x256/apps
+          cp FrameScale/build/Linux/FrameScale AppDir/usr/bin/
+          cp -a FrameScale/models FrameScale/runtime AppDir/usr/bin/
+          cp FrameScale/packaging/linux/framescale.desktop AppDir/usr/share/applications/
+          cp FrameScale/assets/framescale-symbol.png AppDir/usr/share/icons/hicolor/256x256/apps/framescale.png
+          mkdir -p AppDir/usr/share/doc/framescale
+          cp FrameScale/THIRD_PARTY_NOTICES.md FrameScale/runtime/LICENSE-*.txt AppDir/usr/share/doc/framescale/
+          cp -a /usr/share/doc/ffmpeg /usr/share/doc/mpv AppDir/usr/share/doc/framescale/
+          curl -fL https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage -o linuxdeploy-x86_64.AppImage
+          curl -fL https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage -o linuxdeploy-plugin-qt-x86_64.AppImage
+          chmod +x linuxdeploy*.AppImage
+          extra=()
+          for executable in AppDir/usr/bin/runtime/bin/*; do
+            if file "$executable" | grep -q ELF; then extra+=(--executable "$executable"); fi
+          done
+          export QMAKE="$(command -v qmake)"
+          export OUTPUT=FrameScale-0.1.0-Linux-x86_64.AppImage
+          ./linuxdeploy-x86_64.AppImage --appdir AppDir --executable AppDir/usr/bin/FrameScale --desktop-file AppDir/usr/share/applications/framescale.desktop --icon-file AppDir/usr/share/icons/hicolor/256x256/apps/framescale.png "${extra[@]}" --plugin qt --output appimage
+          sha256sum "$OUTPUT" > "$OUTPUT.sha256"
+      - name: Validate bundled native tools
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          export LD_LIBRARY_PATH="$PWD/AppDir/usr/lib:${LD_LIBRARY_PATH:-}"
+          AppDir/usr/bin/runtime/bin/ffmpeg -v error -f lavfi -i testsrc2=size=32x32:duration=0.04 -frames:v 1 test.png
+          AppDir/usr/bin/runtime/bin/realesrgan-ncnn-vulkan -i test.png -o esrgan.png -s 2 -n realesr-animevideov3-x2 -m AppDir/usr/bin/models/realesrgan -t 32
+          AppDir/usr/bin/runtime/bin/realcugan-ncnn-vulkan -i test.png -o cugan.png -s 2 -n 0 -m AppDir/usr/bin/models/realcugan/models-se -t 32
+          AppDir/usr/bin/runtime/bin/ffprobe -v error -show_entries stream=width,height -of csv=p=0 cugan.png | grep -x '64,64'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FrameScale-Linux-x86_64
+          path: |
+            FrameScale-0.1.0-Linux-x86_64.AppImage
+            FrameScale-0.1.0-Linux-x86_64.AppImage.sha256
+          if-no-files-found: error

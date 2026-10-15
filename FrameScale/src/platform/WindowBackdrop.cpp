@@ -80,11 +80,23 @@ void syncGlassRegion(QWidget* widget)
     if (!widget || !widget->isWindow() || !widget->testAttribute(Qt::WA_WState_Created)
         || QApplication::platformName() != "windows") return;
     const auto hwnd = reinterpret_cast<HWND>(widget->winId());
-    if (widget->property("glassRegionCleared").toBool()) return;
-    // Native HRGN edges are binary and cut away Qt's partially transparent
-    // corner pixels. With native accent blur removed, the alpha mask alone
-    // defines the window edge and remains smooth at different display scales.
-    if(SetWindowRgn(hwnd,nullptr,TRUE)) widget->setProperty("glassRegionCleared",true);
+    const bool rounded = widget->property("roundedWindowInstalled").toBool()
+        && !widget->isMaximized() && !widget->isFullScreen();
+    if (!rounded) {
+        SetWindowRgn(hwnd, nullptr, TRUE);
+        return;
+    }
+    // Accent blur is composed by Windows outside Qt's alpha mask. Bound the
+    // native window too, otherwise its rectangular blur leaves bright square
+    // tips behind the rounded content (especially at the bottom corners).
+    // Use physical pixels so the native and Qt outlines agree at any DPI.
+    const qreal scale = widget->devicePixelRatioF();
+    const int width = qRound(widget->width() * scale);
+    const int height = qRound(widget->height() * scale);
+    const int diameter = qRound(28 * scale);
+    HRGN region = CreateRoundRectRgn(0, 0, width + 1, height + 1, diameter, diameter);
+    // Windows owns the region only after a successful SetWindowRgn.
+    if (region && !SetWindowRgn(hwnd, region, TRUE)) DeleteObject(region);
 #else
     Q_UNUSED(widget);
 #endif

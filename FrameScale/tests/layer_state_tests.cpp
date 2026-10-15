@@ -181,6 +181,12 @@ int main(int argc, char** argv) {
         layer.path=std::filesystem::path(input.toStdString());
 #endif
         layer.sourceFps=60;layer.sourceDuration=layer.out=5;
+        {
+            auto portrait=layer;portrait.width=2160;portrait.height=3840;
+            const auto inspection=framescale::composeLayers({portrait},output,true,0,1./60);
+            check(inspection.error.isEmpty() && inspection.width==2160 && inspection.height==3840,
+                "layer preview discarded 4K detail before zoom/paused inspection");
+        }
         const auto plan=framescale::composeLayers({layer},output,false,4,4+1./60);
         check(plan.error.isEmpty()&&std::abs(plan.duration-1./60)<1e-8,"single-frame range still composes full source");
         check(plan.arguments.contains("-ss"),"late range does not seek before decoding");

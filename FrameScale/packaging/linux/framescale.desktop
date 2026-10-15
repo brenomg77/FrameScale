@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=FrameScale
+Comment=AI video and image upscaling, restoration and interpolation
+Exec=FrameScale %F
+Icon=framescale
+Categories=AudioVideo;Video;Graphics;
+Terminal=false
+MimeType=video/mp4;video/x-matroska;image/png;image/jpeg;

@@ -61,11 +61,8 @@ inline LayerComposition composeLayers(const std::vector<MediaLayer>& sourceLayer
         }
         layers.erase(std::remove_if(layers.begin(),layers.end(),[](const MediaLayer& layer){return layer.out<=layer.in;}),layers.end());
     }
-    if (preview) {
-        const double scale = std::min(1., 720. / std::max(plan.width, plan.height));
-        plan.width = std::max(2, int(plan.width * scale));
-        plan.height = std::max(2, int(plan.height * scale));
-    }
+    // Keep the project resolution for inspection and zoom. Reducing the long
+    // edge to 720 pixels discarded upscale detail even while paused.
     plan.width += plan.width % 2; plan.height += plan.height % 2;
     const qint64 frames = std::max<qint64>(1, std::ceil(duration * plan.fps - 1e-7));
     plan.duration = frames / plan.fps;
