@@ -430,6 +430,7 @@ MainWindow::MainWindow(QWidget* parent)
     pageStack_->setCurrentWidget(editorPage_);
     applyAppearance();
     auto* materialTimer = new QTimer(this);
+    materialTimer->setObjectName("materialTimer");
     materialTimer->setInterval(900);
     auto updateMaterial = [this] {
         if (!isVisible() || isMinimized()) return;
@@ -703,6 +704,8 @@ QWidget* MainWindow::buildInspector()
     layout->setContentsMargins(1, 1, 1, 1);
     layout->setSpacing(0);
     auto* scroll = new QScrollArea(inspector_);
+    scroll->setObjectName("inspectorScroll");
+    scroll->viewport()->setObjectName("inspectorViewport");
     scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     auto* inspectorScrollBar=scroll->verticalScrollBar();
     inspectorScrollBar->setEnabled(false);
@@ -996,7 +999,6 @@ QWidget* MainWindow::buildEditorPage()
         preview_->setLayerEditing(true);
     };
     auto* layerClock = new QTimer(this);
-    layerClock->setTimerType(Qt::PreciseTimer);
     layerClock->setInterval(16);
     connect(layerClock, &QTimer::timeout, this, [this] {
         if(layers_->active()) {
@@ -1033,6 +1035,8 @@ void MainWindow::applyAppearance()
 {
     Appearance::palette();
     Appearance::apply(this, applicationStyle());
+    if(auto* timer=findChild<QTimer*>("materialTimer"))
+        timer->setInterval(900);
     if (preview_ && GlassMaterial::updateBackdrop(this,preview_->currentFrame()))
         centralWidget()->update();
     if (projectTabs_) {

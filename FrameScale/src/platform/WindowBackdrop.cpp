@@ -92,8 +92,9 @@ void syncGlassRegion(QWidget* widget)
     // tips behind the rounded content (especially at the bottom corners).
     // Use physical pixels so the native and Qt outlines agree at any DPI.
     const qreal scale = widget->devicePixelRatioF();
-    const int width = qRound(widget->width() * scale);
-    const int height = qRound(widget->height() * scale);
+    const int inset = qRound(widget->property("glassEdgeInset").toReal() * scale);
+    const int width = qRound(widget->width() * scale) - 2*inset;
+    const int height = qRound(widget->height() * scale) - 2*inset;
     const int radius = qMin(qRound(14 * scale),qMin(width,height)/2);
     // Build symmetric pixel rows inside Qt's alpha outline. GDI's rounded
     // rectangle uses different right/bottom endpoint rules and can leave tips.
@@ -106,6 +107,7 @@ void syncGlassRegion(QWidget* widget)
         row=CreateRectRgn(inset,height-y-1,width-inset,height-y);
         if(row) {CombineRgn(region,region,row,RGN_OR);DeleteObject(row);}
     }
+    if(region && inset) OffsetRgn(region,inset,inset);
     // Avoid invalidating the native window when the outline is already right.
     HRGN current=CreateRectRgn(0,0,0,0);
     const bool unchanged=region && current && GetWindowRgn(hwnd,current)!=ERROR && EqualRgn(region,current);

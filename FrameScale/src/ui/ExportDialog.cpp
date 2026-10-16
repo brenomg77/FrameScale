@@ -298,6 +298,12 @@ ExportDialog::ExportDialog(const QString& inputPath,
     renderPanel->hide();
 
     auto* actions = new QHBoxLayout;
+    failureLabel_ = label({}, "exportFailure", this);
+    failureLabel_->setWordWrap(true);
+    failureLabel_->setTextFormat(Qt::PlainText);
+    failureLabel_->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    failureLabel_->hide();
+    body->addWidget(failureLabel_);
     folderButton_ = new QPushButton(tr("Abrir pasta"), this);
     folderButton_->setObjectName("exportOpenFolderButton");
     actions->addWidget(folderButton_);
@@ -544,6 +550,9 @@ void ExportDialog::updateControls()
     cancelButton_->setText(cancellationPending_ ? tr("Cancelando…")
                                                 : tr("Cancelar"));
     const int selectedRow = indexOf(selected_);
+    const bool failed = !running_ && selectedRow >= 0 && entries_[selectedRow].state == State::Failed;
+    failureLabel_->setText(failed ? entries_[selectedRow].error : QString());
+    failureLabel_->setVisible(failed);
     folderButton_->setVisible(selectedRow >= 0 && entries_[selectedRow].state == State::Finished);
     if (!running_) {
         statusLabel_->clear();
@@ -727,6 +736,7 @@ void ExportDialog::setRunning(bool running)
 {
     if (running_ == running)
         return;
+    if(running && !isMaximized() && !isFullScreen()) idleSize_=size();
     running_ = running;
     progressBar_->parentWidget()->setVisible(running);
     if (running) {
@@ -749,14 +759,17 @@ void ExportDialog::setRunning(bool running)
     }
     updateElapsed();
     updateControls();
-    // Revealing progress changes the required height. Expand before the first
-    // running frame instead of squeezing the queue into the compact idle size.
+    // Reserve room for progress while running, then restore the user's idle
+    // size. expandedTo(size()) on both transitions kept the extra blank space
+    // forever after progress was hidden (success, failure or cancellation).
     if (layout()) {
+        setMinimumSize(640,340);
         layout()->invalidate();
         layout()->activate();
         const QSize required=layout()->totalMinimumSize().expandedTo(QSize(640,340));
         setMinimumSize(required);
-        resize(size().expandedTo(required));
+        if(!isMaximized() && !isFullScreen())
+            resize((running ? size() : idleSize_).expandedTo(required));
     }
 }
 
@@ -767,6 +780,7 @@ void ExportDialog::finishItem(State state, const QString& detail)
     const int row = indexOf(active_);
     if (row >= 0) {
         entries_[row].state = state;
+        entries_[row].error = state == State::Failed ? detail : QString();
         updateRow(row, detail);
         if (state == State::Finished) {
             const QSignalBlocker blocker(table_);

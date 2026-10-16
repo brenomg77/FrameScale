@@ -27,7 +27,7 @@ try {
         throw 'The build directory belongs to another source tree.'
     }
     & (Join-Path $PSScriptRoot 'verify-runtime.ps1') -AppRoot $projectRoot
-    & $CMake --build $buildPath --target FrameScale --parallel 3
+    & $CMake --build $buildPath --target FrameScale FrameScaleSetup --parallel 3
     if ($LASTEXITCODE -ne 0) { throw 'Release build failed' }
     New-Item -ItemType Directory -Path $PackageDir -Force | Out-Null
     $stagingRoot = (Resolve-Path -LiteralPath $PackageDir).Path
@@ -55,6 +55,45 @@ try {
     $deleteLines += Get-ChildItem -LiteralPath $payload -Recurse -Directory | Sort-Object { $_.FullName.Length } -Descending | ForEach-Object { 'RMDir "$INSTDIR\' + $_.FullName.Substring($payload.Length + 1).Replace('$','$$') + '"' }
     $manifest = Join-Path $stagingRoot "uninstall-files-$runId.nsh"
     [IO.File]::WriteAllLines($manifest, $deleteLines, [Text.UTF8Encoding]::new($true))
+    $totalBytes = ($files | Measure-Object Length -Sum).Sum
+    $completedBytes = 0L
+    $installLines = [Collections.Generic.List[string]]::new()
+    foreach ($file in ($files | Sort-Object FullName)) {
+        $relative = $file.FullName.Substring($payload.Length + 1)
+        $folder = [IO.Path]::GetDirectoryName($relative).Replace('$','$$')
+        $filename = $file.Name.Replace('$','$$')
+        $source = $file.FullName.Replace('$','$$')
+        $installLines.Add('SetOutPath "$INSTDIR\' + $folder + '"')
+        $installLines.Add('ClearErrors')
+        $installLines.Add('File "/oname=' + $filename + '" "' + $source + '"')
+        $installLines.Add('IfErrors 0 +3')
+        $installLines.Add('  SetErrorLevel 3')
+        $installLines.Add('  Abort')
+        $completedBytes += $file.Length
+        $percent = [math]::Min(99,[math]::Floor($completedBytes * 100.0 / $totalBytes))
+        $installLines.Add('${If} $ProgressFile != ""')
+        $installLines.Add('  FileOpen $0 "$ProgressFile" w')
+        $installLines.Add('  FileWrite $0 "' + $percent + '"')
+        $installLines.Add('  FileClose $0')
+        $installLines.Add('${EndIf}')
+    }
+    $installManifest = Join-Path $stagingRoot "install-files-$runId.nsh"
+    [IO.File]::WriteAllLines($installManifest,$installLines,[Text.UTF8Encoding]::new($true))
+    # The front end uses the same Qt build as the app, deployed independently so
+    # no system Qt or developer tools are needed to show the custom installer.
+    $frontend = Join-Path $stagingRoot "frontend-$runId"
+    New-Item -ItemType Directory -Path $frontend -Force | Out-Null
+    Copy-Item -LiteralPath (Join-Path $payload 'bin/FrameScaleSetup.exe') -Destination $frontend
+    foreach ($library in @('Qt6Core.dll','Qt6Gui.dll','Qt6Widgets.dll','Qt6Svg.dll','libgcc_s_seh-1.dll','libstdc++-6.dll','libwinpthread-1.dll','D3Dcompiler_47.dll','opengl32sw.dll')) {
+        $libraryPath = Join-Path $payload ('bin/' + $library)
+        if (Test-Path -LiteralPath $libraryPath) {Copy-Item -LiteralPath $libraryPath -Destination $frontend}
+    }
+    foreach ($plugin in @('platforms/qwindows.dll','imageformats/qsvg.dll')) {
+        $destination = Join-Path $frontend ('plugins/' + $plugin)
+        New-Item -ItemType Directory -Path (Split-Path -Parent $destination) -Force | Out-Null
+        Copy-Item -LiteralPath (Join-Path $payload ('plugins/' + $plugin)) -Destination $destination
+    }
+    [IO.File]::WriteAllText((Join-Path $frontend 'qt.conf'),"[Paths]`nPlugins=plugins`n",[Text.UTF8Encoding]::new($false))
     $outputFile = Join-Path $projectRoot "dist/FrameScale-$version-Windows-x64-Setup.exe"
     $recordsDir = Join-Path $projectRoot 'build/release-records'
     New-Item -ItemType Directory -Path $recordsDir -Force | Out-Null
@@ -73,8 +112,11 @@ try {
         }
     })
     $kib = [math]::Ceiling(($files | Measure-Object Length -Sum).Sum / 1KB)
-    & $compiler "/INPUTCHARSET" "UTF8" "/DAPP_VERSION=$version" "/DPAYLOAD_DIR=$payload" "/DOUTPUT_FILE=$pendingOutput" "/DUNINSTALL_FILES=$manifest" "/DPAYLOAD_KIB=$kib" 'packaging/windows/FrameScale.nsi'
-    if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed' }
+    $backendFile = Join-Path $stagingRoot "backend-$runId.exe"
+    & $compiler "/INPUTCHARSET" "UTF8" "/DAPP_VERSION=$version" "/DPAYLOAD_DIR=$payload" "/DFRONTEND_DIR=$frontend" "/DOUTPUT_FILE=$backendFile" "/DINSTALL_FILES=$installManifest" "/DUNINSTALL_FILES=$manifest" "/DPAYLOAD_KIB=$kib" 'packaging/windows/FrameScale.nsi'
+    if ($LASTEXITCODE -ne 0) { throw 'Installer backend compilation failed' }
+    & $compiler "/INPUTCHARSET" "UTF8" "/DAPP_VERSION=$version" "/DFRONTEND_DIR=$frontend" "/DBACKEND_FILE=$backendFile" "/DOUTPUT_FILE=$pendingOutput" 'packaging/windows/SetupBootstrap.nsi'
+    if ($LASTEXITCODE -ne 0) { throw 'Custom installer compilation failed' }
     # Publish locally only after compilation succeeds. Preserve the previous setup.
     $previousFiles = @($outputFile, ($recordBase + '.sha256'), ($recordBase + '.build.json'), ($recordBase + '.validation.json')) |
         Where-Object { Test-Path -LiteralPath $_ }

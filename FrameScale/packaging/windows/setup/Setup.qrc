@@ -1,0 +1,13 @@
+<RCC>
+  <qresource prefix="/setup">
+    <file alias="symbol.png">../../../assets/framescale-symbol.png</file>
+    <file alias="logo.png">../../../assets/framescale-logo.png</file>
+    <file alias="wordmark.png">../../../assets/framescale-wordmark.png</file>
+    <file>check.svg</file>
+  </qresource>
+  <qresource prefix="/brand">
+    <file alias="chevron-ink.svg">../../../assets/chevron-ink.svg</file>
+    <file alias="chevron-up-ink.svg">../../../assets/chevron-up-ink.svg</file>
+    <file alias="chevron-dark.svg">../../../assets/chevron-dark.svg</file>
+  </qresource>
+</RCC>

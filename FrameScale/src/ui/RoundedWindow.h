@@ -89,7 +89,7 @@ protected:
         mask.setCompositionMode(QPainter::CompositionMode_SourceOver);
         mask.translate(-offset);
         if (window_->property("glassWindowSurface").toBool() && !GlassMaterial::reduced()) {
-            const bool light = QSettings().value("appearance", "macos-light").toString() != "macos-dark";
+            const bool light=QSettings().value("appearance", "macos-light").toString()!="macos-dark";
             GlassMaterial::paintWindowSurface(mask,window_->rect(),light);
         } else {
             // A solid base also covers areas whose child styles are transparent
@@ -106,7 +106,8 @@ protected:
             alpha_=QImage(pixmap.size(),QImage::Format_ARGB32_Premultiplied);
             alpha_.setDevicePixelRatio(pixmap.devicePixelRatio());alpha_.fill(Qt::transparent);
             QPainterPath path;
-            path.addRoundedRect(QRectF(QPointF(-offset),QSizeF(window_->size())),rounded ? 14 : 0,rounded ? 14 : 0);
+            const qreal inset=window_->property("glassEdgeInset").toReal();
+            path.addRoundedRect(QRectF(QPointF(-offset),QSizeF(window_->size())).adjusted(inset,inset,-inset,-inset),rounded ? 14 : 0,rounded ? 14 : 0);
             QPainter shape(&alpha_);shape.setRenderHint(QPainter::Antialiasing);shape.fillPath(path,Qt::white);
             offset_=offset; rounded_=rounded;
         }
@@ -118,7 +119,8 @@ protected:
             rim.setColorAt(0,light?QColor(255,255,255,100):QColor(255,255,255,45));
             rim.setColorAt(1,QColor(128,128,128,20));
             mask.setPen(QPen(QBrush(rim),1));
-            mask.drawRoundedRect(QRectF(QPointF(-offset),QSizeF(window_->size())).adjusted(.5,.5,-.5,-.5),13.5,13.5);
+            const qreal edge=window_->property("glassEdgeInset").toReal()+.5;
+            mask.drawRoundedRect(QRectF(QPointF(-offset),QSizeF(window_->size())).adjusted(edge,edge,-edge,-edge),13.5,13.5);
         }
         // Clip the rim as well as the content so it cannot leave stray pixels
         // outside the smooth, antialiased alpha corners.

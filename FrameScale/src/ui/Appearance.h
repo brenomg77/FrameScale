@@ -43,7 +43,8 @@ inline void revealSection(QWidget* widget, bool visible) {
 inline QString theme()
 {
     const auto value = QSettings().value("appearance", "macos-light").toString();
-    return value == "studio" || value == "macos-dark" ? value : QStringLiteral("macos-light");
+    return value == "studio" || value == "macos-dark"
+        ? value : QStringLiteral("macos-light");
 }
 inline bool light() { return theme() == "macos-light"; }
 inline QString adapted(QString source)

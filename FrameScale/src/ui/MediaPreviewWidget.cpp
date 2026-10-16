@@ -1709,7 +1709,8 @@ void MediaPreviewWidget::updateImageSize()
     pixels.fill(QColor("#181818"));
     QPainter painter(&pixels);
     painter.setRenderHint(QPainter::SmoothPixmapTransform);
-    painter.drawImage(QRectF(view.center() - QPointF(target.width()/2, target.height()/2) + pan_, target), orientedFrame(image_));
+    const QRectF media(view.center() - QPointF(target.width()/2, target.height()/2) + pan_, target);
+    painter.drawImage(media, orientedFrame(image_));
     painter.end();
     imageLabel_->setPixmap(pixels);
 }

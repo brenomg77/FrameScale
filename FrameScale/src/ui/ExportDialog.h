@@ -58,6 +58,7 @@ private:
         framescale::ProcessingOptions options;
         QString summary;
         State state = State::Ready;
+        QString error;
     };
 
     int indexOf(quint64 id) const;
@@ -85,6 +86,7 @@ private:
     quint64 active_ = 0;
     framescale::ProcessingOptions activeSnapshot_;
     bool running_ = false;
+    QSize idleSize_{720,360};
     bool processingAvailable_ = true;
     bool awaitingRelease_ = false;
     bool nextScheduled_ = false;
@@ -104,6 +106,7 @@ private:
     QLineEdit* outputEdit_ = nullptr;
     QLabel* statusLabel_ = nullptr;
     QLabel* stageLabel_ = nullptr;
+    QLabel* failureLabel_ = nullptr;
     QLabel* frameCountLabel_ = nullptr;
     QLabel* speedLabel_ = nullptr;
     QLabel* elapsedLabel_ = nullptr;

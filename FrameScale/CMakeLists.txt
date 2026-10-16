@@ -19,6 +19,24 @@ find_package(Qt6 6.5 REQUIRED COMPONENTS Widgets Multimedia MultimediaWidgets Ne
 
 qt_standard_project_setup()
 
+if(WIN32)
+    qt_add_executable(FrameScaleSetup EXCLUDE_FROM_ALL
+        packaging/windows/setup/main.cpp packaging/windows/setup/SetupTask.h
+        packaging/windows/setup/Setup.qrc src/platform/WindowBackdrop.cpp)
+    target_include_directories(FrameScaleSetup PRIVATE src)
+    target_link_libraries(FrameScaleSetup PRIVATE Qt6::Widgets)
+    target_link_libraries(FrameScaleSetup PRIVATE dwmapi)
+    target_compile_definitions(FrameScaleSetup PRIVATE FRAMESCALE_VERSION="${PROJECT_VERSION}")
+    set_target_properties(FrameScaleSetup PROPERTIES WIN32_EXECUTABLE ON)
+    install(TARGETS FrameScaleSetup RUNTIME DESTINATION bin)
+    qt_add_executable(FrameScaleSetupActionsTests EXCLUDE_FROM_ALL
+        tests/setup_actions_tests.cpp packaging/windows/setup/Setup.qrc
+        src/platform/WindowBackdrop.cpp)
+    target_include_directories(FrameScaleSetupActionsTests PRIVATE src)
+    target_link_libraries(FrameScaleSetupActionsTests PRIVATE Qt6::Widgets dwmapi)
+    target_compile_definitions(FrameScaleSetupActionsTests PRIVATE FRAMESCALE_VERSION="${PROJECT_VERSION}")
+endif()
+
 # Share the compiled brand resources between the application and UI tests.
 qt_add_big_resources(FRAMESCALE_BRAND_OBJECTS assets/brand.qrc)
 add_custom_target(FrameScaleBrandResources DEPENDS ${FRAMESCALE_BRAND_OBJECTS})
@@ -202,6 +220,7 @@ qt_add_executable(FrameScaleUiSmoke
     src/processing/RuntimePaths.h
 )
 add_dependencies(FrameScaleUiSmoke FrameScaleBrandResources)
+
 target_include_directories(FrameScaleUiSmoke PRIVATE src)
 target_link_libraries(FrameScaleUiSmoke PRIVATE Qt6::Widgets Qt6::Multimedia Qt6::MultimediaWidgets Qt6::Network)
 target_compile_definitions(FrameScaleUiSmoke PRIVATE

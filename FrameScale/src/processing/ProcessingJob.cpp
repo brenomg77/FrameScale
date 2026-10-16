@@ -16,6 +16,9 @@
 #include <QRegularExpression>
 #include <QThreadPool>
 #include <QTimer>
+#include <QStorageInfo>
+#include <QStandardPaths>
+#include <QDateTime>
 
 #include <algorithm>
 #include <cmath>
@@ -1019,18 +1022,23 @@ bool ProcessingJob::prepareVideoSteps(QString& error)
     if (!orientation.isEmpty()) finish += (finish.isEmpty() ? QString() : ",") + orientation;
     // RIFE's Windows image loader wraps decoded bytes as three-channel RGB.
     // GIF/alpha sources otherwise produce RGBA PNGs and corrupt row/channel
-    // alignment. Normalize at the engine boundary, regardless of container.
-    if (!audioOnly(options_) && usesInterpolation(options_.operation))
+    // alignment. ProRes/10-bit sources otherwise become RGB48 PNGs, doubling
+    // channel storage and forcing the 8-bit NCNN loaders to convert them back.
+    // Normalize at the engine boundary, regardless of container. The delivery
+    // encoder still uses the selected pixel format (including 10-bit ProRes).
+    if (!audioOnly(options_) && (usesInterpolation(options_.operation) || needsUpscale(options_)))
         extractFilter += QStringLiteral(",format=rgb24");
 
     steps_.push_back({ tr("Preparando vídeo"),
         toolPath(QStringLiteral("ffmpeg")),
-        { QStringLiteral("-y"),
+        { QStringLiteral("-y"), QStringLiteral("-filter_threads"), processingFilterThreads(),
             QStringLiteral("-i"), fromPath(options_.inputPath),
             QStringLiteral("-map"), QStringLiteral("0:v:0"),
             QStringLiteral("-vf"),
             extractFilter,
             QStringLiteral("-frames:v"), QString::number(sourceFrameCount_),
+            QStringLiteral("-threads:v"), QStringLiteral("2"),
+            QStringLiteral("-pix_fmt"), QStringLiteral("rgb24"),
             QStringLiteral("-compression_level"), QStringLiteral("1"), inputPattern },
         15,
         [inputFrames, expected = sourceFrameCount_, width = sourceWidth_,
@@ -2026,6 +2034,13 @@ void ProcessingJob::pollCompletedFrames()
     if (directory.isEmpty()) {
         return;
     }
+    QStorageInfo storage(directory);
+    if (storage.isValid() && storage.isReady() && storage.bytesAvailable() >= 0
+        && storage.bytesAvailable() < 512LL * 1024 * 1024) {
+        fail(tr("Espaço insuficiente no disco dos arquivos temporários (%1). Libere espaço antes de exportar novamente.")
+            .arg(QDir::toNativeSeparators(storage.rootPath())));
+        return;
+    }
     if (frameScan_) {
         if (!frameScan_->complete.load(std::memory_order_acquire)) {
             return;
@@ -2080,6 +2095,16 @@ void ProcessingJob::fail(const QString& message)
 {
     if (!running_ && stepIndex_ >= 0) {
         return;
+    }
+    // Keep the engine diagnostics after the temporary frame workspace is removed.
+    const QString logDirectory = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/logs";
+    QDir().mkpath(logDirectory);
+    QFile log(logDirectory + "/export-" + QDateTime::currentDateTimeUtc().toString("yyyyMMdd-HHmmss-zzz") + ".log");
+    if (log.open(QIODevice::WriteOnly)) {
+        log.write(message.toUtf8() + '\n');
+        log.write(process_.program().toUtf8() + '\n');
+        for (const auto& argument : process_.arguments()) log.write(argument.toUtf8() + '\n');
+        log.write(outputBuffer_);
     }
     cancellationTimer_.stop();
     frameProgressTimer_.stop();

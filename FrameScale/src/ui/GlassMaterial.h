@@ -147,6 +147,7 @@ protected:
         QPainter painter(this);
         const QString theme=QSettings().value("appearance","macos-light").toString();
         if(theme=="studio") {painter.fillRect(rect(),QColor("#1e1e1e"));return;}
-        GlassMaterial::paint(painter,rect(),window()->property("glassBackdrop").value<QImage>(),theme!="macos-dark",theme=="macos-dark"?155:120);
+        const bool dark=theme=="macos-dark";
+        GlassMaterial::paint(painter,rect(),window()->property("glassBackdrop").value<QImage>(),!dark,dark?155:120);
     }
 };
