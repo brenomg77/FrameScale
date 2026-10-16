@@ -1,4 +1,6 @@
 #include "ui/KeyboardBindings.h"
+#include "ui/ProgramTour.h"
+#include "ui/ProjectTransition.h"
 #include "ui/LayerEditor.h"
 #include "ui/HelpPopover.h"
 #include "ui/VideoDownloadDialog.h"
@@ -434,6 +436,7 @@ MainWindow::MainWindow(QWidget* parent)
     materialTimer->setInterval(900);
     auto updateMaterial = [this] {
         if (!isVisible() || isMinimized()) return;
+        if(projectTransition_ && projectTransition_->isVisible()) return;
         const QImage source=preview_->currentFrame();
         if (GlassMaterial::updateBackdrop(this,source)) {
             centralWidget()->update();
@@ -444,7 +447,10 @@ MainWindow::MainWindow(QWidget* parent)
     connect(preview_,&MediaPreviewWidget::mediaReady,this,updateMaterial);
     materialTimer->start();
     exportButton_->setEnabled(false);
-    QTimer::singleShot(0, this, [this] { if (inputPath_.isEmpty()) showWelcome(); });
+    QTimer::singleShot(0, this, [this] {
+        if(isVisible() && shouldOfferProgramTour()) startTour();
+        else if (inputPath_.isEmpty()) showWelcome();
+    });
 
     setWindowState(windowState() | Qt::WindowMaximized);
 }
@@ -457,6 +463,7 @@ void MainWindow::updateWindowCorners()
 void MainWindow::resizeEvent(QResizeEvent* event)
 {
     QMainWindow::resizeEvent(event);
+    if(projectTransition_ && preview_) projectTransition_->setGeometry(preview_->rect());
     updateWindowCorners();
 }
 void MainWindow::changeEvent(QEvent* event)
@@ -984,19 +991,26 @@ QWidget* MainWindow::buildEditorPage()
     layers_->seekRequested = [this](double seconds) { if(preview_->isPlaying()) preview_->pause(); preview_->seek(qRound64(seconds*1000)); };
     layers_->volumeRequested = [this](const QPoint& point) { preview_->showLayerVolume(point); };
     layers_->playRequested = [this] { if(preview_->isPlaying()) preview_->pause(); else preview_->play(); };
-    layers_->previewFailed = [this](const QString& message) { preview_->failLayerPreview(message); };
+    layers_->previewFailed = [this](const QString& message) {
+        if(projectTransition_) projectTransition_->reveal();
+        preview_->failLayerPreview(message);
+    };
     layers_->previewInvalidated = [this] { preview_->invalidateLayerPreview(layers_->layers().empty()); };
     layers_->previewReady = [this](const QString& path) {
         if (!layers_->active()) return;
         const auto orientation = preview_->orientation();
         const auto position = preview_->positionMs();
+        const auto zoom = preview_->viewZoom();
+        const auto pan = preview_->viewPan();
         if (path.isEmpty()) { preview_->invalidateLayerPreview(true); return; }
         else preview_->setMedia(path, position);
+        preview_->restoreView(zoom,pan);
         QSize projectSize;
         for(const auto& layer:layers_->layers()) if(layer.kind==framescale::LayerKind::Video) { projectSize=QSize(layer.width,layer.height); break; }
         preview_->setProjectMediaInfo(inputPath_,projectSize);
         preview_->setOrientation(orientation);
         preview_->setLayerEditing(true);
+        if(projectTransition_ && !preview_->currentFrame().isNull()) projectTransition_->reveal();
     };
     auto* layerClock = new QTimer(this);
     layerClock->setInterval(16);
@@ -1022,10 +1036,12 @@ QWidget* MainWindow::buildEditorPage()
     row->addLayout(pageLayout);
     connect(preview_, &MediaPreviewWidget::previewError, this,
         [this](const QString& s) {
+            if(projectTransition_) projectTransition_->reveal();
             if (!isProcessing())
                 setStatusText(s);
         });
     connect(preview_, &MediaPreviewWidget::mediaReady, this, [this] {
+        if(projectTransition_ && (!layers_->active() || layers_->ready())) projectTransition_->reveal();
         if (!isProcessing())
             setStatusText(tr("Pronto"));
     });
@@ -1107,6 +1123,7 @@ void MainWindow::enterDocument()
 }
 void MainWindow::showSettings()
 {
+    bool tourRequested=false;
     QDialog dialog(this);
     dialog.setObjectName("settingsDialog");
     dialog.setWindowTitle(tr("Configurações"));
@@ -1145,13 +1162,13 @@ void MainWindow::showSettings()
     row->addWidget(navigationPanel,0,Qt::AlignTop);
     auto* settingsCard = new QWidget(&dialog);
     auto* content = new QVBoxLayout(settingsCard);
-    content->setContentsMargins(12, 4, 12, 12);
-    content->setSpacing(10);
+    content->setContentsMargins(12, 4, 12, 4);
+    content->setSpacing(5);
     auto* heading = new QLabel(tr("Geral"), &dialog);
     heading->setFont(Typography::display());
     heading->setStyleSheet(QString("font-family:\"%1\";font-size:22px;font-weight:600;background:transparent;").arg(Typography::displayFamily));
     content->addWidget(heading);
-    content->addSpacing(12);
+    content->addSpacing(6);
     auto* language = new SelectionComboBox(&dialog);
     language->setObjectName("languageChoice");
     language->setSizeAdjustPolicy(QComboBox::AdjustToContents);
@@ -1164,7 +1181,7 @@ void MainWindow::showSettings()
     languageLabel->setBuddy(language);
     content->addWidget(languageLabel);
     content->addWidget(language, 0, Qt::AlignLeft);
-    content->addSpacing(12);
+    content->addSpacing(6);
     auto* appearance = new SelectionComboBox(&dialog);
     appearance->setObjectName("appearanceChoice");
     appearance->setSizeAdjustPolicy(QComboBox::AdjustToContents);
@@ -1177,7 +1194,7 @@ void MainWindow::showSettings()
     appearanceLabel->setBuddy(appearance);
     content->addWidget(appearanceLabel);
     content->addWidget(appearance, 0, Qt::AlignLeft);
-    content->addSpacing(12);
+    content->addSpacing(6);
     auto* transparency = new SwitchControl(tr("Transparência dos painéis"), &dialog);
     transparency->setObjectName("glassTransparencyChoice");
     transparency->setChecked(QSettings().value("glassTransparency", true).toBool());
@@ -1186,6 +1203,11 @@ void MainWindow::showSettings()
         transparency->setEnabled(appearance->currentData() != "studio");
     });
     content->addWidget(transparency);
+    auto* tourButton=new QPushButton(tr("Tour"),&dialog);
+    tourButton->setObjectName("restartTourButton");tourButton->setAutoDefault(false);
+    tourButton->setEnabled(!isProcessing());
+    content->addWidget(tourButton,0,Qt::AlignLeft);
+    connect(tourButton,&QPushButton::clicked,&dialog,[&]{tourRequested=true;dialog.reject();});
     content->addStretch();
     auto* settingsPages=new QStackedWidget(&dialog);
     settingsPages->addWidget(settingsCard);
@@ -1242,6 +1264,83 @@ void MainWindow::showSettings()
         Appearance::refresh();
         InterfaceTranslator::applyLanguage(language->currentData().toString());
     }
+    if(tourRequested) QTimer::singleShot(0,this,[this]{startTour();});
+}
+void MainWindow::startTour()
+{
+    if(tour_) {tour_->raise();return;}
+    if(isProcessing()) return;
+    // Mark the offer as seen even when skipped, closed or interrupted. A replay
+    // from Settings never clears this per-user flag, including after upgrades.
+    markProgramTourSeen();
+    const bool welcomeVisible=inputPath_.isEmpty();
+    if(welcomeDialog_) welcomeDialog_->hide();
+    preview_->pause();
+    auto* tabs=findChild<QTabWidget*>("inspectorTabs");
+    const int originalTab=tabs?tabs->currentIndex():0;
+    const bool inspectorEnabled=inspector_->isEnabled();inspector_->setEnabled(true);
+    auto anchor=[this](QWidget* widget) -> std::function<QRect()> {
+        QPointer<QWidget> guarded(widget);
+        return [this,guarded] {
+            if(!guarded || !guarded->isVisible()) return QRect();
+            QRect area(guarded->mapTo(this,QPoint()),guarded->size());
+            for(auto* parent=guarded->parentWidget();parent && parent!=this;parent=parent->parentWidget())
+                area=area.intersected(QRect(parent->mapTo(this,QPoint()),parent->size()));
+            return area;
+        };
+    };
+    auto keys=[](const QString& id) {return KeyboardBindings::sequence(id).toString(QKeySequence::NativeText);};
+    auto shortcut=[&](const QString& id,const QString& text) {
+        const auto key=keys(id);return key.isEmpty()?QString():key+QStringLiteral(" · ")+text;
+    };
+    auto processing=[tabs]{if(tabs) tabs->setCurrentIndex(0);};
+    auto encoding=[tabs]{if(tabs) tabs->setCurrentIndex(1);};
+    auto menuTarget=[this] {
+        auto* menu=findChild<QMenuBar*>("mainMenu");QRect area;
+        if(menu) for(auto* action:menu->actions()) if(action->isVisible()) area=area.united(menu->actionGeometry(action));
+        return menu && !area.isEmpty()?QRect(menu->mapTo(this,area.topLeft()),area.size()):QRect();
+    };
+    auto processingTarget=[this,anchor] {
+        QRect area;
+        for(auto* widget:std::vector<QWidget*>{upscaleCheck_,upscaleFields_,combinedCheck_,interpolationFields_,reductionFps_,playbackSpeed_,enhancement_})
+            area=area.united(anchor(widget)());
+        return area;
+    };
+    auto timelineTarget=[this,anchor] {
+        const auto area=anchor(layers_->findChild<QWidget*>("layerTracks"))();
+        return area.isEmpty()?QRect():area.adjusted(8,3,-8,-10);
+    };
+    std::vector<ProgramTour::Step> steps {
+        {tr("1. Abra um arquivo"),
+         tr("Use Arquivo → Abrir ou arraste uma imagem ou vídeo para o programa.\n\nTambém pode copiar um arquivo no explorador com Ctrl+C e colar aqui com Ctrl+V.\n\nAo abrir outro arquivo, escolha uma nova aba para manter os projetos separados."),
+         shortcut("open",tr("Abrir arquivo"))+QStringLiteral("\n")+shortcut("paste",tr("Colar arquivo ou imagem")),menuTarget,{}},
+        {tr("2. Conheça as ferramentas"),
+         tr("O painel da direita reúne as funcionalidades para melhorar seu arquivo.\n\nO centro mostra a prévia, e o controle de zoom ajuda a ver os detalhes.\n\nCada aba mantém sua posição e seu zoom."),
+         {},processingTarget,processing},
+        {tr("3. Escolha o trecho"),
+         tr("Ao abrir um vídeo, a timeline aparece embaixo.\n\nArraste a agulha para escolher um momento.\n\nPara cortar e diminuir a duração, arraste a ponta esquerda da faixa azul até o novo início e a direita até o novo fim: só esse trecho será exportado.\n\nAs pistas mostram o vídeo e o áudio."),
+         shortcut("play",tr("Reproduzir ou pausar"))+QStringLiteral("\n")+shortcut("previous",tr("Quadro anterior"))+QStringLiteral(" · ")+shortcut("next",tr("Quadro seguinte")),
+         timelineTarget,{},true},
+        {tr("4. Escolha a melhoria"),
+         tr("Ampliação aumenta a resolução: 2× dobra a largura e a altura.\n\nInterpolação cria quadros para deixar o movimento mais fluido, como 30 → 60 fps.\n\nMelhoria de imagem oferece ajustes de limpeza e nitidez.\n\nAtive apenas o que precisar."),
+         {},processingTarget,processing},
+        {tr("5. Compare antes de exportar"),
+         tr("Depois de abrir um arquivo e escolher as opções, clique em Preview para comparar o original e o resultado.\n\nTeste um trecho curto primeiro: resoluções e FPS maiores exigem mais tempo e espaço em disco."),
+         {},anchor(preview_->findChild<QWidget*>("comparePreviewButton")),processing},
+        {tr("6. Escolha o formato"),
+         tr("Em Codificação, escolha como salvar o resultado.\n\nMP4 com H.264 é uma opção prática para compartilhar.\n\nProRes é útil para edição, mas gera arquivos maiores.\n\nAs opções de formato controlam a qualidade e o áudio."),
+         {},anchor(encoderOptions_),encoding},
+        {tr("7. Exporte o resultado"),
+         tr("Clique em Adicionar à fila.\n\nDepois, abra Ver fila, confira a pasta de saída e clique em Exportar.\n\nVocê pode pausar ou cancelar o processamento.\n\nO arquivo original é preservado."),
+         {},anchor(exportButton_),processing}
+    };
+    auto* tour=new ProgramTour(this,std::move(steps));tour_=tour;
+    connect(tour,&QDialog::finished,this,[this,tabs,originalTab,inspectorEnabled,welcomeVisible] {
+        if(tabs) tabs->setCurrentIndex(originalTab);
+        inspector_->setEnabled(inspectorEnabled);tour_=nullptr;
+        if(welcomeVisible && inputPath_.isEmpty()) showWelcome();
+    });
+    tour->show();tour->raise();tour->activateWindow();
 }
 bool MainWindow::isProcessing() const
 {
@@ -1359,7 +1458,7 @@ bool MainWindow::trySetInputFile(const QString& path)
         if (prompt.exec() != QDialog::Accepted)
             return false;
     }
-    saveProject();
+    cacheProjectView();saveProject();
     auto options = processingOptions({ });
     options.inputPath = toPath(absolute);
     options.orientation = {};
@@ -1402,8 +1501,20 @@ bool MainWindow::trySetInputFile(const QString& path)
 }
 void MainWindow::saveProject()
 {
-    if (activeProject_ >= 0 && activeProject_ < projects_.size())
-        projects_[activeProject_].options = processingOptions({ });
+    if (activeProject_ >= 0 && activeProject_ < projects_.size()) {
+        auto& project=projects_[activeProject_];
+        project.options = processingOptions({ });
+        project.position=preview_->positionMs();
+        project.zoom=preview_->viewZoom();project.pan=preview_->viewPan();
+        project.timelineView=layers_->timelineView();
+    }
+}
+void MainWindow::cacheProjectView()
+{
+    if(activeProject_<0 || activeProject_>=projects_.size() || preview_->currentFrame().isNull()
+        || (projectTransition_ && projectTransition_->isVisible())) return;
+    preview_->pause();
+    projects_[activeProject_].previewSnapshot=preview_->grab().scaled(1600,1000,Qt::KeepAspectRatio,Qt::SmoothTransformation);
 }
 void MainWindow::activateProject(int index)
 {
@@ -1413,7 +1524,7 @@ void MainWindow::activateProject(int index)
         pageStack_->setCurrentWidget(editorPage_);
         return;
     }
-    saveProject();
+    cacheProjectView();saveProject();
     preview_->pause();
     activeProject_ = index;
     enterDocument();
@@ -1424,6 +1535,9 @@ void MainWindow::activateProject(int index)
     exportButton_->setEnabled(true);
     inputPath_ = projects_[index].path;
     const auto o = projects_[index].options;
+    const auto view=projects_[index];
+    if(!projectTransition_) projectTransition_=new ProjectTransition(preview_);
+    projectTransition_->present(view.previewSnapshot);
     engineCombo_->setCurrentIndex(
         engineCombo_->findData(static_cast<int>(o.upscaleEngine)));
     scaleCombo_->setValue(o.scaleFactor);
@@ -1448,7 +1562,9 @@ void MainWindow::activateProject(int index)
     updateOperationControls();
     pageStack_->setCurrentWidget(editorPage_);
     preview_->setLayerEditing(!isImage(inputPath_));
-    preview_->setMedia(inputPath_);
+    if(preview_->mediaPath()==inputPath_) preview_->seek(view.position);
+    else preview_->setMedia(inputPath_,view.position);
+    preview_->restoreView(view.zoom,view.pan);
     preview_->setTrimRange(o.trimStartSeconds, o.trimEndSeconds);
     preview_->setOrientation(o.orientation);
     preview_->setVideoTimelineStart(o.videoTimelineStartMs);
@@ -1456,9 +1572,12 @@ void MainWindow::activateProject(int index)
     preview_->setPlaybackSpeed(o.playbackSpeed);
     preview_->setAudioLinked(o.audioVideoLinked);
     layers_->setProject(inputPath_, o, !isImage(inputPath_));
+    layers_->restoreTimelineView(view.timelineView);
+    layers_->setPosition(view.position/1000.);
 }
 void MainWindow::startNewProject()
 {
+    if(projectTransition_) projectTransition_->hide();
     saveProject();
     activeProject_ = -1;
     inputPath_.clear();

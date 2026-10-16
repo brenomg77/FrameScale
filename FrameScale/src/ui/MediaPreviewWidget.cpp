@@ -1665,6 +1665,12 @@ void MediaPreviewWidget::setZoom(double value)
     emit viewZoomChanged(value);
 }
 void MediaPreviewWidget::useComparisonZoom() { comparisonZoom_=true; zoomChoice_->setToolTip(QString()); }
+void MediaPreviewWidget::restoreView(double zoom,const QPointF& pan)
+{
+    setViewZoom(zoom);
+    pan_=pan;
+    updateImageSize();
+}
 void MediaPreviewWidget::setViewZoom(double value)
 {
     QSignalBlocker blocker(zoomChoice_);

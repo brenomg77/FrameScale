@@ -23,6 +23,7 @@
 #include <QWheelEvent>
 #include <QShortcut>
 #include <QCache>
+#include <QDateTime>
 #include <QSet>
 #include <memory>
 #include <functional>
@@ -148,11 +149,13 @@ public:
         edited();
     }
     void setPosition(double seconds) { if(seeking_) return; position_ = std::max(0., seconds); updateRange(); }
+    QPointF timelineView() const { return pendingView_ ? savedView_ : QPointF(tracks_->zoomFactor(),tracks_->visibleStart()); }
+    void restoreTimelineView(const QPointF& view) { savedView_=view;pendingView_=true;updateRange(); }
     void setProject(const QString& path, const framescale::ProcessingOptions& options, bool active) {
-        ++generation_; cancelRender(); cancelReaders(); renderTimer_.stop();
+        ++generation_; cancelRender(); cancelReaders(); renderTimer_.stop();sourceVersions_.clear();
         initialized_ = options.layered;
         workStart_=options.trimStartSeconds; workEnd_=options.trimEndSeconds; projectExtent_=1; seeking_=false; drag_=0; active_ = active; pendingImports_ = 0; layers_.clear(); thumbnails_.clear();
-        undo_.clear(); redo_.clear(); selected_ = -1; position_ = 0; tracks_->resetView();
+        undo_.clear(); redo_.clear(); selected_ = -1; position_ = 0; pendingView_=false;tracks_->resetView();
         setVisible(active);
         if (!active) { refresh(); return; }
         if (options.layered) {
@@ -248,6 +251,7 @@ private:
         const double start=workStart_;
         const double end=workEnd_;
         tracks_->setRange(extent(),start,end,position_);
+        if(pendingView_ && initialized_) {tracks_->restoreView(savedView_.x(),savedView_.y());pendingView_=false;}
     }
     void refresh() {
         double fps=25;
@@ -340,7 +344,15 @@ private:
         });
         probe->start(framescale::RuntimePaths().tool("ffprobe"), {"-v","error","-show_streams","-show_format","-of","json",file});
     }
-    QString key(const Layer& layer) const { return framescale::layerPath(layer.path)+(layer.kind==Kind::Audio ? "#audio" : "#video"); }
+    QString key(const Layer& layer) const {
+        const auto path=framescale::layerPath(layer.path);
+        if(!sourceVersions_.contains(path)) {
+            const QFileInfo file(path);
+            sourceVersions_.insert(path,QString("#%1#%2").arg(file.size()).arg(file.lastModified().toMSecsSinceEpoch()));
+        }
+        return path+sourceVersions_.value(path)
+            +(layer.kind==Kind::Audio ? "#audio" : "#video");
+    }
     struct ThumbnailTask { Layer layer; QString id; qint64 frame=-1; };
     void loadThumbnail(const Layer& layer) {
         if(layer.kind==Kind::Video) {
@@ -348,6 +360,7 @@ private:
             return;
         }
         const auto id=key(layer); if(thumbnails_.contains(id)) return;
+        if(const auto* cached=audioFrames_.object(id)) {thumbnails_[id]=*cached;return;}
         thumbnails_[id]={}; thumbnailQueue_.push_back({layer,id,-1}); startThumbnail();
     }
     QString queueVideoThumbnail(const Layer& layer,double seconds) {
@@ -386,7 +399,10 @@ private:
             timeout->stop();
             if(generation==generation_) {
                 const QImage image=code==0 ? QImage::fromData(process->readAllStandardOutput(),"PNG") : QImage();
-                if(task.frame<0) thumbnails_[task.id]=image;
+                if(task.frame<0) {
+                    thumbnails_[task.id]=image;
+                    if(!image.isNull()) audioFrames_.insert(task.id,new QImage(image),std::max(1,int(image.sizeInBytes()/1024)));
+                }
                 else {
                     videoFrames_.insert(task.id,new QImage(image),std::max(1,int(image.sizeInBytes()/1024)));
                     pendingFrames_.remove(task.id);
@@ -405,7 +421,10 @@ private:
         process->start(framescale::RuntimePaths().tool("ffmpeg"),args);
     }
     void cancelReaders() {
-        thumbnailQueue_.clear(); thumbnailRunning_=false; pendingFrames_.clear(); videoFrames_.clear();
+        // Retire readers, but retain the bounded, source-versioned display
+        // caches so switching projects does not erase thumbnails/waveforms.
+        thumbnailQueue_.clear(); thumbnailRunning_=false; pendingFrames_.clear();
+        for(const auto& id:videoFrames_.keys()) if(videoFrames_.object(id)->isNull()) videoFrames_.remove(id);
         for(auto* process:findChildren<QProcess*>(QString(),Qt::FindDirectChildrenOnly)) {
             if(process==render_) continue;
             process->disconnect(this); process->setParent(nullptr);
@@ -644,12 +663,16 @@ private:
     std::vector<Layer> layers_,before_;
     std::vector<ThumbnailTask> thumbnailQueue_;
     QCache<QString,QImage> videoFrames_{16384}; // 16 MiB, independent of clip length.
+    QCache<QString,QImage> audioFrames_{4096};
+    mutable QHash<QString,QString> sourceVersions_;
     QSet<QString> pendingFrames_;
     bool thumbnailRunning_=false;
     std::vector<std::vector<Layer>> undo_,redo_;
     QHash<QString,QImage> thumbnails_;
     int selected_=-1,nextLink_=0,pendingImports_=0,drag_=0;
     bool active_=false, initialized_=false, seeking_=false;
+    bool pendingView_=false;
+    QPointF savedView_{1,0};
     double workStart_=0,workEnd_=0,projectExtent_=1,position_=0,pressX_=0,pressScale_=1,dragExtent_=1;
     quint64 generation_=0;
     QTimer renderTimer_; QProcess* render_=nullptr;

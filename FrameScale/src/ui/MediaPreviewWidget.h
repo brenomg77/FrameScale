@@ -66,6 +66,9 @@ public:
     void setCompact(bool compact);
     void useComparisonZoom();
     void setViewZoom(double value);
+    double viewZoom() const { return zoom_; }
+    QPointF viewPan() const { return pan_; }
+    void restoreView(double zoom,const QPointF& pan);
     void enableFilmstrip(qint64 start=0, qint64 length=0) {
         externalFilmstrip_=true;filmstripStart_=start;filmstripLength_=length;
         if(originalDuration_>0) startFilmstrip();

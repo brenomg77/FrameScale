@@ -84,6 +84,9 @@ public:
     double visibleStart() const { return viewStart_; }
     double visibleDuration() const { return extent() / zoom_; }
     void resetView() { zoom_ = 1.; viewStart_ = 0.; updateView(); }
+    void restoreView(double zoom,double start) {
+        zoom_=std::isfinite(zoom)?zoom:1.;viewStart_=std::isfinite(start)?start:0.;updateView();
+    }
     void setZoom(double value, double anchorPixel = -1.)
     {
         if (drag_ || !std::isfinite(value)) return;

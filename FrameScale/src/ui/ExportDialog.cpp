@@ -203,6 +203,7 @@ ExportDialog::ExportDialog(const QString& inputPath,
     tabRow->addWidget(label(tr("Fila de renderização"), "exportTab", queuePanel));
     tabRow->addStretch();
     statusLabel_ = label({ }, "exportStatus", queuePanel);
+    statusLabel_->hide();
     tabRow->addWidget(statusLabel_);
     queue->addLayout(tabRow);
 

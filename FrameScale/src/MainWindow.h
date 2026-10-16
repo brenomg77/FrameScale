@@ -6,12 +6,15 @@
 #include <QString>
 #include <QTemporaryDir>
 #include <QVector>
+#include <QPointF>
+#include <QPixmap>
 #include <memory>
 
 namespace framescale {
 class ProcessingJob;
 }
 class QAction;
+class ProjectTransition;
 class QParallelAnimationGroup;
 class QCheckBox;
 class QCloseEvent;
@@ -49,6 +52,11 @@ private:
     struct Project {
         QString path;
         framescale::ProcessingOptions options;
+        qint64 position = 0;
+        double zoom = 0;
+        QPointF pan;
+        QPointF timelineView{1,0};
+        QPixmap previewSnapshot;
     };
     QVector<Project> projects_;
     QTabBar* projectTabs_ = nullptr;
@@ -58,6 +66,8 @@ private:
     EncoderOptionsWidget* encoderOptions_ = nullptr;
     EnhancementWidget* enhancement_ = nullptr;
     void saveProject();
+    void cacheProjectView();
+    ProjectTransition* projectTransition_ = nullptr;
     void activateProject(int index);
     void addToQueue();
     void buildInterface();
@@ -72,6 +82,8 @@ private:
     void enterDocument();
     QLabel* emptyDocument_ = nullptr;
     QPointer<QDialog> welcomeDialog_;
+    QPointer<QDialog> tour_;
+    void startTour();
     void startNewProject();
     bool trySetInputFile(const QString& path);
     void pasteMedia();

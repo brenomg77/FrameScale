@@ -117,9 +117,9 @@ protected:
         p.setRenderHint(QPainter::Antialiasing);
         p.setPen(QPen(palette().color(QPalette::ButtonText), 1.4, Qt::SolidLine, Qt::RoundCap));
         // Center on the widget's pixel bounds so the tab close X is not shifted right.
-        const QPointF center((width() - 1) / 2., (height() - 1) / 2.);
-        p.drawLine(center+QPointF(-3.5,-3.5),center+QPointF(3.5,3.5));
-        p.drawLine(center+QPointF(3.5,-3.5),center+QPointF(-3.5,3.5));
+        const QPointF center(width() / 2., height() / 2.);
+        p.drawLine(center+QPointF(-3,-3),center+QPointF(3,3));
+        p.drawLine(center+QPointF(3,-3),center+QPointF(-3,3));
     }
 };
 
@@ -131,11 +131,19 @@ protected:
     void tabLayoutChange() override
     {
         QTabBar::tabLayoutChange();
+        alignCloseButtons();
+    }
+    void paintEvent(QPaintEvent* event) override {
+        // Qt may lay out tab buttons again after tabLayoutChange (selection,
+        // style and scrolling). Align against the visible tab on every paint.
+        alignCloseButtons();QTabBar::paintEvent(event);
+    }
+    void alignCloseButtons() {
         for (int i = 0; i < count(); ++i)
             if (auto* close = tabButton(i, QTabBar::RightSide)) {
-                const QRect tab = tabRect(i);
-                close->move(tab.right() - close->width() - 8,
-                    tab.top() + (tab.height() - close->height()) / 2);
+                const QRect tab = tabRect(i).adjusted(4,2,-4,-2);
+                close->move(tab.right() - close->width() - 3,
+                    qRound(tab.center().y() - (close->height()-1)/2.));
             }
     }
     QSize tabSizeHint(int index) const override

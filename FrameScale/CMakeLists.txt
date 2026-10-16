@@ -19,6 +19,14 @@ find_package(Qt6 6.5 REQUIRED COMPONENTS Widgets Multimedia MultimediaWidgets Ne
 
 qt_standard_project_setup()
 
+qt_add_executable(FrameScaleProgramTourTests EXCLUDE_FROM_ALL
+    tests/program_tour_tests.cpp src/platform/WindowBackdrop.cpp)
+target_include_directories(FrameScaleProgramTourTests PRIVATE src)
+target_link_libraries(FrameScaleProgramTourTests PRIVATE Qt6::Widgets)
+if(WIN32)
+    target_link_libraries(FrameScaleProgramTourTests PRIVATE dwmapi)
+endif()
+
 if(WIN32)
     qt_add_executable(FrameScaleSetup EXCLUDE_FROM_ALL
         packaging/windows/setup/main.cpp packaging/windows/setup/SetupTask.h

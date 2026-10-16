@@ -17,6 +17,22 @@ int main(int argc, char** argv) {
     framescale::ProcessingOptions project;
     project.layered=true; project.layers={video,audio};
     {
+        LayerEditor editor;
+        auto longer=project;
+        for(auto& layer:longer.layers) layer.sourceDuration=layer.out=20;
+        editor.setProject("missing-fixture.mp4",longer,true);
+        editor.restoreTimelineView(QPointF(4,8));
+        const auto first=editor.timelineView();
+        check(std::abs(first.x()-4)<1e-9 && std::abs(first.y()-8)<1e-9,"timeline view was not restored");
+        editor.setProject("other-fixture.mp4",project,true);
+        editor.restoreTimelineView(QPointF(2,.5));
+        check(editor.timelineView()!=first,"projects shared the same timeline viewport");
+        editor.setProject("missing-fixture.mp4",longer,true);
+        editor.restoreTimelineView(first);
+        editor.setPosition(12);
+        check(editor.timelineView()==first,"playhead update reset the restored timeline viewport");
+    }
+    {
         auto direct=project;direct.inputPath=video.path;
         check(framescale::usesOriginalLayerSource(direct),"unedited source still requires composition");
         direct.trimStartSeconds=.5;direct.trimEndSeconds=1;

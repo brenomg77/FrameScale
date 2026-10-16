@@ -1,37 +1,47 @@
 # FrameScale 0.1.0 Alpha 1
 
-Atualizada em 16 de outubro de 2026, mantendo a mesma pr?-release.
+Atualizada em 16 de outubro de 2026, mantendo a mesma pré-release.
+
+## Tour e navegação entre projetos
+
+- Tour de sete etapas, apresentado uma vez na primeira abertura e disponível novamente em Definições → Geral → Tour.
+- Cartões com Liquid Glass, logo de fundo preto e logo escrita; destaques ajustados às áreas visíveis dos controles.
+- Explicações de abertura, copiar/colar arquivos, timeline, corte, melhorias, comparação e exportação. Atalhos acompanham as preferências do usuário.
+- Textos separados por assunto e cartões dimensionados para exibir os parágrafos completos.
+- Cada aba mantém a agulha, o zoom e o deslocamento. A última visualização fica na tela durante o carregamento, com transição curta quando a prévia está pronta.
+- Cache limitado de miniaturas e formas de onda evita reconstruções desnecessárias ao alternar projetos.
+- X das abas centralizados; removido o status duplicado do cabeçalho da fila de exportação.
 
 ## Instalador Windows
 
-- Interface personalizada no tema Liquid Glass Claro, com janela compacta de 480 ? 310.
-- Logo de fundo preto e logo escrita acima das a??es. Cada a??o abre diretamente sua tela.
+- Interface personalizada no tema Liquid Glass Claro, em janela compacta de 480 × 310.
+- Logo de fundo preto e logo escrita acima das ações; cada ação abre diretamente sua tela.
 - Instalar, reparar e desinstalar, com escolha da pasta e atalho opcional.
-- Cantos do vidro ajustados e bot?o de fechar com destaque centralizado.
 - Apenas um setup Windows, mantendo o nome habitual do download.
 
-## Processamento de v?deo
+## Processamento de vídeo
 
-- A prepara??o para IA converte fontes de 10 bits para PNG RGB de 8 bits por canal, compat?vel com os motores, evitando intermedi?rios RGB48 desnecess?rios. O formato de sa?da escolhido, incluindo ProRes de 10 bits, continua respeitado.
-- Concorr?ncia da grava??o dos quadros limitada para reduzir picos de mem?ria.
-- Falta de espa?o tempor?rio gera uma mensagem espec?fica; o erro fica vis?vel na fila e os diagn?sticos s?o guardados em log.
-- Testado um trecho curto de uma fonte 2160 ? 3840 a 120 fps, ampliado com Real-CUGAN para 4320 ? 7680, em ProRes 422 HQ. Isso n?o representa uma valida??o de exporta??es longas em 8K; o fluxo ainda usa sequ?ncias tempor?rias e precisa de espa?o em disco.
+- Preparação para IA com PNG RGB de 8 bits por canal, evitando intermediários RGB48 desnecessários em fontes de 10 bits. O formato de saída selecionado, incluindo ProRes de 10 bits, continua respeitado.
+- Concorrência da gravação dos quadros limitada para reduzir picos de memória.
+- Falta de espaço temporário gera uma mensagem específica; erros permanecem visíveis na fila e são registrados em log.
+- Testado um trecho curto de uma fonte 2160 × 3840 a 120 fps, ampliado com Real-CUGAN para 4320 × 7680 em ProRes 422 HQ. Isso não representa uma validação de exportações longas em 8K; o fluxo ainda usa sequências temporárias e precisa de espaço em disco.
 
-Continuam inclu?das as corre??es anteriores de Preview de 10 bits, timeline, fila de exporta??o e caminhos dos motores no Linux.
+Continuam incluídas as correções anteriores de Preview de 10 bits, timeline e caminhos dos motores no Linux.
 
 ## Downloads
 
 - **Windows x64:** execute `FrameScale-0.1.0-Windows-x64-Setup.exe`.
-- **Linux x86_64:** baixe `FrameScale-0.1.0-Linux-x86_64.AppImage`, marque como execut?vel e execute. Requer glibc 2.39 ou mais recente. [Instru??es para Linux](https://github.com/brenomg77/FrameScale/blob/main/FrameScale/docs/linux-package.md).
+- **Linux x86_64:** baixe `FrameScale-0.1.0-Linux-x86_64.AppImage`, marque como executável e execute. Requer glibc 2.39 ou mais recente. [Instruções para Linux](https://github.com/brenomg77/FrameScale/blob/main/FrameScale/docs/linux-package.md).
 
-Os pacotes incluem Qt, ferramentas de m?dia, motores e modelos. As fun??es de IA precisam de driver Vulkan compat?vel. O AppImage ? experimental; o vidro depende do compositor Linux.
+Os pacotes incluem Qt, ferramentas de mídia, motores e modelos. As funções de IA precisam de driver Vulkan compatível. O AppImage é experimental; o vidro depende do compositor Linux.
 
-## Verifica??es
+## Verificações
 
-- Windows: cliques e navega??o das tr?s a??es do instalador; instala??o, atualiza??o e remo??o silenciosas; integridade dos modelos e bibliotecas; regress?es de processamento.
-- Linux: compila??o e verifica??es pelo GitHub Actions. O pacote ainda precisa de testes em desktops e GPUs Linux reais.
+- Testes de persistência, navegação e saída do tour; dimensões dos parágrafos e destaques; transição e estado dos projetos.
+- Windows: integridade dos modelos e bibliotecas e verificação silenciosa da instalação, atualização e remoção.
+- Linux: compilação e verificações pelo GitHub Actions. O pacote ainda precisa de testes em desktops e GPUs Linux reais.
 - Arquivos `.sha256` acompanham os downloads.
 
-Vers?o alpha, sem atualiza??o autom?tica. Instalador Windows sem assinatura digital. Os arquivos ?Source code? s?o para desenvolvimento.
+Versão alpha, sem atualização automática. Instalador Windows sem assinatura digital. Os arquivos “Source code” são para desenvolvimento.
 
 [Avisos de terceiros](https://github.com/brenomg77/FrameScale/blob/main/FrameScale/THIRD_PARTY_NOTICES.md).
