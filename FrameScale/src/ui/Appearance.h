@@ -320,9 +320,9 @@ QToolTip {background:%2;color:%4;border:1px solid %3;padding:6px;border-radius:6
         .arg(light()?"qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #e3e3e3,stop:1 #d0d0d0)":"qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #303030,stop:1 #262626)",
              light()?"rgba(80,80,80,35)":"rgba(255,255,255,20)");
     style += QString(R"(
-QPushButton#welcomeOpenButton, QPushButton#welcomeUrlButton, QPushButton#welcomeNewButton {font-size:13px;font-weight:500;padding:1px 8px;min-height:18px;border-radius:6px;}
-QPushButton#welcomeNewButton, QPushButton#welcomeOpenButton, QPushButton#welcomeUrlButton {background:transparent;color:%1;border:1px solid %3;}
-QPushButton#welcomeNewButton:hover, QPushButton#welcomeOpenButton:hover, QPushButton#welcomeUrlButton:hover {background:%2;border:1px solid %3;}
+QPushButton#welcomeOpenButton, QPushButton#welcomeUrlButton {font-size:13px;font-weight:500;padding:1px 8px;min-height:18px;border-radius:6px;}
+QPushButton#welcomeOpenButton, QPushButton#welcomeUrlButton {background:transparent;color:%1;border:1px solid %3;}
+QPushButton#welcomeOpenButton:hover, QPushButton#welcomeUrlButton:hover {background:%2;border:1px solid %3;}
 QDialog#urlDownloadDialog QLabel {color:%1;background:transparent;font-size:14px;font-weight:500;}
 QDialog#urlDownloadDialog QLineEdit {font-size:14px;font-weight:500;padding:1px 8px;}
 QDialog#urlDownloadDialog QPushButton {font-size:13px;font-weight:500;padding:1px 8px;min-height:18px;}

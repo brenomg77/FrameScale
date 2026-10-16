@@ -126,7 +126,6 @@ private:
     QSpinBox* reductionFps_ = nullptr;
     QWidget* reductionField_ = nullptr;
     QPushButton* exportButton_ = nullptr;
-    QAction* newAction_ = nullptr;
     QAction* openAction_ = nullptr;
     QPointer<ExportDialog> exportDialog_;
     std::unique_ptr<framescale::ProcessingJob> processingJob_;

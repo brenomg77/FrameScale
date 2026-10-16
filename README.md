@@ -234,6 +234,21 @@ A atualização dentro do programa ainda não está implementada. Consulte a pá
 
 O código da aplicação fica em [`FrameScale/`](FrameScale/). O projeto utiliza **C++17, Qt 6, CMake e Ninja**; a compilação Windows validada usa Qt 6.11.2 e MinGW 13.1.
 
+### Ferramentas e módulos Qt
+
+O ambiente Windows utiliza **Qt Creator**, o kit **Qt 6.11.2 / MinGW 13.1**, **CMake** e **Ninja**. O `moc` gera o suporte de sinais/slots e o `rcc` incorpora os recursos. O deployment do Qt (`windeployqt`, integrado pelo CMake) reúne as bibliotecas e plugins no pacote distribuído.
+
+| Módulo | Uso no FrameScale |
+| --- | --- |
+| Qt Core | Processos externos, preferências, ficheiros, JSON, eventos e tarefas. |
+| Qt Gui | Imagens, ícones, fontes e desenho com QPainter. |
+| Qt Widgets | Janelas, menus, controles, timeline e instalador. |
+| Qt Multimedia | Reprodução de vídeo e áudio. |
+| Qt MultimediaWidgets | Apresentação de vídeo com QVideoWidget. |
+| Qt Network | Pedidos HTTP/HTTPS na abertura por URL. |
+
+A interface é implementada em **C++/Qt Widgets**, com folhas de estilo e desenho personalizado. O pacote também inclui Qt SVG e plugins gráficos. O workflow Linux compila com **Qt 6.8.3**. [Inventário completo das ferramentas Qt](FrameScale/docs/qt-tools.md).
+
 Consulte as [instruções de compilação e testes](FrameScale/README.md) para preparar o ambiente.
 
 <details>

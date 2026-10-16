@@ -8,7 +8,7 @@
 namespace KeyboardBindings {
 struct Command { const char* id; const char* label; const char* keys; int group; };
 inline const Command commands[] = {
-    {"new", "Novo projeto", "Ctrl+N", 0}, {"open", "Abrir ficheiro", "Ctrl+O", 0},
+    {"open", "Abrir ficheiro", "Ctrl+O", 0},
     {"paste", "Colar imagem ou ficheiro", "Ctrl+V", 0}, {"quit", "Sair do programa", "Ctrl+Q", 0},
     {"undo", "Desfazer", "Ctrl+Z", 1}, {"redo", "Refazer", "Ctrl+Shift+Z", 1},
     {"delete", "Excluir camadas selecionadas", "Del", 1},

@@ -353,9 +353,9 @@ QWidget#welcomeRail { background: #1e1e1e; }
 QPushButton#chooseMediaButton {font-size:12px;font-weight:700;border:2px solid transparent;border-radius:15px;padding:0 15px;min-width:0;background:#1473e6;color:white;}
 QPushButton#chooseMediaButton:hover {background:#0d66d0;}
 QPushButton#chooseMediaButton:focus {border-color:#70b6ff;}
-QPushButton#welcomeOpenButton, QPushButton#welcomeNewButton {font-size:12px;font-weight:700;background:transparent;border:2px solid transparent;border-radius:4px;padding:0 10px;min-width:0;}
-QPushButton#welcomeOpenButton:hover, QPushButton#welcomeNewButton:hover {background:#303030;}
-QPushButton#welcomeOpenButton:focus, QPushButton#welcomeNewButton:focus {border-color:#70b6ff;}
+QPushButton#welcomeOpenButton {font-size:12px;font-weight:700;background:transparent;border:2px solid transparent;border-radius:4px;padding:0 10px;min-width:0;}
+QPushButton#welcomeOpenButton:hover {background:#303030;}
+QPushButton#welcomeOpenButton:focus {border-color:#70b6ff;}
 QFrame#railDivider { background: #2c2c2c; border: none; }
 QLabel#welcomeTitle { color: #dfdfdf; font-size: 23px; font-weight: 400; }
 QFrame#mediaDropZone { background: #232323; border: 1px solid transparent; border-radius: 6px; }
@@ -497,10 +497,6 @@ QWidget* MainWindow::buildTitleBar()
     file->setTitle(tr("Arquivo"));
     menus->addMenu(file);
     file->menuAction()->setObjectName("fileMenuAction");
-    newAction_ = file->addAction(tr("Novo"));
-    newAction_->setIcon(ControlSymbols::icon(ControlSymbols::Symbol::Plus));
-    newAction_->setObjectName("newFileAction");
-    connect(KeyboardBindings::bind("new", this), &QShortcut::activated, newAction_, &QAction::trigger);
     openAction_ = file->addAction(tr("Abrir"));
     openAction_->setIcon(ControlSymbols::icon(ControlSymbols::Symbol::Folder));
     connect(KeyboardBindings::bind("open", this), &QShortcut::activated, openAction_, &QAction::trigger);
@@ -517,7 +513,7 @@ QWidget* MainWindow::buildTitleBar()
     menus->addMenu(settings);
     auto* preferences = settings->addAction(tr("Geral"));
     preferences->setIcon(ControlSymbols::icon(ControlSymbols::Symbol::Sliders));
-    for(auto* action:{newAction_,openAction_,download,quit,preferences}) action->setIconVisibleInMenu(true);
+    for(auto* action:{openAction_,download,quit,preferences}) action->setIconVisibleInMenu(true);
     preferences->setObjectName("preferencesAction");
     menus->setFixedWidth(240);
     menus->setContentsMargins(0, 0, 0, 0);
@@ -533,7 +529,6 @@ QWidget* MainWindow::buildTitleBar()
     connect(maximize, &QPushButton::clicked, this,
         [this] { isMaximized() ? showNormal() : showMaximized(); });
     connect(close, &QPushButton::clicked, this, &QWidget::close);
-    connect(newAction_, &QAction::triggered, this, [this] { chooseInputFile(); });
     connect(openAction_, &QAction::triggered, this,
         [this] { chooseInputFile(); });
     connect(quit, &QAction::triggered, this, &QWidget::close);
@@ -573,14 +568,6 @@ QWidget* MainWindow::buildWelcomePage()
     auto* r = new QVBoxLayout(rail);
     r->setContentsMargins(18, 46, 20, 20);
     r->setSpacing(8);
-    auto* create = new QPushButton(tr("Novo ficheiro"), rail);
-    create->setObjectName("welcomeNewButton");
-    create->setProperty("variant", "text");
-    create->setAutoDefault(false);
-    create->setFixedHeight(24);
-    create->setMinimumWidth(0);
-    create->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-    r->addWidget(create, 0, Qt::AlignLeft);
     auto* open = new QPushButton(tr("Abrir"), rail);
     open->setObjectName("welcomeOpenButton");
     open->setProperty("variant", "text");
@@ -667,7 +654,6 @@ QWidget* MainWindow::buildWelcomePage()
     b->addStretch(1);
     scroll->setWidget(body);
     row->addWidget(scroll, 1);
-    connect(create, &QPushButton::clicked, this, [this] { chooseInputFile(); });
     connect(open, &QPushButton::clicked, this, [this] { chooseInputFile(); });
     connect(choose, &QPushButton::clicked, this, [this] { chooseInputFile(); });
     return page;
@@ -1098,10 +1084,6 @@ void MainWindow::showWelcome()
     // Resolve the inherited font and stylesheet before the first native show.
     Appearance::apply(welcomeDialog_);
     welcomeDialog_->ensurePolished();
-    if (auto* button = welcomeDialog_->findChild<QPushButton*>("welcomeNewButton")) {
-        button->ensurePolished();
-        button->setMinimumWidth(qMax(button->minimumSizeHint().width(), button->fontMetrics().horizontalAdvance(button->text()) + 28));
-    }
     welcomeDialog_->layout()->activate();
     welcomeDialog_->resize(qMin(1160, width() - 80), qMin(640, height() - 80));
     welcomeDialog_->move(mapToGlobal(rect().center()) - welcomeDialog_->rect().center());
@@ -1963,7 +1945,6 @@ void MainWindow::processingStopped()
     cancellationPending_ = false;
     preview_->setComparisonAllowed(true);
     inspector_->setEnabled(true);
-    newAction_->setEnabled(true);
     openAction_->setEnabled(true);
     auto* job = processingJob_.get();
     const bool clipboardCopy = clipboardCopyPending_;

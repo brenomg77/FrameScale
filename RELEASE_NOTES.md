@@ -2,6 +2,15 @@
 
 Atualizada em 16 de outubro de 2026, mantendo a mesma pré-release.
 
+## Correções mais recentes
+
+- Removidas as opções Novo/Novo arquivo e o atalho Ctrl+N.
+- Recorte das janelas sincronizado com o Qt para evitar cantos pretos nas atualizações das janelas translúcidas do Windows. A aparência ainda precisa de confirmação no computador que apresentou o problema.
+- Reprodução de vídeos 4K/8K aceita o comando Play durante a preparação; Pausar cancela esse pedido.
+- Prévia temporária limitada a 30 FPS e apresentação acelerada quando aplicável. Exportação e inspeção de fotogramas usam a origem.
+- Testes locais com ProRes 2160×3840 e 4320×7680 a 120 FPS passaram na reprodução, troca de trecho e retorno na timeline. A preparação inicial levou cerca de 16 e 46 segundos, respetivamente; ainda podem existir esperas entre trechos.
+- Documentação das ferramentas e módulos Qt utilizados, incluindo os kits Windows e Linux.
+
 ## Tour e navegação entre projetos
 
 - Tour de sete etapas, apresentado uma vez na primeira abertura e disponível novamente em Definições → Geral → Tour.

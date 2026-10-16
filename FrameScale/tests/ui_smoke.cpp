@@ -689,8 +689,7 @@ int main(int argc, char* argv[])
         "welcome page not shown");
     check(!window.findChild<QWidget*>("recentPanel") && !window.findChild<QWidget*>("versionLabel"),
         "removed content remains");
-    auto* welcomeNew = window.findChild<QPushButton*>("welcomeNewButton");
-    check(welcomeNew->width() >= welcomeNew->fontMetrics().horizontalAdvance(welcomeNew->text()) + 28, "welcome action is clipped on first show");
+    check(!window.findChild<QPushButton*>("welcomeNewButton"), "removed New welcome action remains");
     check(window.findChild<QLabel*>("emptyDocumentTitle")->isVisible(), "empty document title is missing behind welcome");
     check(!window.findChild<QWidget*>("previewViewHeader"), "empty composition header remains");
     capture(&window, "empty-editor.png");
@@ -1094,17 +1093,7 @@ int main(int argc, char* argv[])
         dialog->close();
         QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
     }
-    bool newOpenedPicker = false;
-    QTimer::singleShot(0, &window, [&] {
-        auto* picker = qobject_cast<QFileDialog*>(QApplication::activeModalWidget());
-        newOpenedPicker = picker != nullptr;
-        if (picker)
-            picker->reject();
-    });
-    window.findChild<QAction*>("newFileAction")->trigger();
-    check(newOpenedPicker, "File > New did not open a file picker");
-    check(pages->currentWidget()->objectName() == "editorPage",
-        "cancelling New discarded the editor");
+    check(!window.findChild<QAction*>("newFileAction"), "removed File > New action remains");
     const QString video = qEnvironmentVariable("FRAMESCALE_UI_VIDEO");
     if (!video.isEmpty()) {
         QTimer::singleShot(0, &window, [&] {

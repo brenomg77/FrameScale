@@ -3,6 +3,8 @@
 #include <QWindow>
 #include <QWidget>
 #include <QApplication>
+#include <QPainterPath>
+#include <QRegion>
 #include <cmath>
 
 #ifdef _WIN32
@@ -84,9 +86,18 @@ void syncGlassRegion(QWidget* widget)
     const bool rounded = widget->property("roundedWindowInstalled").toBool()
         && !widget->isMaximized() && !widget->isFullScreen();
     if (!rounded) {
+        if (!widget->mask().isEmpty()) widget->clearMask();
         SetWindowRgn(hwnd, nullptr, TRUE);
         return;
     }
+    // Keep Qt's own window mask in sync too. Qt reapplies its stored region
+    // when updating layered windows; a GDI-only region can otherwise be lost,
+    // exposing the rectangular native blur as black corner wedges on Windows 10.
+    const qreal edgeInset = widget->property("glassEdgeInset").toReal();
+    QPainterPath outline;
+    outline.addRoundedRect(QRectF(widget->rect()).adjusted(edgeInset,edgeInset,-edgeInset,-edgeInset),14,14);
+    const QRegion qtRegion(outline.toFillPolygon().toPolygon());
+    if (widget->mask() != qtRegion) widget->setMask(qtRegion);
     // Accent blur is composed by Windows outside Qt's alpha mask. Bound the
     // native window too, otherwise its rectangular blur leaves bright square
     // tips behind the rounded content (especially at the bottom corners).

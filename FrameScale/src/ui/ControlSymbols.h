@@ -12,7 +12,6 @@ enum class Symbol { None, Expand, Frames, Sparkle, Chip, Layers, Sliders, Noise,
 
 inline Symbol forControl(const QString& name)
 {
-    if (name == "welcomeNewButton") return Symbol::Plus;
     if (name == "welcomeOpenButton") return Symbol::Folder;
     if (name == "welcomeUrlButton") return Symbol::Import;
     if (name == "enableUpscale") return Symbol::Expand;

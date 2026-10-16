@@ -580,6 +580,11 @@ MediaPreviewWidget::MediaPreviewWidget(QWidget* parent)
     });
 
     connect(playButton_, &QPushButton::clicked, this, [this] {
+        if (!player_ && segmented_ && (proxy_ || prefetch_)) {
+            pendingResume_ = !pendingResume_;
+            updatePlaybackControls();
+            return;
+        }
         if (!player_ || fallingBack_ || !mediaLoaded_) {
             return;
         }
@@ -867,6 +872,7 @@ void MediaPreviewWidget::pause()
     if (player_) {
         player_->pause();
     }
+    updatePlaybackControls();
 }
 
 void MediaPreviewWidget::setTrimRange(double startSeconds, double endSeconds)
@@ -1189,7 +1195,7 @@ void MediaPreviewWidget::loadVideo(const QString& playbackPath)
             if (decoder_) {
                 stopDecoder();
             }
-            if (orientation_.isIdentity() && !segmented_ && zoom_ == 0 && pan_.isNull() && !panning_ && playbackRequested_ && player_->playbackState() == QMediaPlayer::PlayingState) {
+            if (orientation_.isIdentity() && zoom_ == 0 && pan_.isNull() && !panning_ && playbackRequested_ && player_->playbackState() == QMediaPlayer::PlayingState) {
                 // The default fit view retains Qt's accelerated video path.
                 videoWidget_->videoSink()->setVideoFrame(frame);
                 updateVideoGeometry();
@@ -1412,6 +1418,7 @@ void MediaPreviewWidget::prepareSegment(qint64 position, bool prefetch)
     (prefetch ? prefetch_ : proxy_) = proxy;
     proxy->setProperty("segmentOffset", offset);
     proxy->setProperty("activateWhenReady", !prefetch);
+    updatePlaybackControls();
     const auto request = generation_;
     connect(proxy, &QProcess::finished, this, [this, proxy, request, temporary, key, activate](int code) {
         if (request != generation_ || (proxy_ != proxy && prefetch_ != proxy)) return;
@@ -1440,7 +1447,11 @@ void MediaPreviewWidget::prepareSegment(qint64 position, bool prefetch)
         }
     });
     QTimer::singleShot(120000, proxy, [proxy] { if (proxy->state() != QProcess::NotRunning) proxy->kill(); });
-    proxy->start(framescale::RuntimePaths().tool("ffmpeg"), { "-v", "error", "-nostdin", "-y", "-threads", "2", "-ss", QString::number(offset / 1000., 'f', 3), "-i", source, "-t", QString::number(segmentLength / 1000.), "-map", "0:v:0", "-map", "0:a:0?", "-filter_threads", "2", "-vf", playbackPreviewFilter() + QStringLiteral(",fps=%1").arg(fps_, 0, 'f', 6), "-c:v", "libx264", "-preset", "ultrafast", "-crf", compact_ ? "18" : "22", "-threads", "2", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "96k", "-movflags", "+faststart", temporary->filePath("preview.mp4") });
+    // Bound display work independently from the original's frame rate. Drop
+    // excess frames before scaling, particularly for 4K/8K ProRes at 120 FPS.
+    // Scrubbing and export still use the source pixels and original frame rate.
+    const QString filter = QStringLiteral("fps=%1,").arg(qMin(fps_,30.),0,'f',6) + playbackPreviewFilter();
+    proxy->start(framescale::RuntimePaths().tool("ffmpeg"), { "-v", "error", "-nostdin", "-y", "-threads", "2", "-ss", QString::number(offset / 1000., 'f', 3), "-i", source, "-t", QString::number(segmentLength / 1000.), "-map", "0:v:0", "-map", "0:a:0?", "-filter_threads", "2", "-vf", filter, "-c:v", "libx264", "-preset", "ultrafast", "-crf", compact_ ? "18" : "22", "-threads", "2", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "96k", "-movflags", "+faststart", temporary->filePath("preview.mp4") });
 }
 
 void MediaPreviewWidget::freezeVideoFrame()
@@ -1724,8 +1735,9 @@ void MediaPreviewWidget::updateImageSize()
 void MediaPreviewWidget::updatePlaybackControls()
 {
     const bool available = player_ && mediaLoaded_ && !fallingBack_;
-    const bool playing = available && player_->playbackState() == QMediaPlayer::PlayingState;
-    playButton_->setEnabled(available);
+    const bool preparing = segmented_ && !player_ && (proxy_ || prefetch_);
+    const bool playing = pendingResume_ || (available && player_->playbackState() == QMediaPlayer::PlayingState);
+    playButton_->setEnabled(available || preparing);
     playButton_->setIcon(playbackIcon(playing));
     playButton_->setToolTip(playing ? tr("Pausar") : tr("Reproduzir"));
     playButton_->setAccessibleName(playButton_->toolTip());
@@ -2028,7 +2040,7 @@ void MediaPreviewWidget::setCompact(bool compact)
     for (auto* shortcut : findChildren<QShortcut*>()) if(shortcut->objectName()=="timelineUndo" || shortcut->objectName()=="timelineRedo") shortcut->setEnabled(!compact);
     spaceShortcut_->setEnabled(!compact);
 }
-bool MediaPreviewWidget::isPlaying() const { return player_ && player_->playbackState() == QMediaPlayer::PlayingState; }
+bool MediaPreviewWidget::isPlaying() const { return pendingResume_ || (player_ && player_->playbackState() == QMediaPlayer::PlayingState); }
 bool MediaPreviewWidget::isPlayable() const { return player_ && mediaLoaded_; }
 void MediaPreviewWidget::play()
 {

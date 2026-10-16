@@ -314,6 +314,17 @@ set_tests_properties(FrameScaleExportQueueSmoke PROPERTIES
 )
 
 # Decoder regression harness: QCoreApplication only; no UI automation.
+qt_add_executable(FrameScalePlaybackCheck EXCLUDE_FROM_ALL
+    tests/playback_check.cpp
+    src/ui/MediaPreviewWidget.cpp src/ui/MediaPreviewWidget.h
+    src/processing/PreviewFrameReader.cpp src/processing/PreviewFrameReader.h
+    src/processing/RuntimePaths.cpp src/platform/WindowBackdrop.cpp)
+target_include_directories(FrameScalePlaybackCheck PRIVATE src)
+target_link_libraries(FrameScalePlaybackCheck PRIVATE Qt6::Widgets Qt6::Multimedia Qt6::MultimediaWidgets)
+if(WIN32)
+    target_link_libraries(FrameScalePlaybackCheck PRIVATE dwmapi)
+endif()
+
 add_executable(FrameScalePreviewDecodeCheck EXCLUDE_FROM_ALL
     tests/preview_decode_check.cpp
     src/processing/PreviewFrameReader.cpp
