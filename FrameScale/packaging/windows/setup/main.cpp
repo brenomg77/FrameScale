@@ -26,6 +26,49 @@
 #include <QWindow>
 
 namespace {
+class SetupProgressBar final : public QProgressBar {
+public:
+    explicit SetupProgressBar(QWidget* parent):QProgressBar(parent) {
+        setProperty("appearanceManaged",true);
+        setAttribute(Qt::WA_StyledBackground,false);
+        setAutoFillBackground(false);
+        setFocusPolicy(Qt::NoFocus);
+        setFixedHeight(7);
+        setTextVisible(false);
+        animation_.setInterval(30);
+        connect(&animation_,&QTimer::timeout,this,[this] {
+            if(isVisible() && minimum()==0 && maximum()==0) {
+                phase_=(phase_+1)%100;
+                update();
+            }
+        });
+        animation_.start();
+    }
+protected:
+    void paintEvent(QPaintEvent*) override {
+        // Paint one complete track and fill. Native progress animations and
+        // style-sheet chunks can leave stale strips in a translucent window.
+        QPainter painter(this);
+        painter.setRenderHint(QPainter::Antialiasing);
+        const QRectF track(rect());
+        QPainterPath outline;
+        outline.addRoundedRect(track,3.5,3.5);
+        painter.setClipPath(outline);
+        painter.fillRect(track,QColor(60,60,60,30));
+        if(minimum()==0 && maximum()==0) {
+            const qreal span=width()*.28;
+            const qreal x=(width()+span)*phase_/100.-span;
+            painter.fillRect(QRectF(x,0,span,height()),QColor("#007aff"));
+        } else if(maximum()>minimum() && value()>minimum()) {
+            const qreal fraction=qBound(0.,double(value()-minimum())/(maximum()-minimum()),1.);
+            painter.fillRect(QRectF(0,0,width()*fraction,height()),QColor("#007aff"));
+        }
+    }
+private:
+    QTimer animation_;
+    int phase_=0;
+};
+
 class CaptionButton final : public QAbstractButton {
 public:
     CaptionButton(bool close,QWidget* parent):QAbstractButton(parent),close_(close) {
@@ -78,8 +121,6 @@ QLineEdit {font-size:13px;}
 QCheckBox {background:transparent;spacing:8px;font-size:13px;}
 QCheckBox::indicator {width:13px;height:13px;border:1px solid rgba(60,60,60,65);border-radius:3px;background:rgba(255,255,255,88);}
 QCheckBox::indicator:checked {background:#007aff;border-color:#1686ff;image:url(:/setup/check.svg);}
-QProgressBar {height:7px;max-height:7px;border:0;border-radius:3px;background:rgba(60,60,60,30);}
-QProgressBar::chunk {background:#007aff;border-radius:3px;}
 QLabel#error {color:#b3262d;font-size:12px;}
 QLabel#info {font-size:12px;color:#55555b;}
 )";
@@ -241,7 +282,7 @@ private:
         auto* box=page();auto* owner=box->parentWidget();box->addStretch();
         progressTitle_=label({},owner,"title");box->addWidget(progressTitle_);
         stage_=label({},owner,"message");stage_->setWordWrap(true);box->addWidget(stage_);box->addSpacing(18);
-        progress_=new QProgressBar(owner);progress_->setTextVisible(false);box->addWidget(progress_);
+        progress_=new SetupProgressBar(owner);box->addWidget(progress_);
         auto* row=new QHBoxLayout;row->addStretch();percent_=label("0%",owner,"muted");row->addWidget(percent_);box->addLayout(row);box->addStretch();
     }
     void buildFinish() {

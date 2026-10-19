@@ -1603,10 +1603,11 @@ void ProcessingJob::runNextStep()
     const bool integrityDecode = step.arguments.contains(QStringLiteral("-xerror"))
         && step.arguments.contains(QStringLiteral("-progress"));
     process_.setProcessChannelMode(integrityDecode ? QProcess::SeparateChannels : QProcess::MergedChannels);
+    diskCheckClock_.start();
+    if (!checkAvailableDiskSpace()) return;
     process_.start();
-    if (!step.progressFramesDirectory.isEmpty()) {
-        frameProgressTimer_.start();
-    }
+    // Encoding writes to the destination even without a PNG progress directory.
+    frameProgressTimer_.start();
 }
 
 void ProcessingJob::handleOutput()
@@ -1894,6 +1895,11 @@ void ProcessingJob::handleProcessFinished(
     }
 
     if (status != QProcess::NormalExit || exitCode != 0) {
+        if (outputBuffer_.toLower().contains("no space left on device")) {
+            fail(tr("Espaço insuficiente para gravar o resultado ou os arquivos temporários. Libere espaço no disco de destino e no disco dos temporários antes de exportar novamente.")
+                + QStringLiteral("\n") + tr("Etapa: %1").arg(steps_[stepIndex_].title));
+            return;
+        }
         if (status == QProcess::NormalExit && retryCurrentVideoEncodeWithAac()) {
             return;
         }
@@ -2024,23 +2030,35 @@ void ProcessingJob::updateCurrentFrameProgress(const qint64 frameCount)
     updateCurrentProgress(static_cast<double>(completed) / total);
 }
 
+bool ProcessingJob::checkAvailableDiskSpace()
+{
+    QStringList directories { QFileInfo(outputTemporaryPath_).absolutePath() };
+    if (temporaryDirectory_) directories << temporaryDirectory_->path();
+    if (compositionDirectory_) directories << compositionDirectory_->path();
+    for (const auto& directory : directories) {
+        QStorageInfo storage(directory);
+        if (storage.isValid() && storage.isReady() && storage.bytesAvailable() >= 0
+            && storage.bytesAvailable() < 512LL * 1024 * 1024) {
+            fail(tr("Espaço insuficiente no disco %1. Restam menos de 512 MB para o resultado e os arquivos temporários. Libere espaço antes de exportar novamente.")
+                .arg(QDir::toNativeSeparators(storage.rootPath())));
+            return false;
+        }
+    }
+    return true;
+}
+
 void ProcessingJob::pollCompletedFrames()
 {
     if (!running_ || cancelling_
         || stepIndex_ < 0 || stepIndex_ >= static_cast<int>(steps_.size())) {
         return;
     }
+    if (diskCheckClock_.elapsed() >= 1000) {
+        diskCheckClock_.restart();
+        if (!checkAvailableDiskSpace()) return;
+    }
     const QString directory = steps_[stepIndex_].progressFramesDirectory;
-    if (directory.isEmpty()) {
-        return;
-    }
-    QStorageInfo storage(directory);
-    if (storage.isValid() && storage.isReady() && storage.bytesAvailable() >= 0
-        && storage.bytesAvailable() < 512LL * 1024 * 1024) {
-        fail(tr("Espaço insuficiente no disco dos arquivos temporários (%1). Libere espaço antes de exportar novamente.")
-            .arg(QDir::toNativeSeparators(storage.rootPath())));
-        return;
-    }
+    if (directory.isEmpty()) return;
     if (frameScan_) {
         if (!frameScan_->complete.load(std::memory_order_acquire)) {
             return;

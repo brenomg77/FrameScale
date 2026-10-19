@@ -4,6 +4,9 @@ Atualizada em 19 de outubro de 2026, mantendo a mesma pré-release.
 
 ## Atualização de 19 de outubro
 
+- Verificação de espaço livre no destino e nos temporários também durante a codificação final. A exportação é interrompida quando o espaço disponível fica abaixo de 512 MB; isso não é uma previsão do espaço total necessário para o trabalho.
+- Falhas do FFmpeg com “No space left on device” passam a apresentar uma mensagem específica de falta de espaço.
+- Barra do instalador desenhada pelo próprio programa para evitar resíduos da animação nativa nas superfícies transparentes.
 - Dimensões e FPS da origem reposicionados junto da prévia, respeitando a área do painel lateral, com fundo discreto para manter o contraste.
 - Balões de ajuda explicam que AnimeVideo v3 é recomendado para vídeos de anime e que Plus Anime é indicado principalmente para imagens e ilustrações, podendo ser usado em vídeo com processamento mais lento.
 - Os balões recomendam comparar um trecho na Preview, pois a qualidade depende da origem; tradução inglesa atualizada.

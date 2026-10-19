@@ -1275,6 +1275,27 @@ int runFakeSuite(const QString& fakeTool)
               QStringLiteral("unrelated encode failure triggered AAC retry"));
     }
 
+    {
+        QTemporaryDir temporary(QStringLiteral("FrameScale-fake-disk-full-XXXXXX"));
+        rootFor(temporary);
+        const QString input = QDir(temporary.path()).filePath(QStringLiteral("entrada.mp4"));
+        const QString output = QDir(temporary.path()).filePath(QStringLiteral("resultado.mp4"));
+        check(writeFile(input), QStringLiteral("could not create disk-full input"));
+        check(writeFile(output), QStringLiteral("could not create existing destination"));
+        const QByteArray previous = [&] { QFile f(output); f.open(QIODevice::ReadOnly); return f.readAll(); }();
+        check(writePlan(temporary.path(), QJsonObject {
+            { QStringLiteral("width"), 16 }, { QStringLiteral("height"), 12 },
+            { QStringLiteral("frames"), 4 }, { QStringLiteral("fps"), 4.0 },
+            { QStringLiteral("diskFull"), true }
+        }), QStringLiteral("could not write disk-full plan"));
+        const ScenarioResult result = runScenario(videoOptions(input, output), temporary.path());
+        check(result.failed == 1 && result.finished == 0
+                && result.error.contains(QString::fromUtf8("Espaço insuficiente")),
+            QStringLiteral("disk-full encoder error was not explained"));
+        QFile preserved(output); preserved.open(QIODevice::ReadOnly);
+        check(preserved.readAll() == previous, QStringLiteral("disk-full failure modified existing destination"));
+    }
+
     for (const auto& engineFault : {
              qMakePair(QStringLiteral("engineFailure"), QStringLiteral("engine failure")),
              qMakePair(QStringLiteral("omitEngineOutput"), QStringLiteral("missing engine output")) }) {

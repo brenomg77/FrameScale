@@ -4,6 +4,7 @@
 #include "processing/RuntimePaths.h"
 
 #include <QObject>
+#include <QElapsedTimer>
 #include <QProcess>
 #include <QSet>
 #include <QStringList>
@@ -108,6 +109,7 @@ private:
     void updateCurrentProgress(double fraction);
     void updateCurrentFrameProgress(qint64 frameCount);
     void pollCompletedFrames();
+    bool checkAvailableDiskSpace();
     void completeVerifiedStep(bool valid, const QString& error);
 
     QString toolPath(const QString& name) const;
@@ -132,6 +134,7 @@ private:
     QProcess process_;
     QTimer cancellationTimer_;
     QTimer frameProgressTimer_;
+    QElapsedTimer diskCheckClock_;
     QTimer verificationTimer_;
     QSet<QString> completedFrameFiles_;
     std::vector<Step> steps_;

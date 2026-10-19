@@ -368,6 +368,10 @@ int runFfmpeg(const QStringList& arguments, const QJsonObject& plan)
             QTextStream(stderr) << "[mp4 @ fake] Could not find tag for codec aac in stream #1\n";
             return 1;
         }
+        if (plan.value(QStringLiteral("diskFull")).toBool()) {
+            QTextStream(stderr) << "Error submitting a packet to the muxer: No space left on device\n";
+            return 28;
+        }
         if (plan.value(QStringLiteral("encodeFailure")).toBool()) {
             QTextStream(stderr) << "synthetic unrelated encoder failure\n";
             return 8;
