@@ -151,6 +151,7 @@ private:
     QWidget* dock_ = nullptr;
     QWidget* zoomBar_ = nullptr;
     QLabel* dimensionsLabel_ = nullptr;
+    QWidget* dimensionsRow_ = nullptr;
     void updateMediaDimensions();
     void setZoom(double value);
     QComboBox* zoomChoice_ = nullptr;

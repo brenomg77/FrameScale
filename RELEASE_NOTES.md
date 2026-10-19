@@ -1,6 +1,12 @@
 # FrameScale 0.1.0 Alpha 1
 
-Atualizada em 16 de outubro de 2026, mantendo a mesma pré-release.
+Atualizada em 19 de outubro de 2026, mantendo a mesma pré-release.
+
+## Atualização de 19 de outubro
+
+- Dimensões e FPS da origem reposicionados junto da prévia, respeitando a área do painel lateral, com fundo discreto para manter o contraste.
+- Balões de ajuda explicam que AnimeVideo v3 é recomendado para vídeos de anime e que Plus Anime é indicado principalmente para imagens e ilustrações, podendo ser usado em vídeo com processamento mais lento.
+- Os balões recomendam comparar um trecho na Preview, pois a qualidade depende da origem; tradução inglesa atualizada.
 
 ## Correções mais recentes
 

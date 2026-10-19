@@ -340,15 +340,22 @@ MediaPreviewWidget::MediaPreviewWidget(QWidget* parent)
     canvasSlot_->setMinimumSize(1,1);
     canvasSlot_->setAttribute(Qt::WA_TransparentForMouseEvents);
     layout->addWidget(canvasSlot_, 1);
-    dimensionsLabel_ = new QLabel(this);
+    dimensionsRow_ = new QWidget(this);
+    dimensionsRow_->setProperty("appearanceManaged", true);
+    dimensionsRow_->setStyleSheet("background:transparent;");
+    auto* dimensionsLayout = new QHBoxLayout(dimensionsRow_);
+    dimensionsLayout->setContentsMargins(8,0,18,0);
+    dimensionsLabel_ = new QLabel(dimensionsRow_);
     dimensionsLabel_->setObjectName("previewDimensions");
     dimensionsLabel_->setProperty("appearanceManaged", true);
     dimensionsLabel_->setAttribute(Qt::WA_TransparentForMouseEvents);
-    dimensionsLabel_->setStyleSheet("QLabel {color:#eeeeee;background:transparent;border:0;padding:3px 18px 3px 8px;font-size:12px;}");
+    dimensionsLabel_->setStyleSheet("QLabel {color:#eeeeee;background:rgba(24,24,24,210);border:0;border-radius:4px;padding:3px 8px;font-size:12px;}");
     dimensionsLabel_->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
     dimensionsLabel_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-    layout->addWidget(dimensionsLabel_, 0, Qt::AlignRight);
-    dimensionsLabel_->hide();
+    dimensionsLayout->addStretch();
+    dimensionsLayout->addWidget(dimensionsLabel_);
+    layout->addWidget(dimensionsRow_);
+    dimensionsRow_->hide();
     stack_->installEventFilter(this);
     connect(stack_, &QStackedWidget::currentChanged, this, [this] { updateMediaDimensions(); });
 
@@ -1479,7 +1486,7 @@ void MediaPreviewWidget::updateMediaDimensions()
 {
     if (!dimensionsLabel_) return;
     const bool visible = sourceSize_.isValid() && !sourceSize_.isEmpty();
-    dimensionsLabel_->setVisible(visible);
+    dimensionsRow_->setVisible(visible);
     if (!visible) return;
     QSize displayed = projectSize_.isValid() ? projectSize_ : sourceSize_;
     if (orientation_.quarterTurns % 2 != 0) displayed.transpose();
@@ -1503,7 +1510,7 @@ void MediaPreviewWidget::updateVideoGeometry()
 void MediaPreviewWidget::setRightOverlayInset(int pixels)
 {
     rightOverlayInset_ = qMax(0, pixels);
-    dimensionsLabel_->setContentsMargins(0,0,rightOverlayInset_,0);
+    dimensionsRow_->layout()->setContentsMargins(8,0,18+rightOverlayInset_,0);
     auto margins = dock_->layout()->contentsMargins();
     margins.setRight(8 + rightOverlayInset_);
     dock_->layout()->setContentsMargins(margins);

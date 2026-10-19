@@ -33,9 +33,9 @@ inline QString upscaleModelHelp(const QString& id)
 {
     const auto tr = [](const char* text) { return QCoreApplication::translate("ModelHelp", text); };
     if (id == "realesr-animevideov3")
-        return helpToolTip("RealESRGAN AnimeVideo v3", tr("Indicado para episódios de anime e animação 2D. É mais leve que Anime x4; confira olhos, cabelo e legendas na preview."));
+        return helpToolTip("RealESRGAN AnimeVideo v3", tr("Recomendado para vídeos de anime e animação 2D. Oferece um bom equilíbrio entre qualidade e velocidade e é mais rápido que Plus Anime.\n\nCompare um trecho na Preview para conferir contornos, olhos e legendas."));
     if (id == "realesrgan-plus-anime-x4")
-        return helpToolTip("RealESRGAN Anime", tr("Restaura contornos de ilustrações e anime. Pode reinterpretar linhas finas e exige mais processamento que AnimeVideo v3."));
+        return helpToolTip("RealESRGAN Plus Anime", tr("Indicado principalmente para imagens, ilustrações e desenhos de anime. Pode recuperar contornos e detalhes, mas também modificar traços finos.\n\nTambém pode ser usado em vídeo, com processamento mais lento que AnimeVideo v3. Compare na Preview: a melhor qualidade depende da origem."));
     if (id == "realesrgan-plus-x4")
         return helpToolTip("RealESRGAN Plus", tr("Indicado para fotografias e filmagens. Reconstrói texturas, mas pode alterar a aparência de pele, grão e detalhes pequenos."));
     if (id == "realcugan-nose")
