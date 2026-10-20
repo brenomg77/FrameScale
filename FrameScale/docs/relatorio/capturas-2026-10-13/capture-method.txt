@@ -1,0 +1,39 @@
+#include <QtWidgets>
+#include "MainWindow.h"
+#include "ui/Typography.h"
+#include "ui/InterfaceTranslator.h"
+#include "ui/Appearance.h"
+#include "ui/LayerEditor.h"
+#include "ui/EncoderOptionsWidget.h"
+#include "ui/ExportDialog.h"
+#include "ui/ComparisonDialog.h"
+static void wait(int ms){QEventLoop l;QTimer::singleShot(ms,&l,&QEventLoop::quit);l.exec();}
+int main(int argc,char**argv){
+ QApplication app(argc,argv);QTemporaryDir settings;
+ QSettings::setDefaultFormat(QSettings::IniFormat);QSettings::setPath(QSettings::IniFormat,QSettings::UserScope,settings.path());
+ app.setOrganizationName("FrameScalePAPCapture");app.setApplicationName("FrameScale");
+ QSettings().setValue("appearance","macos-light");QSettings().setValue("language","pt-PT");
+ InterfaceTranslator::applyLanguage("pt-PT");Typography::apply();
+ QString out=QString::fromLocal8Bit(argv[1]);QDir().mkpath(out);
+ auto snap=[&](QWidget*w,QString name){if(!w)return;wait(400);w->grab().save(out+"/"+name+".png");};
+ MainWindow window;window.show();window.showNormal();window.resize(1440,900);wait(400);
+ if(auto*w=window.findChild<QDialog*>("welcomeDialog")){snap(w,"inicio");w->close();}
+ window.openInputFile(QString::fromLocal8Bit(argv[2]));wait(5000);snap(&window,"editor-camadas");
+ if(auto*w=window.findChild<QCheckBox*>("enableEnhancement"))w->setChecked(true);
+ snap(&window,"ajustes");
+ if(auto*w=window.findChild<QTabWidget*>("inspectorTabs"))w->setCurrentIndex(1);
+ snap(&window,"codificacao");
+ QTimer::singleShot(400,&window,[&]{auto*q=qobject_cast<QDialog*>(QApplication::activeModalWidget());snap(q,"formato");if(q)q->reject();});
+ if(auto*w=window.findChild<QPushButton*>("formatOptionsButton"))w->click();
+ if(auto*w=window.findChild<QPushButton*>("addToQueueButton"))w->click();
+ wait(500);if(auto*w=window.findChild<ExportDialog*>("exportDialog")){snap(w,"fila");w->hide();}
+ QTimer::singleShot(400,&window,[&]{
+  auto*q=qobject_cast<QDialog*>(QApplication::activeModalWidget());if(!q)return;snap(q,"definicoes");
+  for(auto*s:q->findChildren<QStackedWidget*>())if(s->count()==3)s->setCurrentIndex(2);
+  for(auto*b:q->findChildren<QPushButton*>())if(b->isCheckable() && b->objectName()=="shortcutHeading" && b->text().contains("Ficheiros"))b->setChecked(true);
+  snap(q,"atalhos");q->reject();
+ });
+ if(auto*w=window.findChild<QAction*>("preferencesAction"))w->trigger();
+ QSettings().setValue("appearance","macos-dark");Appearance::refresh();snap(&window,"tema-escuro");
+ return 0;
+}

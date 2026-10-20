@@ -1,0 +1,10 @@
+# Revisão das regressões da Preview
+
+- Uma seleção de um frame a 24000/1001 FPS foi preparada em FFV1/AVI e processada com upscale 2×, Clareza 100 e saída sem perdas. FFprobe contou exatamente um frame no resultado, com duração 0,041708 s. Evidência: `build/one-frame-review`. Não foi reproduzida geração de 25 frames no motor. A timeline da comparação, porém, começava com duração padrão de um segundo a 25 FPS enquanto processava; agora recebe o intervalo selecionado e o FPS esperado antes de iniciar o trabalho.
+- Restaurada a suavização no desenho da imagem ampliada. A mudança anterior para vizinho mais próximo realçava os pixels, especialmente em zoom extremo.
+- Retirado o carregamento estático de 8K por padrão. A visualização volta ao limite de 4096 pixels por eixo. O zoom aguarda 120 ms antes de solicitar detalhe, evitando reiniciar a decodificação a cada movimento da roda. O arquivo exportado continua na resolução solicitada. Acima da resolução da cópia de visualização ainda há limite de detalhe; não se promete inspeção nativa de qualquer resolução.
+- Os controles Preview/volume/zoom agora têm superfície própria alinhada à direita, inclusive com timeline de vídeo. A altura da aba do projeto voltou de 36 para 28 pixels.
+- Espaço é reconhecido sobre a imagem/vídeo mesmo quando outro controle estava com foco, para ativar o cursor de arraste.
+- As seis fontes SF Pro em `assets/fonts` foram comparadas por SHA-256 com as correspondentes em Downloads/SF-Pro e são idênticas. A pasta real usa `SF Pro Fonts` e `Payload~/Payload~~`, diferente do caminho digitado. Typography registra Text Regular/Medium/Semibold/Bold e Display Regular/Semibold pelos recursos do aplicativo; o programa não depende dessa pasta externa para funcionar.
+
+Não houve alteração dos pesos ou executáveis de IA nesta revisão. A regressão de custo identificada foi na visualização; isso não demonstra a causa de toda lentidão percebida na exportação. Os testes pequenos de processamento não estimam tempo em vídeos longos ou 8K. Não foram executados testes de interface.
