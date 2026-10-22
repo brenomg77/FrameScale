@@ -96,6 +96,11 @@ public:
         QHash<QString, QString> sources;
         for (auto it = oldDictionary.begin(); it != oldDictionary.end(); ++it)
             sources.insert(it.value().toString(), it.key());
+        // An unchanged label is its own source. Prefer it over another key
+        // with the same translation (e.g. Preview and Prévia -> Preview).
+        for (auto it = oldDictionary.begin(); it != oldDictionary.end(); ++it)
+            if (it.key() == it.value().toString())
+                sources.insert(it.key(), it.key());
         auto text = [&sources, &oldDictionary](const QString& value) {
             if (value.isEmpty())
                 return value;

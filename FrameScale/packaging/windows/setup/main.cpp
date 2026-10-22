@@ -100,6 +100,9 @@ private:
 // window material, blur and rounded alpha outline come from the application.
 const char* setupStyle=R"(
 QWidget#shell, QWidget#header, QWidget#footer, QStackedWidget, QWidget#page {background:transparent;border:0;}
+/* The custom painter owns the surface; suppress the shared progress frame. */
+QProgressBar {background:transparent;border:0;padding:0;}
+QProgressBar::chunk {background:transparent;border:0;}
 QLabel {background:transparent;border:0;color:#292929;}
 QLabel[role="muted"] {color:#72747b;font-size:12px;}
 QLabel[role="title"] {font-size:15px;font-weight:600;}
@@ -180,7 +183,7 @@ public:
         auto* closeButton=new CaptionButton(true,header);title->addWidget(closeButton);
         connect(minimize,&QAbstractButton::clicked,this,&QWidget::showMinimized);connect(closeButton,&QAbstractButton::clicked,this,&QWidget::close);
         root->addWidget(header);
-        pages_=new QStackedWidget(shell_);root->addWidget(pages_,1);
+        pages_=new QStackedWidget(shell_);pages_->setFrameShape(QFrame::NoFrame);root->addWidget(pages_,1);
         buildActions();buildDestination();buildProgress();buildFinish();
         error_=label({},shell_);error_->setObjectName("error");error_->setWordWrap(true);error_->hide();root->addWidget(error_);
         auto* footer=new QWidget(shell_);footer->setObjectName("footer");auto* actions=new QHBoxLayout(footer);actions->setContentsMargins(0,0,0,0);actions->setSpacing(8);

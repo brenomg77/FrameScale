@@ -774,6 +774,10 @@ void EncoderOptionsWidget::refreshPresets(const QString& selected)
     for (auto it = presetFiles_.cbegin(); it != presetFiles_.cend(); ++it)
         presets_->addItem(it.key(), it.value());
     presets_->setCurrentIndex(qMax(0, presets_->findText(selected)));
+    // Signals are blocked while rebuilding the list, so the selection-change
+    // connection cannot update the remove action after save/import/delete.
+    if (auto* remove = findChild<QPushButton*>("removeEncoderPreset"))
+        remove->setEnabled(presets_->currentIndex() > 0);
     presets_->setToolTip(QDir::toNativeSeparators(presetDirectory()));
 }
 void EncoderOptionsWidget::savePreset(const QString& name)

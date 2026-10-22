@@ -604,8 +604,8 @@ int main(int argc, char* argv[])
     frameTimeline.setFrameRate(24);
     frameTimeline.setRange(5, 0, 1, 1);
     check(frameTimeline.selectionFrameCount() == 24, "one second at 24 FPS must contain 24 frames");
-    check(frameTimeline.timecode(1) == "00:01:00" && frameTimeline.timecode(.5) == "00:00:12"
-        && frameTimeline.timecode(61.5) == "01:01:12" && frameTimeline.timecode(3661.5) == "01:01:01:12",
+    check(frameTimeline.timecode(1) == "00:01.00" && frameTimeline.timecode(.5) == "00:00.12"
+        && frameTimeline.timecode(61.5) == "01:01.12" && frameTimeline.timecode(3661.5) == "01:01:01.12",
         "compact timeline timecode mislabels hours, minutes, seconds or frames");
     frameTimeline.setRange(5, 2, 3, 2.5);
     check(frameTimeline.selectionFrameCount() == 24, "offset one-second trim frame count incorrect");
@@ -639,6 +639,9 @@ int main(int argc, char* argv[])
         desktopFixture.setGeometry(QApplication::primaryScreen()->geometry());
         desktopFixture.show();
     }
+    // This suite exercises the normal welcome/editor flow. First-run onboarding
+    // is covered separately by FrameScaleProgramTourTests.
+    QSettings().setValue("onboarding/tourSeen", true);
     MainWindow window;
     if (captureDesktop) window.setWindowFlag(Qt::WindowStaysOnTopHint);
     check(window.findChild<QComboBox*>("encoderPresets")->findText("Legacy preset") > 0, "legacy presets were not migrated");
@@ -685,7 +688,11 @@ int main(int argc, char* argv[])
         "incorrect main menus");
     check(!window.windowIcon().isNull() && !window.findChild<QLabel*>("titleLogo")->pixmap().isNull(),
         "brand icons missing");
-    check(pages->currentWidget()->objectName() == "editorPage" && window.findChild<QDialog*>("welcomeDialog")->isVisible(),
+    auto* welcome = window.findChild<QDialog*>("welcomeDialog");
+    check(welcome != nullptr, "welcome dialog was not created");
+    if (!welcome)
+        return 1;
+    check(pages->currentWidget()->objectName() == "editorPage" && welcome->isVisible(),
         "welcome page not shown");
     check(!window.findChild<QWidget*>("recentPanel") && !window.findChild<QWidget*>("versionLabel"),
         "removed content remains");
@@ -731,7 +738,9 @@ int main(int argc, char* argv[])
     auto* zoomPercent = window.findChild<QComboBox*>("previewZoom");
     check(QRegularExpression("^[0-9]+%$").match(zoomPercent->currentText()).hasMatch(), "fit zoom does not display its current percentage");
     check(!window.findChild<QLabel*>("emptyDocumentTitle")->isVisible(), "empty title was not replaced");
-    check(GlassMaterial::reduced() || !window.property("glassBackdrop").value<QImage>().isNull(), "panel material has no source image");
+    check(waitUntil([&] { return GlassMaterial::reduced()
+        || !window.property("glassBackdrop").value<QImage>().isNull(); }),
+        "panel material has no source image");
     capture(&window, "editor-image.png");
     check(tabs->height() <= 28, "project title bar is oversized");
     auto* compactPreview = window.findChild<QPushButton*>("comparePreviewButton");
@@ -747,7 +756,10 @@ int main(int argc, char* argv[])
         DeleteObject(region);
     }
 #endif
-    check(window.findChild<QPushButton*>("windowCloseButton")->toolTip().isEmpty(),"window close tooltip remains");
+    auto* closeButton = window.findChild<QPushButton*>("windowCloseButton");
+    check(closeButton && !closeButton->accessibleName().isEmpty()
+        && closeButton->toolTip() == closeButton->accessibleName(),
+        "window close button is missing its accessible help");
     check(dynamic_cast<SwitchControl*>(window.findChild<QCheckBox*>("encoderKeepMetadata")),"metadata control is not the shared switch");
     check(!window.findChild<QTabWidget*>("inspectorTabs")->tabBar()->drawBase(),"inspector tab base line remains");
     if (window.property("nativeGlassActive").toBool()) {
@@ -914,7 +926,12 @@ int main(int argc, char* argv[])
         QApplication::sendEvent(canvas, &up);
         check(preview->property("viewPan").toPointF() == QPointF(55, 35), "space drag cannot move fit view freely");
         const auto originalPan = preview->property("viewPan").toPointF();
-        const QPointF anchor(120,90), center(canvas->width()/2.,canvas->height()/2.);
+        const QPointF anchor(120,90);
+        // The image fills the preview surface, but its viewing area excludes
+        // the dock and the inspector overlay. Zoom is anchored in that area.
+        QRect viewArea = preview->layout()->itemAt(0)->widget()->geometry();
+        viewArea.setWidth(viewArea.width() - window.findChild<QWidget*>("inspectorPanel")->width());
+        const QPointF center = QRectF(viewArea).center() - canvas->mapTo(preview, QPoint());
         const double scaleBefore=preview->property("zoomPercent").toDouble();
         QWheelEvent anchoredWheel(anchor,canvas->mapToGlobal(anchor),QPoint(),QPoint(0,120),Qt::NoButton,Qt::NoModifier,Qt::NoScrollPhase,false);
         QApplication::sendEvent(canvas,&anchoredWheel);
@@ -1021,9 +1038,14 @@ int main(int argc, char* argv[])
     for (auto* area : window.findChildren<QScrollArea*>())
         if (area->widget() && area->widget()->isAncestorOf(enhancement))
             area->verticalScrollBar()->setValue(area->verticalScrollBar()->maximum());
-    enhancement->findChild<QToolButton*>("enhancementModel1")->click();
+    auto* enhancementModel1 = enhancement->findChild<QPushButton*>("enhancementModel1");
+    auto* enhancementModel0 = enhancement->findChild<QPushButton*>("enhancementModel0");
+    check(enhancementModel1 && enhancementModel0, "enhancement model buttons are missing");
+    if (!enhancementModel1 || !enhancementModel0)
+        return 1;
+    enhancementModel1->click();
     capture(&window, "enhancement-controls.png");
-    enhancement->findChild<QToolButton*>("enhancementModel0")->click();
+    enhancementModel0->click();
     for (auto* area : window.findChildren<QScrollArea*>())
         if (area->widget() && area->widget()->isAncestorOf(enhancement))
             area->verticalScrollBar()->setValue(0);
@@ -1528,11 +1550,23 @@ int main(int argc, char* argv[])
         check(result.enhancement.enabled && result.enhancement.model == 2 && result.enhancement.denoise == 36 && result.enhancement.sharpen == 24, "preset lost Enhancement");
         check(result.videoCodec == saved.videoCodec && result.encoderPreset == saved.encoderPreset && result.crf == saved.crf && result.pixelFormat == saved.pixelFormat && result.keepAudio == saved.keepAudio,
             "encoder preset settings changed");
+        bool removalConfirmed = false;
         QTimer::singleShot(0, &window, [&] {
-            if (auto* prompt = qobject_cast<QMessageBox*>(QApplication::activeModalWidget()))
-                prompt->button(QMessageBox::Yes)->click();
+            auto* prompt = qobject_cast<QDialog*>(QApplication::activeModalWidget());
+            check(prompt && prompt->objectName() == "removePresetDialog",
+                "preset removal confirmation missing");
+            if (prompt && prompt->objectName() == "removePresetDialog") {
+                auto* buttons = prompt->findChild<QDialogButtonBox*>();
+                for (auto* button : buttons->buttons())
+                    if (buttons->buttonRole(button) == QDialogButtonBox::AcceptRole) {
+                        removalConfirmed = true;
+                        button->click();
+                        break;
+                    }
+            }
         });
         encoder->findChild<QPushButton*>("removeEncoderPreset")->click();
+        check(removalConfirmed, "preset removal action did not confirm deletion");
         check(!restored.loadPreset("Test preset"), "preset removal did not persist");
         const QString portable = fixture.filePath("Portable quality.fspreset");
         bool pickerOpened = false;
