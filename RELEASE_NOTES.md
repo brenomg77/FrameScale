@@ -4,6 +4,9 @@ Atualizada em 22 de outubro de 2026, mantendo a mesma pré-release.
 
 ## Atualização de 22 de outubro
 
+- Instalador Windows com fundo claro estável, sem interferência das cores das janelas por trás.
+- Unificados os estados dos botões, campos e caixas de seleção; removida a camada animada que se sobrepunha ao desenho dos botões.
+- Verificados foco, hover, pressão, navegação entre ações e limpeza da barra de progresso em diferentes escalas de ecrã.
 - Corrigidos os contornos da barra de progresso do instalador.
 - Corrigidas as ações dos presets de codificação.
 - Corrigida a tradução da interface ao alternar entre idiomas.
@@ -39,7 +42,7 @@ Atualizada em 22 de outubro de 2026, mantendo a mesma pré-release.
 
 ## Instalador Windows
 
-- Interface personalizada no tema Liquid Glass Claro, em janela compacta de 480 × 310.
+- Interface personalizada clara, com fundo estável e cantos arredondados, em janela compacta de 480 × 310.
 - Logo de fundo preto e logo escrita acima das ações; cada ação abre diretamente sua tela.
 - Instalar, reparar e desinstalar, com escolha da pasta e atalho opcional.
 - Apenas um setup Windows, mantendo o nome habitual do download.

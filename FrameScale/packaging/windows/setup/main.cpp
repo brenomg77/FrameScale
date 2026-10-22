@@ -9,7 +9,6 @@
 #include <QEnterEvent>
 #include <QDesktopServices>
 #include <QFileDialog>
-#include <QGraphicsDropShadowEffect>
 #include <QHBoxLayout>
 #include <QIcon>
 #include <QLabel>
@@ -96,63 +95,53 @@ protected:
 private:
     bool close_;
 };
-// Only installer layout rules live here. The actual control faces, palette,
-// window material, blur and rounded alpha outline come from the application.
+// The installer owns one complete set of control states. Mixing the shared
+// translucent application theme with another hover painter produced competing
+// borders and colours on layered Windows surfaces.
 const char* setupStyle=R"(
+QWidget {font-size:13px;color:#292929;}
 QWidget#shell, QWidget#header, QWidget#footer, QStackedWidget, QWidget#page {background:transparent;border:0;}
-/* The custom painter owns the surface; suppress the shared progress frame. */
 QProgressBar {background:transparent;border:0;padding:0;}
 QProgressBar::chunk {background:transparent;border:0;}
-QLabel {background:transparent;border:0;color:#292929;}
-QLabel[role="muted"] {color:#72747b;font-size:12px;}
+QLabel {background:transparent;border:0;}
+QLabel[role="muted"] {color:#666973;font-size:12px;}
 QLabel[role="title"] {font-size:15px;font-weight:600;}
 QLabel[role="message"] {font-size:13px;color:#55555b;}
-QLabel#brand {font-size:13px;font-weight:500;}
-QPushButton#close,QPushButton#minimize {border:0;background:transparent;padding:0;border-radius:5px;font-size:16px;}
-QPushButton#close:hover {background:#ff453a;color:white;}
-QPushButton#minimize:hover {background:rgba(0,0,0,24);}
-QPushButton:hover {background:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 rgba(255,255,255,110),stop:0.45 rgba(255,255,255,100),stop:1 rgba(248,249,252,92));border-color:rgba(60,60,60,45);}
-QPushButton[action="true"] {text-align:left;padding:3px 10px;border-radius:8px;font-size:14px;font-weight:500;}
-QPushButton[action="true"]:checked {background:rgba(255,255,255,150);border:1px solid rgba(60,60,60,55);}
-QPushButton[action="true"]:hover {background:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 rgba(255,255,255,96),stop:0.45 rgba(255,255,255,86),stop:1 rgba(248,249,252,80));border-color:rgba(60,60,60,38);}
-QPushButton[action="true"]:checked:hover {background:rgba(255,255,255,150);border-color:rgba(60,60,60,55);}
-QPushButton[action="true"]:focus {border-color:rgba(60,60,60,70);}
-QPushButton[danger="true"] {background:#ff453a;color:white;border-color:#ff453a;}
-QPushButton[danger="true"]:hover {background:#e5332a;border-color:#e5332a;}
-QPushButton:disabled {color:#898989;}
-QLineEdit {font-size:13px;}
-QCheckBox {background:transparent;spacing:8px;font-size:13px;}
-QCheckBox::indicator {width:13px;height:13px;border:1px solid rgba(60,60,60,65);border-radius:3px;background:rgba(255,255,255,88);}
-QCheckBox::indicator:checked {background:#007aff;border-color:#1686ff;image:url(:/setup/check.svg);}
+QPushButton {background:#f8f9fc;color:#292929;border:1px solid #c7c9d0;border-radius:7px;padding:1px 10px;min-height:18px;min-width:0;font-weight:500;}
+QPushButton:hover {background:#eceef3;border-color:#a9adb7;}
+QPushButton:pressed {background:#dde1e9;border-color:#9299a6;}
+QPushButton:focus {border-color:#007aff;}
+QPushButton:disabled {background:#e9ebef;color:#858993;border-color:#d4d7de;}
+QPushButton[action="true"] {text-align:left;padding:3px 10px;font-size:14px;font-weight:500;}
+QPushButton[action="true"]:checked {background:#e5efff;border-color:#90b9ee;}
+QPushButton[action="true"]:checked:hover {background:#d8e8ff;border-color:#6fa4e8;}
+QPushButton[action="true"]:pressed {background:#cbdcf4;border-color:#6296da;}
+QPushButton[variant="primary"] {background:#007aff;border-color:#007aff;color:white;}
+QPushButton[variant="primary"]:hover {background:#0064d2;border-color:#0064d2;}
+QPushButton[variant="primary"]:pressed {background:#0054b0;border-color:#0054b0;}
+QPushButton[variant="primary"]:focus {border-color:#003b80;}
+QPushButton[variant="danger"] {background:#d73532;border-color:#d73532;color:white;}
+QPushButton[variant="danger"]:hover {background:#bd2926;border-color:#bd2926;}
+QPushButton[variant="danger"]:pressed {background:#a3201e;border-color:#a3201e;}
+QPushButton[variant="danger"]:focus {border-color:#701512;}
+QPushButton[variant="primary"]:disabled, QPushButton[variant="danger"]:disabled {background:#d9dde5;border-color:#d0d4dc;color:#737985;}
+QLineEdit {background:#ffffff;color:#292929;border:1px solid #c7c9d0;border-radius:7px;padding:1px 7px;selection-background-color:#007aff;selection-color:white;}
+QLineEdit:hover {border-color:#a9adb7;}
+QLineEdit:focus {border-color:#007aff;}
+QLineEdit:disabled {background:#e9ebef;color:#858993;border-color:#d4d7de;}
+QCheckBox {background:transparent;spacing:8px;}
+QCheckBox::indicator {width:13px;height:13px;border:1px solid #a9adb7;border-radius:3px;background:#ffffff;}
+QCheckBox::indicator:hover {border-color:#007aff;background:#edf4ff;}
+QCheckBox::indicator:checked {background:#007aff;border-color:#007aff;image:url(:/setup/check.svg);}
+QCheckBox::indicator:checked:hover {background:#0064d2;border-color:#0064d2;}
+QCheckBox::indicator:pressed {background:#d8e8ff;border-color:#007aff;}
+QCheckBox::indicator:checked:pressed {background:#0054b0;border-color:#0054b0;}
+QCheckBox::indicator:disabled {background:#e9ebef;border-color:#d4d7de;}
+QCheckBox:focus {color:#0054b0;}
+QCheckBox:disabled {color:#858993;}
 QLabel#error {color:#b3262d;font-size:12px;}
 QLabel#info {font-size:12px;color:#55555b;}
 )";
-class ActionButton final : public QPushButton {
-public:
-    ActionButton(const QString& text,QWidget* parent):QPushButton(text,parent) {
-        hover_.setDuration(140);hover_.setEasingCurve(QEasingCurve::OutCubic);
-        connect(&hover_,&QVariantAnimation::valueChanged,this,[this](const QVariant& value){shade_=value.toReal();update();});
-    }
-protected:
-    void enterEvent(QEnterEvent* event) override {fade(1);QPushButton::enterEvent(event);}
-    void leaveEvent(QEvent* event) override {fade(0);QPushButton::leaveEvent(event);}
-    void paintEvent(QPaintEvent* event) override {
-        QPushButton::paintEvent(event);
-        if(!isEnabled() || shade_<=0) return;
-        QPainter painter(this);painter.setRenderHint(QPainter::Antialiasing);
-        // A gentle wash over the existing material, without a drop shadow or
-        // an abrupt change in the selected row's background.
-        painter.setPen(Qt::NoPen);painter.setBrush(QColor(0,0,0,qRound(8*shade_)));
-        painter.drawRoundedRect(QRectF(rect()).adjusted(1,1,-1,-1),7,7);
-    }
-private:
-    void fade(qreal target) {
-        hover_.stop();
-        if(Appearance::reduceMotion()) {shade_=target;update();return;}
-        hover_.setStartValue(shade_);hover_.setEndValue(target);hover_.start();
-    }
-    QVariantAnimation hover_;qreal shade_=0;
-};
 class SetupPanel final : public QFrame {
 public:
     explicit SetupPanel(QWidget* parent):QFrame(parent) {
@@ -161,8 +150,10 @@ public:
 protected:
     void paintEvent(QPaintEvent*) override {
         QPainter painter(this);
-        // Same inner panel material used by the app's light dialogs.
-        GlassMaterial::paint(painter,rect(),{},true,88,12,true);
+        painter.setRenderHint(QPainter::Antialiasing);
+        painter.setPen(QPen(QColor("#d5d8e0"),1));
+        painter.setBrush(QColor("#eef0f5"));
+        painter.drawRoundedRect(QRectF(rect()).adjusted(.5,.5,-.5,-.5),12,12);
     }
 };
 
@@ -201,8 +192,11 @@ public:
         };
         setProperty("glassEdgeInset",2);
         installRoundedWindow(this);
-        Appearance::apply(this);
-        setStyleSheet(styleSheet()+QString::fromUtf8(setupStyle));
+        // Retain rounded alpha corners, but paint an opaque interior so desktop
+        // colours and native blur cannot bleed through the controls.
+        setProperty("appearanceManaged",true);
+        framescale::window_backdrop::configureGlassWindow(this,false,false);
+        setStyleSheet(QString::fromUtf8(setupStyle));
         if(uninstall) {action_=2;showPage(1);} else showPage(0);
     }
 protected:
@@ -218,11 +212,11 @@ protected:
         else event->accept();
     }
     void paintEvent(QPaintEvent*) override {
-        // The shared rounded effect paints the translucent window material.
-        // Supply its opaque light fallback when accessibility disables glass.
-        if(!property("glassWindowSurface").toBool()) {
-            QPainter painter(this);painter.fillRect(rect(),QColor("#fafafa"));
-        }
+        QPainter painter(this);
+        QLinearGradient surface(rect().topLeft(),rect().bottomLeft());
+        surface.setColorAt(0,QColor("#fafbfe"));
+        surface.setColorAt(1,QColor("#edf0f6"));
+        painter.fillRect(rect(),surface);
     }
 private:
     static QLabel* label(const QString& text,QWidget* parent,const char* role=nullptr) {
@@ -254,7 +248,7 @@ private:
         auto* group=new QButtonGroup(owner);group->setExclusive(true);
         const QStringList names={QString::fromUtf8("Instalar FrameScale"),QString::fromUtf8("Reparar instalação"),QString::fromUtf8("Desinstalar FrameScale")};
         for(int i=0;i<3;++i) {
-            auto* button=new ActionButton(names[i],panel);button->setProperty("action",true);button->setCheckable(true);button->setFixedHeight(28);button->setCursor(Qt::PointingHandCursor);
+            auto* button=new QPushButton(names[i],panel);button->setProperty("action",true);button->setCheckable(true);button->setFixedHeight(28);button->setCursor(Qt::PointingHandCursor);
             const ControlSymbols::Symbol symbols[]={ControlSymbols::Symbol::Import,ControlSymbols::Symbol::Reset,ControlSymbols::Symbol::Trash};
             button->setIcon(ControlSymbols::icon(symbols[i]));button->setIconSize(QSize(19,15));
             group->addButton(button,i);rows->addWidget(button);
@@ -298,8 +292,8 @@ private:
     void showPage(int index) {
         error_->hide();info_->show();pages_->setCurrentIndex(index);back_->setVisible(index==1 && !backend_.isEmpty());
         next_->setEnabled(index!=2);next_->setVisible(index!=2 && index!=0);
-        next_->setProperty("danger",index==1 && action_==2);next_->setProperty("variant",index==1 && action_==2?"danger":"primary");
-        next_->style()->unpolish(next_);next_->style()->polish(next_);
+        next_->setProperty("variant",index==1 && action_==2?"danger":"primary");
+        next_->style()->unpolish(next_);next_->style()->polish(next_);next_->update();
         if(index==0) next_->setText("Continuar");
         if(index==1) {
             const bool remove=action_==2,repair=action_==1;

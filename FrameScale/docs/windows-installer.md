@@ -2,11 +2,12 @@
 
 A interface de instalação é uma aplicação Qt Widgets própria, em
 `packaging/windows/setup`, com janela de **480 × 310 pixels lógicos**.
-Usa diretamente `Appearance`, `GlassMaterial`, `RoundedWindow` e
-`Typography` da aplicação, fixados no tema Liquid Glass Claro. A paleta,
-o material translúcido, o desfoque nativo, os contornos e os controlos
-são partilhados com o programa. As preferências do instalador ficam numa
-chave própria e não mudam o tema guardado do FrameScale.
+Mantém a aparência clara, a tipografia e os cantos arredondados do FrameScale.
+O interior da janela é opaco e os controlos usam uma folha de estilos própria,
+com estados completos de foco, hover, pressão e desativação. Isso evita a
+interferência das cores das janelas por trás e a sobreposição de contornos e
+animações do tema geral. As preferências do instalador ficam numa chave própria
+e não mudam o tema guardado do FrameScale.
 A primeira tela apresenta apenas as ações, sem cabeçalhos promocionais
 ou rótulos de etapa. Os textos de instalação são diretos e sem referências a IA. A janela pode ser movida pelo cabeçalho e minimizada.
 O tamanho físico acompanha o DPI do Windows. Os textos atuais são em português.
@@ -59,6 +60,9 @@ Use o caminho real do payload que o build reteve. A verificação instala numa p
 
 A execução local de 05/10/2026 e o hash do setup estão documentados no [fecho das correções](correcoes-finais-2026-10-05.md). O teste local com PATH restrito ao Windows não substitui um ensaio numa máquina limpa nem no computador onde será feita a defesa da PAP.
 
-O realce das ações usa uma transição de 140 ms com uma camada neutra de
-baixa opacidade, preservando o fundo da seleção. Não acrescenta sombra
-externa. A opção de reduzir movimento desativa a animação.
+As ações são desenhadas uma única vez pelo estilo Qt, sem uma segunda camada
+animada sobre os botões. A largura dos contornos mantém-se nos diferentes estados.
+O teste `FrameScaleSetupActionsTests` verifica a navegação entre as três ações,
+as cores dos botões, a estabilidade da geometria e a limpeza do progresso após
+repaint parcial. A variável `FRAMESCALE_SETUP_CAPTURES` permite guardar capturas
+destes estados numa pasta de validação.
