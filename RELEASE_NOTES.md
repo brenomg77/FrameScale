@@ -1,6 +1,13 @@
 # FrameScale 0.1.0 Alpha 1
 
-Atualizada em 19 de outubro de 2026, mantendo a mesma pré-release.
+Atualizada em 22 de outubro de 2026, mantendo a mesma pré-release.
+
+## Atualização de 22 de outubro
+
+- Corrigidos os contornos da barra de progresso do instalador.
+- Corrigidas as ações dos presets de codificação.
+- Corrigida a tradução da interface ao alternar entre idiomas.
+- Recuperada documentação técnica da PAP e organizados os recursos gráficos e os scripts de desenvolvimento.
 
 ## Atualização de 19 de outubro
 
