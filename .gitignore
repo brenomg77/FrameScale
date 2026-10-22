@@ -21,3 +21,7 @@ Thumbs.db
 .DS_Store
 /tmp/
 /output/
+# Added by code-review-graph
+.code-review-graph/
+
+/.tools/
