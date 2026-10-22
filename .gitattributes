@@ -1,0 +1,2 @@
+# Bundled third-party Anime4K shaders are dependencies, not FrameScale source.
+FrameScale/models/libplacebo/*.glsl linguist-vendored
