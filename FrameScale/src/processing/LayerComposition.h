@@ -1,5 +1,6 @@
 #pragma once
 #include "core/ProcessingOptions.h"
+#include "TextLayerRenderer.h"
 #include <QStringList>
 #include <QFileInfo>
 #include <cmath>
@@ -13,8 +14,8 @@ inline bool usesOriginalLayerSource(const ProcessingOptions& options) {
     for (const auto& layer:options.layers) {
         if (layer.path!=options.inputPath || !layer.enabled || layer.start!=0 || layer.in!=0
             || layer.out!=layer.sourceDuration || layer.sourceDuration<=0 || layer.speed!=1
-            || layer.audioTimeScale!=1) return false;
-        if(layer.kind==LayerKind::Video) ++video; else ++audio;
+            || layer.audioTimeScale!=1 || !layer.transform.isIdentity()) return false;
+        if(layer.kind==LayerKind::Video) ++video; else if(layer.kind==LayerKind::Audio) ++audio; else return false;
     }
     return video==1 && audio<=1;
 }
@@ -44,12 +45,16 @@ inline LayerComposition composeLayers(const std::vector<MediaLayer>& sourceLayer
     LayerComposition plan;
     if (layers.empty()) { plan.error = QObject::tr("Adicione uma camada ao projeto."); return plan; }
     for (const auto& layer : layers) {
-        if (!QFileInfo::exists(layerPath(layer.path)) || !std::isfinite(layer.speed)
+        if ((layer.kind!=LayerKind::Audio && !layerTransform(layer).valid()) || (layer.kind!=LayerKind::Text && !QFileInfo::exists(layerPath(layer.path))) || !std::isfinite(layer.speed)
             || layer.speed < .25 || layer.speed > 4 || !std::isfinite(layer.start)
             || layer.start < 0 || !std::isfinite(layer.in) || !std::isfinite(layer.out)
             || layer.in < 0 || layer.out <= layer.in || layer.out > layer.sourceDuration + .001) {
             plan.error = QObject::tr("Uma camada contém um ficheiro ou intervalo inválido."); return plan;
         }
+    }
+    // Keep the canvas dimensions if the last video is removed but text remains.
+    for(const auto& layer:layers) if(layer.kind==LayerKind::Text && layer.width>0 && layer.height>0) {
+        plan.width=layer.width;plan.height=layer.height;plan.fps=std::clamp(layer.sourceFps,1.,240.);break;
     }
     for (const auto& layer : layers) if (layer.kind == LayerKind::Video) {
         plan.width = std::max(2, layer.width); plan.height = std::max(2, layer.height);
@@ -80,10 +85,20 @@ inline LayerComposition composeLayers(const std::vector<MediaLayer>& sourceLayer
     plan.duration = frames / plan.fps;
     auto number = [](double value) { return QString::number(value, 'f', 12); };
     QStringList args {"-v", "error", "-nostdin", "-y", "-filter_complex_threads", "2"};
-    for (const auto& layer : layers) {
+    for (int i=0;i<int(layers.size());++i) {
+        const auto& layer=layers[i];
         args << "-threads" << "1";
-        if(ranged) args << "-ss" << number(layer.in);
-        args << "-i" << layerPath(layer.path);
+        if(layer.kind==LayerKind::Text) {
+            const QString raster=output+QString(".text-%1.png").arg(i);
+            if(!renderTextLayer(layer.text,plan.width,plan.height).save(raster)) {
+                plan.error=QObject::tr("Não foi possível desenhar a camada de texto."); return plan;
+            }
+            args << "-loop" << "1" << "-framerate" << number(plan.fps)
+                 << "-t" << number(plan.duration) << "-i" << raster;
+        } else {
+            if(ranged) args << "-ss" << number(layer.in);
+            args << "-i" << layerPath(layer.path);
+        }
     }
     QStringList graph;
     graph << QString("color=c=black:s=%1x%2:r=%3:d=%4,format=yuv444p[base]")
@@ -92,19 +107,33 @@ inline LayerComposition composeLayers(const std::vector<MediaLayer>& sourceLayer
     // Rows are ordered front to back, matching a conventional layer stack.
     for (int i = int(layers.size()) - 1; i >= 0; --i) {
         const auto& layer = layers[i];
-        if (layer.kind != LayerKind::Video || !layer.enabled) continue;
+        if (layer.kind == LayerKind::Audio || !layer.enabled) continue;
+        if(layer.kind==LayerKind::Text) {
+            const QString next=QString("textmix%1").arg(i);
+            graph << QString("[%1:v:0]format=rgba,setpts=PTS-STARTPTS[text%1]").arg(i);
+            graph << QString("[%1][text%2]overlay=0:0:eof_action=pass:repeatlast=0:format=yuv444:enable='gte(t,%3)*lt(t,%4)'[%5]")
+                .arg(current).arg(i).arg(number(layer.start),number(layer.start+layer.duration()),next);
+            current=next;
+            continue;
+        }
+        const auto t=layer.transform;
+        QString spatial;
+        if(!t.isIdentity()) {
+            spatial=QString("scale=w='max(2,round(iw*%1))':h='max(2,round(ih*%2))',rotate=%3*PI/180:ow=rotw(%3*PI/180):oh=roth(%3*PI/180):c=none,colorchannelmixer=aa=%4,")
+                .arg(number(t.scaleX/100.),number(t.scaleY/100.),number(t.rotation),number(t.opacity/100.));
+        }
         // Some containers start audio at zero but the first video packet later.
         // Trim relative to the visible video, otherwise a one-frame range can
         // discard every picture and leave only the black composition base.
         graph << QString("[%1:v:0]setpts=PTS-STARTPTS,trim=start=%2:end=%3,setpts=(PTS-STARTPTS)/%4,"
             "scale=%5:%6:force_original_aspect_ratio=decrease,setsar=1,format=yuva444p,"
-            "tpad=stop_mode=clone:stop_duration=1,trim=duration=%7,setpts=PTS+%8/TB[v%1]")
+            "%9tpad=stop_mode=clone:stop_duration=1,trim=duration=%7,setpts=PTS+%8/TB[v%1]")
             .arg(i).arg(number(ranged?0:layer.in), number(ranged?layer.out-layer.in:layer.out), number(layer.speed))
-            .arg(plan.width).arg(plan.height).arg(number(layer.duration()), number(layer.start));
+            .arg(plan.width).arg(plan.height).arg(number(layer.duration()), number(layer.start),spatial);
         const QString next = QString("mix%1").arg(i);
-        graph << QString("[%1][v%2]overlay=x=(W-w)/2:y=(H-h)/2:eof_action=pass:repeatlast=0:"
+        graph << QString("[%1][v%2]overlay=x=W*%6-w/2:y=H*%7-h/2:eof_action=pass:repeatlast=0:"
             "format=yuv444:enable='gte(t,%3)*lt(t,%4)'[%5]")
-            .arg(current).arg(i).arg(number(layer.start), number(layer.start + layer.duration()), next);
+            .arg(current).arg(i).arg(number(layer.start), number(layer.start + layer.duration()), next,number(t.x/100.),number(t.y/100.));
         current = next;
     }
     graph << QString("[%1]fps=%2,tpad=stop_mode=clone:stop=-1,trim=end_frame=%3,setpts=N/(%2*TB)[video]")

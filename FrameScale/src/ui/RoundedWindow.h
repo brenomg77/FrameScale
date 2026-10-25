@@ -90,6 +90,10 @@ protected:
         mask.translate(-offset);
         if (window_->property("glassWindowSurface").toBool() && !GlassMaterial::reduced()) {
             const bool light=QSettings().value("appearance", "macos-light").toString()!="macos-dark";
+            if(window_->property("cachedGlassSurface").toBool()) {
+                const auto backdrop=window_->property("glassBackdrop").value<QImage>();
+                if(!backdrop.isNull()) mask.drawImage(window_->rect(),backdrop);
+            }
             GlassMaterial::paintWindowSurface(mask,window_->rect(),light);
         } else {
             // A solid base also covers areas whose child styles are transparent
@@ -100,7 +104,12 @@ protected:
             window_->style()->drawPrimitive(QStyle::PE_Widget,&background,&mask,window_);
         }
         mask.restore();
-        mask.drawPixmap(QPoint(),source);
+        // QWidget's masked source starts at the mask's bounding origin, even
+        // though sourcePixmap reports offset (0,0). Restore that origin before
+        // composing: otherwise child faces move up/left while native hover and
+        // hit rectangles retain their original coordinates (inset tool windows).
+        const QPoint maskOrigin=window_->mask().isEmpty()?QPoint():window_->mask().boundingRect().topLeft();
+        mask.drawPixmap(offset.isNull()?maskOrigin:QPoint(),source);
         mask.setCompositionMode(QPainter::CompositionMode_DestinationIn);
         if(alpha_.size()!=pixmap.size() || alpha_.devicePixelRatio()!=pixmap.devicePixelRatio() || offset_!=offset || rounded_!=rounded) {
             alpha_=QImage(pixmap.size(),QImage::Format_ARGB32_Premultiplied);
@@ -160,11 +169,12 @@ class DialogTitle final : public QWidget, public QAbstractNativeEventFilter {
 public:
     explicit DialogTitle(QDialog* dialog):QWidget(dialog) {
         setObjectName("dialogTitleBar");
-        setFixedHeight(30);
+        setFixedHeight(dialog->property("dialogTitleHeight").isValid()?dialog->property("dialogTitleHeight").toInt():30);
         auto* row=new QHBoxLayout(this);row->setContentsMargins(6,0,2,0);
+        auto* header=dialog->property("dialogTitleWidget").value<QWidget*>();
         auto* title=new QLabel(dialog->windowTitle(),this);
         title->setAttribute(Qt::WA_TransparentForMouseEvents);
-        title->setStyleSheet("background:transparent;font-weight:500;");row->addWidget(title,1);
+        title->setStyleSheet("background:transparent;font-weight:500;");if(header) {title->hide();row->addWidget(header);row->addStretch();} else row->addWidget(title,1);
         auto* close=new DialogCloseButton(this);
         close->setAutoDefault(false);
         close->setAccessibleName(tr("Fechar"));close->setFixedSize(26,26);
@@ -193,7 +203,8 @@ protected:
         const QRect caption(0, 0, window()->width(), mapTo(window(), QPoint(0, height())).y());
         if (!caption.contains(inWindow)) return false;
         QWidget* child = childAt(local);
-        if (child && qobject_cast<QAbstractButton*>(child)) return false;
+        for(auto* item=child;item && item!=this;item=item->parentWidget())
+            if(qobject_cast<QAbstractButton*>(item) || item->property("captionInteractive").toBool()) return false;
         // Welcome uses client dragging: native caption dragging enables Aero
         // Shake, which can minimize background windows during rapid movement.
         *result = window()->property("clientCaptionDrag").toBool() ? HTCLIENT : HTCAPTION;

@@ -3,6 +3,7 @@
 #include "core/ModelCatalog.h"
 
 #include <filesystem>
+#include <cmath>
 #include <string>
 #include <utility>
 #include <vector>
@@ -38,7 +39,24 @@ struct VideoOrientation {
 };
 std::string orientationFilter(const VideoOrientation& orientation);
 
-enum class LayerKind { Video, Audio };
+enum class LayerKind { Video, Audio, Text };
+struct LayerTransform {
+    double x=50, y=50, scaleX=100, scaleY=100, rotation=0, opacity=100;
+    bool operator==(const LayerTransform& r) const {return x==r.x && y==r.y && scaleX==r.scaleX && scaleY==r.scaleY && rotation==r.rotation && opacity==r.opacity;}
+    bool isIdentity() const {return *this==LayerTransform{};}
+    bool valid() const {return std::isfinite(x) && std::isfinite(y) && std::isfinite(rotation) && std::isfinite(scaleX) && std::isfinite(scaleY) && std::isfinite(opacity)
+        && x>=-1000 && x<=1000 && y>=-1000 && y<=1000 && scaleX>=1 && scaleX<=500 && scaleY>=1 && scaleY<=500 && rotation>=-36000 && rotation<=36000 && opacity>=0 && opacity<=100; }
+};
+struct TextLayerOptions {
+    std::string content = "Texto", fontFamily = "Inter", fontStyle = "Regular";
+    double fontSize = 72, lineHeight = 0, letterSpacing = 0;
+    double x = 50, y = 50, horizontalScale = 100, verticalScale = 100;
+    int alignment = 1; // Left, centre, right; position anchors the text block.
+    bool fill = true, stroke = false, underline = false;
+    std::string fillColor = "#ffffffff", strokeColor = "#ff000000";
+    double strokeWidth = 2;
+    double rotation = 0, opacity = 100;
+};
 struct MediaLayer {
     std::filesystem::path path;
     LayerKind kind = LayerKind::Video;
@@ -48,9 +66,19 @@ struct MediaLayer {
     double start = 0, in = 0, out = 0, speed = 1;
     int link = 0;
     bool enabled = true;
+    TextLayerOptions text;
+    LayerTransform transform;
     double duration() const { return (out - in) / speed; }
 };
 
+inline LayerTransform layerTransform(const MediaLayer& l) {
+    if(l.kind==LayerKind::Text) return {l.text.x,l.text.y,l.text.horizontalScale,l.text.verticalScale,l.text.rotation,l.text.opacity};
+    return l.transform;
+}
+inline void setLayerTransform(MediaLayer& l,const LayerTransform& t) {
+    if(l.kind==LayerKind::Text) {l.text.x=t.x;l.text.y=t.y;l.text.horizontalScale=t.scaleX;l.text.verticalScale=t.scaleY;l.text.rotation=t.rotation;l.text.opacity=t.opacity;}
+    else l.transform=t;
+}
 struct ProcessingOptions {
     bool layered = false;
     std::vector<MediaLayer> layers;

@@ -38,23 +38,27 @@ public:
         const QString ink = Appearance::light() ? "#252329" : "#f2f1f5";
         QString style = QString(R"(
 QMenu#selectionPopup {background:transparent;border:0;padding:14px;color:%1;font-size:14px;font-weight:500;font-family:"%2";}
-QMenu#selectionPopup::item {background:transparent;border:0;border-radius:7px;padding:4px 14px 4px 34px;min-height:20px;}
+QMenu#selectionPopup::item {background:transparent;border:0;border-radius:7px;padding:4px 10px 4px 8px;min-height:20px;}
 QMenu#selectionPopup::item:checked {background:#007aff;color:white;}
 QMenu#selectionPopup::item:selected {background:#0064d2;color:white;}
 QMenu#selectionPopup::item:disabled {color:#96939e;}
-QMenu#selectionPopup::icon {width:18px;height:18px;left:10px;}
+QMenu#selectionPopup::icon {width:16px;height:16px;left:4px;}
 QMenu#selectionPopup::indicator {width:0px;height:0px;}
 QMenu#selectionPopup::separator {height:1px;background:rgba(128,128,140,55);margin:5px 12px;}
 )").arg(ink, parentWidget()->font().family());
         const bool compactMenuBar = qobject_cast<QMenuBar*>(parentWidget()) != nullptr;
         if (compactMenuBar)
-            style += "QMenu#selectionPopup {padding:11px 12px 14px;} QMenu#selectionPopup::item {padding:4px 10px 4px 32px;min-height:18px;min-width:0;}";
+            style += "QMenu#selectionPopup {padding:11px 12px 14px;} QMenu#selectionPopup::item {padding:4px 10px 4px 8px;min-height:18px;min-width:0;}";
+        bool hasSubmenus=false;
+        for(auto* action:actions()) if(action->menu()) {hasSubmenus=true;break;}
+        if(hasSubmenus)
+            style += "QMenu#selectionPopup::item {padding-right:28px;} QMenu#selectionPopup::right-arrow {width:8px;height:8px;right:8px;}";
         setStyleSheet(style);
         if (compactMenuBar) {
             int textWidth = 0;
             for (auto* action : actions())
                 if (!action->isSeparator()) textWidth = qMax(textWidth, fontMetrics().horizontalAdvance(action->text().remove('&')));
-            setFixedWidth(textWidth + 70);
+            setFixedWidth(textWidth + (hasSubmenus?70:52));
         }
     }
     std::function<void(quint64)> outsidePress;

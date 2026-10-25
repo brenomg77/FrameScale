@@ -1,4 +1,5 @@
 #include "ui/LayerEditor.h"
+#include "ui/TextLayerOverlay.h"
 #include <QApplication>
 #include <QTemporaryDir>
 #include <QEventLoop>
@@ -192,6 +193,26 @@ int main(int argc, char** argv) {
         check(editor.layers().size()==2 && editor.layers()[0].link==7 && editor.layers()[1].link==7,"undo did not restore the complete linked group");
         check(std::abs(editor.layers()[0].out-1.5)<.01,"undo deletion lost linked trim");
     }
+    {
+        LayerEditor editor;editor.setProject("missing-fixture.mp4",project,true);
+        editor.setPosition(.5);editor.addTextLayer(false);
+        check(editor.layers().size()==3 && editor.layers()[0].kind==framescale::LayerKind::Text,"text layer was not added above media");
+        check(editor.layers()[0].start==.5 && editor.layers()[0].duration()==1.5,"text timing did not follow playhead/project extent");
+        auto text=editor.layers()[0].text;text.content="Primeiro texto";text.fontSize=48;
+        editor.setSelectedText(text);
+        editor.addTextLayer(false);
+        text.content="Segundo texto";editor.setSelectedText(text);
+        check(editor.layers()[1].text.content=="Primeiro texto","editing text changed another layer");
+        editor.undo();check(editor.layers()[0].text.content=="Texto","undo lost text state");
+        editor.redo();check(editor.layers()[0].text.content=="Segundo texto","redo lost text state");
+        editor.selectLayer(2);editor.setSelectedText(text);
+        check(editor.layers()[2].kind==framescale::LayerKind::Video,"text edit altered a video layer");
+        framescale::ProcessingOptions saved=project;saved.layers=editor.layers();
+        editor.setProject("other.mp4",project,true);editor.setProject("missing-fixture.mp4",saved,true);
+        check(editor.layers()[0].text.content=="Segundo texto","project switch lost text content");
+        editor.selectLayer(0);editor.removeSelected();
+        check(editor.layers().size()==3 && editor.layers()[0].text.content=="Primeiro texto","text deletion removed another layer");
+    }
     const QString ffmpeg=framescale::RuntimePaths().tool("ffmpeg");
     if(QFileInfo::exists(ffmpeg)) {
         QTemporaryDir directory;
@@ -212,10 +233,84 @@ int main(int argc, char** argv) {
 #endif
         layer.sourceFps=60;layer.sourceDuration=layer.out=5;
         {
+            framescale::MediaLayer title;title.kind=framescale::LayerKind::Text;
+            title.sourceDuration=5;title.start=.5;title.out=1;
+            title.text.content="A: 'teste' [x] %\nçã";title.text.fontFamily="Arial";
+            title.text.fontSize=14;title.text.stroke=true;title.text.strokeWidth=1;
+            const auto raster=framescale::renderTextLayer(title.text,96,64);
+            int ink=0;for(int y=0;y<raster.height();++y)for(int x=0;x<raster.width();++x)if(raster.pixelColor(x,y).alpha())++ink;
+            check(ink>20 && ink<96*64,"text raster is empty or opaque outside glyphs");
+            for(bool preview:{false,true}) {
+                const QString textOutput=directory.filePath(preview?"text-preview.mp4":"text-export.mkv");
+                const auto withText=framescale::composeLayers({title,layer},textOutput,preview,.5,.5+1./60);
+                check(withText.error.isEmpty() && run(ffmpeg,withText.arguments).first,"text composition failed");
+                const auto withPixels=run(ffmpeg,{"-v","error","-i",textOutput,"-frames:v","1","-f","rawvideo","-pix_fmt","rgb24","pipe:1"});
+                title.enabled=false;
+                const auto withoutText=framescale::composeLayers({title,layer},textOutput,preview,.5,.5+1./60);
+                check(withoutText.error.isEmpty() && run(ffmpeg,withoutText.arguments).first,"hidden text composition failed");
+                const auto withoutPixels=run(ffmpeg,{"-v","error","-i",textOutput,"-frames:v","1","-f","rawvideo","-pix_fmt","rgb24","pipe:1"});
+                check(withPixels.first && withoutPixels.first && withPixels.second!=withoutPixels.second,"text is missing from rendered video");
+                title.enabled=true;
+            }
+            std::cout<<"Text Unicode raster, preview/export composition and visibility passed with FFmpeg\n";
+            {
+                framescale::ProcessingOptions withText;withText.layered=true;withText.layers={title,layer};
+                LayerEditor live;
+                QEventLoop loop;QTimer watchdog;watchdog.setSingleShot(true);
+                QObject::connect(&watchdog,&QTimer::timeout,&loop,&QEventLoop::quit);
+                QString media;int ready=0,invalidations=0;
+                live.previewReady=[&](const QString& path){media=path;++ready;loop.quit();};
+                live.setProject(input,withText,true);watchdog.start(5000);loop.exec();watchdog.stop();
+                check(media==input,"Text was baked into the editor media instead of a live overlay");
+                live.previewInvalidated=[&]{++invalidations;};live.selectLayer(0);
+                auto changed=live.layers()[0].text;changed.content="Live typing";live.setSelectedText(changed);
+                watchdog.start(500);loop.exec();
+                check(ready==1 && invalidations==0,"Text typing restarted or invalidated media playback");
+            }
+        }
+        {
             auto portrait=layer;portrait.width=2160;portrait.height=3840;
             const auto inspection=framescale::composeLayers({portrait},output,true,0,1./60);
             check(inspection.error.isEmpty() && inspection.width==2160 && inspection.height==3840,
                 "layer preview discarded 4K detail before zoom/paused inspection");
+        }
+        {
+            LayerEditor transforms;framescale::ProcessingOptions p;p.layered=true;p.layers={layer};transforms.setProject(input,p,true);transforms.selectLayer(0);
+            const framescale::LayerTransform t{65,40,50,70,33,45};transforms.setSelectedTransform(t);
+            check(transforms.layers()[0].transform==t,"Video transform fields were not retained");
+            transforms.undo();check(transforms.layers()[0].transform.isIdentity(),"Undo did not restore video transform");
+            transforms.redo();check(transforms.layers()[0].transform==t,"Redo did not restore video transform");
+            for(bool preview:{false,true}) {
+                auto transformed=layer;transformed.transform=t;
+                const QString result=directory.filePath(preview?"transform.mp4":"transform.mkv");
+                const auto transformedPlan=framescale::composeLayers({transformed},result,preview,0,1./60);
+                check(transformedPlan.error.isEmpty() && run(ffmpeg,transformedPlan.arguments).first,"Video position/scale/rotation/opacity composition failed");
+                const auto rgba=run(ffmpeg,{"-v","error","-i",result,"-frames:v","1","-f","rawvideo","-pix_fmt","rgb24","pipe:1"});
+                check(rgba.first && rgba.second.size()==96*64*3,"Transformed video changed canvas dimensions");
+                int light=0;for(unsigned char c:rgba.second) light=std::max(light,int(c));check(light>20 && light<180,"Video transform opacity was lost or frame was black");
+            }
+            auto hidden=layer;hidden.transform.opacity=0;
+            const auto invisible=framescale::composeLayers({hidden},output,false,0,1./60);
+            check(run(ffmpeg,invisible.arguments).first,"Zero-opacity video failed to compose");
+            const auto black=run(ffmpeg,{"-v","error","-i",output,"-frames:v","1","-f","rawvideo","-pix_fmt","rgb24","pipe:1"});
+            int light=0;for(unsigned char c:black.second) light=std::max(light,int(c));check(black.first && light<5,"Zero-opacity video is visible");
+            auto invalid=layer;invalid.transform.rotation=std::numeric_limits<double>::quiet_NaN();
+            check(!framescale::composeLayers({invalid},output).error.isEmpty(),"Non-finite transform was accepted");
+        }
+        {
+            QWidget stage;stage.setAttribute(Qt::WA_DontShowOnScreen);stage.resize(384,256);
+            stage.setAutoFillBackground(true);auto palette=stage.palette();palette.setColor(QPalette::Window,Qt::red);stage.setPalette(palette);
+            TextLayerOverlay overlay(&stage);overlay.setGeometry(stage.rect());overlay.setSelectionTool(true);
+            std::vector<framescale::MediaLayer> scene{layer};overlay.setLayers(scene,0);overlay.setView(stage.rect(),QSize(96,64),0);
+            overlay.transformChanged=[&](int i,const framescale::LayerTransform& t,bool){framescale::setLayerTransform(scene[i],t);overlay.setLayers(scene,i);};
+            stage.show();app.processEvents();const QPointF centre(192,128);
+            QMouseEvent down(QEvent::MouseButtonPress,centre,centre,Qt::LeftButton,Qt::LeftButton,Qt::NoModifier);QApplication::sendEvent(&overlay,&down);
+            QMouseEvent move(QEvent::MouseMove,centre+QPointF(76.8,0),centre+QPointF(76.8,0),Qt::NoButton,Qt::LeftButton,Qt::NoModifier);QApplication::sendEvent(&overlay,&move);
+            for(auto* reader:overlay.findChildren<QProcess*>()) check(reader->waitForFinished(5000),"Live transform source frame did not decode");
+            app.processEvents();const QImage snapshot=stage.grab().toImage();
+            const QColor left=snapshot.pixelColor(2,2);
+            check(left.red()<5 && left.green()<5 && left.blue()<5,"Video image did not move live with its selection bounds");
+            check(std::abs(scene[0].transform.x-70)<.01,"Live video drag did not update position");
         }
         const auto plan=framescale::composeLayers({layer},output,false,4,4+1./60);
         check(plan.error.isEmpty()&&std::abs(plan.duration-1./60)<1e-8,"single-frame range still composes full source");

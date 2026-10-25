@@ -27,6 +27,7 @@ class QVideoWidget;
 class QVideoSink;
 class QTimer;
 class QToolButton;
+class TextLayerOverlay;
 
 class MediaPreviewWidget final : public QWidget {
     Q_OBJECT
@@ -37,7 +38,7 @@ public:
 
     std::function<QString()> projectDetails;
     void setMedia(const QString& path, qint64 initialPosition = 0);
-    void setProjectMediaInfo(const QString& path, const QSize& size) { projectPath_=path; projectSize_=size; updateMediaDimensions(); }
+    void setProjectMediaInfo(const QString& path, const QSize& size) { projectPath_=path; projectSize_=size; updateMediaDimensions(); updateTextOverlay(); }
     void setRightOverlayInset(int pixels);
     QString mediaPath() const { return mediaPath_; }
     QImage currentFrame() const;
@@ -79,6 +80,15 @@ public:
     void setLayerEditing(bool enabled);
     void showLayerVolume(const QPoint& position);
     void setLayerEditorWidget(QWidget* editor);
+    void setTextLayers(const std::vector<framescale::MediaLayer>& layers,int selected);
+    void editTextLayer(int index,bool focus=true);
+    void activateTextTool();
+    void activateSelectionTool();
+    void updateTextOverlay();
+    std::function<void(int)> textLayerSelected;
+    std::function<void(const QPointF&)> textCreationRequested;
+    std::function<void(int,const std::string&)> textContentChanged;
+    std::function<void(int,const framescale::LayerTransform&,bool)> layerTransformChanged;
     void setPlaybackSpeed(double speed);
     double playbackSpeed() const { return playbackSpeed_; }
     int audioOffset() const { return audioOffsetMs_; }
@@ -115,6 +125,9 @@ protected:
 
 private:
     QRectF mediaViewRect() const;
+    TextLayerOverlay* textOverlay_=nullptr;
+    int pendingTextEdit_=-1;
+    bool selectionToolActive_=true;
     QWidget* canvasSlot_ = nullptr;
     int rightOverlayInset_ = 0;
     QMenu* createOrientationMenu(QMenu* parent);

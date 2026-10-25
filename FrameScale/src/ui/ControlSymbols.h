@@ -8,7 +8,7 @@
 // Small, scalable monochrome symbols; no emoji or platform font dependency.
 namespace ControlSymbols {
 enum class Symbol { None, Expand, Frames, Sparkle, Chip, Layers, Sliders, Noise,
-    Contrast, Color, Grid, Gradient, Eye, Queue, Plus, Minus, Pencil, Keyboard, Exit, ReduceFrames, Speed, Reset, Folder, Save, Export, Audio, Scale, FrameRate, Sharpen, Denoise, Import, Zoom, RotateLeft, RotateRight, FlipHorizontal, FlipVertical, Link, Unlink, Trash, Info };
+    Contrast, Color, Grid, Gradient, Eye, Queue, Plus, Minus, Pencil, Keyboard, Exit, ReduceFrames, Speed, Reset, Folder, Save, Export, Audio, Scale, FrameRate, Sharpen, Denoise, Import, Zoom, RotateLeft, RotateRight, FlipHorizontal, FlipVertical, Link, Unlink, Trash, Info, Text, Selection };
 
 inline Symbol forControl(const QString& name)
 {
@@ -54,6 +54,13 @@ inline void paint(QPainter& p, QRectF area, Symbol symbol, const QColor& ink)
     auto line = [&](qreal x, qreal y, qreal xx, qreal yy) {p.drawLine(QPointF(x,y),QPointF(xx,yy));};
     auto box = [&](qreal x,qreal y,qreal w,qreal h) {p.drawRoundedRect(QRectF(x,y,w,h),2,2);};
     switch (symbol) {
+    case Symbol::Selection: {
+        QPolygonF arrow;arrow<<QPointF(5,2)<<QPointF(5,17.5)<<QPointF(9,13)<<QPointF(16,13);
+        p.setPen(QPen(ink,0.7,Qt::SolidLine,Qt::RoundCap,Qt::RoundJoin));p.setBrush(ink);p.drawPolygon(arrow);break;
+    }
+    case Symbol::Text:
+        line(3,5,3,3); line(3,3,17,3); line(17,3,17,5);
+        line(10,3,10,17); line(6,17,14,17); break;
     case Symbol::Trash:
         line(3,5,17,5); box(5,5,10,13); line(8,2,12,2); line(8,9,8,15); line(12,9,12,15); break;
     case Symbol::Info:
@@ -150,12 +157,13 @@ public:
     Engine(Symbol s,bool primary):symbol(s),white(primary){}
     QIconEngine* clone() const override {return new Engine(symbol,white);}
     void paint(QPainter* p,const QRect& r,QIcon::Mode mode,QIcon::State) override {
-        QColor ink = white ? QColor(Qt::white) : qApp->palette().color(QPalette::ButtonText);
+        QColor ink = white ? QColor(Qt::white) : symbol == Symbol::Selection ? QColor("#168bff") : qApp->palette().color(QPalette::ButtonText);
         if(mode==QIcon::Selected) ink=qApp->palette().color(QPalette::HighlightedText);
         if(mode==QIcon::Disabled) ink=qApp->palette().color(QPalette::Disabled,QPalette::ButtonText);
-        // Leave four pixels after the symbol, in addition to Qt's text gap.
+        // Qt may allocate a rectangular icon slot. Centre the square glyph in
+        // that slot so the icon and its hover surface share the same centre.
         const int side = qMin(r.width(),r.height());
-        const QRectF glyph(r.left(),r.top()+(r.height()-side)/2.,side,side);
+        const QRectF glyph(r.left()+(r.width()-side)/2.,r.top()+(r.height()-side)/2.,side,side);
         ControlSymbols::paint(*p,glyph,symbol,ink);
     }
     QPixmap pixmap(const QSize& size,QIcon::Mode mode,QIcon::State state) override {

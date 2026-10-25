@@ -69,6 +69,10 @@ int main(int argc,char** argv) {
             if(count%3==2) check(face.red()>face.blue()+70,"Uninstall button lost its red action colour");
             else check(face.blue()>face.red()+70,"Primary button lost its blue action colour");
             check(next->geometry()==geometry,"Button geometry changed with interaction state");
+            const QColor left=pixel(image,next,QPoint(8,4));
+            const QColor right=pixel(image,next,QPoint(next->width()-9,4));
+            check(qAbs(left.red()-right.red())<=2 && qAbs(left.blue()-right.blue())<=2,
+                "Installer button surface is not centred");
         };
         checkFace(normal);
         next->setAttribute(Qt::WA_UnderMouse,true);

@@ -1,3 +1,4 @@
+#include "processing/TextLayerRenderer.h"
 #include "ui/KeyboardBindings.h"
 #include <QJsonArray>
 #include "ComparisonDialog.h"
@@ -316,7 +317,7 @@ void ComparisonDialog::render()
     for(const auto& layer : options.layers) {
         const QFileInfo file(text(layer.path));
         layerKeys.append(QJsonObject{{"path",file.absoluteFilePath()}, {"modified",QString::number(file.lastModified().toMSecsSinceEpoch())},
-            {"size",QString::number(file.size())},{"kind",int(layer.kind)},{"start",layer.start},{"in",layer.in},{"out",layer.out},{"speed",layer.speed},{"enabled",layer.enabled}});
+            {"size",QString::number(file.size())},{"kind",int(layer.kind)},{"text",framescale::textLayerKey(layer.text)},{"transform",QJsonArray{layer.transform.x,layer.transform.y,layer.transform.scaleX,layer.transform.scaleY,layer.transform.rotation,layer.transform.opacity}},{"start",layer.start},{"in",layer.in},{"out",layer.out},{"speed",layer.speed},{"enabled",layer.enabled}});
     }
     key.insert("layers",layerKeys);
     key.insert("layered",options.layered);

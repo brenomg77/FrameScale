@@ -196,7 +196,7 @@ public:
         // colours and native blur cannot bleed through the controls.
         setProperty("appearanceManaged",true);
         framescale::window_backdrop::configureGlassWindow(this,false,false);
-        setStyleSheet(QString::fromUtf8(setupStyle));
+        setStyleSheet(QString::fromUtf8(setupStyle)+controlSurfaceGeometry());
         if(uninstall) {action_=2;showPage(1);} else showPage(0);
     }
 protected:

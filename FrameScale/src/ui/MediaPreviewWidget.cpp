@@ -1,3 +1,4 @@
+#include "ui/TextLayerOverlay.h"
 #include "ui/KeyboardBindings.h"
 #include <QGroupBox>
 #include <QClipboard>
@@ -88,7 +89,7 @@ protected:
         QPainter painter(this);
         painter.setRenderHint(QPainter::Antialiasing);
         if (Appearance::theme() != "studio" && !property("zoomOnly").toBool()) {
-            if (auto* controls = findChild<QWidget*>("previewZoomBar")) {
+            for(const auto& name:{QStringLiteral("previewZoomBar"),QStringLiteral("timelineTools")}) if (auto* controls = findChild<QWidget*>(name)) {
                 const QRectF surface(controls->mapTo(this, QPoint(0, 0)), controls->size());
                 GlassMaterial::paint(painter, surface,
                     window()->property("glassBackdrop").value<QImage>(),
@@ -211,6 +212,8 @@ MediaPreviewWidget::MediaPreviewWidget(QWidget* parent)
     connect(fit, &QShortcut::activated, this, [this] { zoomChoice_->setCurrentIndex(0); setZoom(0); });
 
     stack_ = new QStackedWidget(this);
+    stack_->setAutoFillBackground(false);
+    stack_->setAttribute(Qt::WA_TranslucentBackground,false);
     stack_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     placeholder_ = new QLabel(tr("Selecione uma imagem ou um vídeo"), stack_);
     placeholder_->setObjectName(QStringLiteral("previewPlaceholder"));
@@ -334,6 +337,13 @@ MediaPreviewWidget::MediaPreviewWidget(QWidget* parent)
     videoWidget_->setMinimumSize(1, 1);
     videoWidget_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
     stack_->addWidget(videoSurface_);
+    textOverlay_=new TextLayerOverlay(this);textOverlay_->hide();
+    textOverlay_->setSelectionTool(true);
+    textOverlay_->createText=[this](const QPointF& point){pause();if(textCreationRequested) textCreationRequested(point);};
+    textOverlay_->selected=[this](int index){pause();if(textLayerSelected) textLayerSelected(index);};
+    textOverlay_->transformChanged=[this](int i,const framescale::LayerTransform& t,bool done){if(layerTransformChanged) layerTransformChanged(i,t,done);};
+    textOverlay_->contentChanged=[this](int index,const std::string& content){if(textContentChanged) textContentChanged(index,content);};
+
     // Reserve the original fit area, while drawing on a separate canvas that
     // continues behind the floating controls and timeline.
     canvasSlot_ = new QWidget(this);
@@ -448,7 +458,7 @@ MediaPreviewWidget::MediaPreviewWidget(QWidget* parent)
     zoomLayout->addWidget(zoomChoice_);
     zoomBar->setFixedHeight(38);
     // Match the timeline card's eight-pixel inset, not its widget bounds.
-    auto* controlsRow = new QHBoxLayout;
+    auto* controlsRow = new QHBoxLayout;controlsRow->setObjectName("previewControlsRow");
     controlsRow->setContentsMargins(8, 0, 8, 0);
     controlsRow->setSpacing(0);
     controlsRow->addStretch();
@@ -721,6 +731,7 @@ void MediaPreviewWidget::stopDecoder()
 
 void MediaPreviewWidget::clear()
 {
+    if(textOverlay_) textOverlay_->setLayers({},-1);
     layerPreviewPending_=false;
     if(layerBlank_) layerBlank_->hide();
     setProperty("hasAudio", false);
@@ -837,15 +848,17 @@ void MediaPreviewWidget::invalidateLayerPreview(bool empty)
 {
     const auto position=positionMs();
     pause();
+    freezeVideoFrame();
     ++generation_; ++seekSerial_;
     stopPlayer(); stopDecoder(); stopProxy(); stopFrameReaders(); seekTimer_->stop();
     pendingPosition_=position;
     layerPreviewPending_=true;
     if(layerBlank_) layerBlank_->hide();
+    if(!empty && !image_.isNull()) {comparisonButton_->setEnabled(false);return;}
     image_={}; imageLabel_->clear();
     placeholder_->setProperty("appearanceManaged",true);
     placeholder_->setStyleSheet("background:#181818;color:#dddddd;border:0;");
-    placeholder_->setText(empty ? tr("Adicione uma camada ao projeto") : tr("A carregar..."));
+    placeholder_->setText(empty ? tr("Adicione uma camada ao projeto") : tr("A carregar…"));
     stack_->setCurrentWidget(placeholder_);
     comparisonButton_->setEnabled(false);
 }
@@ -1039,7 +1052,20 @@ void MediaPreviewWidget::setMedia(const QString& path, qint64 initialPosition)
         pause();
         return;
     }
+    // A layer edit replaces the decoded source asynchronously. Keep its last
+    // frame on screen rather than exposing the empty/loading page in between.
+    const bool retainFrame=layerEditing_ && layerPreviewPending_ && info.isFile() && !image_.isNull();
+    const QImage retained=retainFrame?image_:QImage();
+    const QSize retainedSize=sourceSize_,retainedProjectSize=projectSize_;
+    const QString retainedProjectPath=projectPath_;
+    const double retainedZoom=zoom_;
+    const QPointF retainedPan=pan_;
     clear();
+    if(retainFrame) {
+        sourceSize_=retainedSize;projectSize_=retainedProjectSize;projectPath_=retainedProjectPath;
+        zoom_=retainedZoom;pan_=retainedPan;
+        image_=retained;stack_->setCurrentWidget(imageLabel_);updateImageSize();
+    }
     if (path.isEmpty()) {
         return;
     }
@@ -1052,7 +1078,7 @@ void MediaPreviewWidget::setMedia(const QString& path, qint64 initialPosition)
     }
     zoomChoice_->setEnabled(true);
     volumeButton_->setEnabled(true);
-    showLoading();
+    if(!retainFrame) showLoading();
     static const QSet<QString> imageExtensions {
         QStringLiteral("png"), QStringLiteral("jpg"), QStringLiteral("jpeg"),
         QStringLiteral("bmp"), QStringLiteral("webp"), QStringLiteral("tif"),
@@ -1496,6 +1522,50 @@ void MediaPreviewWidget::updateMediaDimensions()
     dimensionsLabel_->updateGeometry();
 }
 
+void MediaPreviewWidget::setTextLayers(const std::vector<framescale::MediaLayer>& layers,int selected)
+{
+    if(!textOverlay_) return;
+    const bool text=selected>=0 && selected<int(layers.size()) && layers[selected].kind==framescale::LayerKind::Text;
+    imageLabel_->setCursor(text && !selectionToolActive_?Qt::IBeamCursor:Qt::ArrowCursor);
+    videoWidget_->setCursor(text && !selectionToolActive_?Qt::IBeamCursor:Qt::ArrowCursor);
+    if(!text || (pendingTextEdit_>=0 && pendingTextEdit_!=selected)) pendingTextEdit_=-1;
+    textOverlay_->setLayers(layers,selected);updateTextOverlay();
+}
+void MediaPreviewWidget::editTextLayer(int index,bool focus)
+{
+    selectionToolActive_=false;textOverlay_->setSelectionTool(false);
+    imageLabel_->setCursor(Qt::IBeamCursor);videoWidget_->setCursor(Qt::IBeamCursor);
+    pause();pendingTextEdit_=focus?index:-1;textOverlay_->finishEditing();updateTextOverlay();
+}
+void MediaPreviewWidget::activateTextTool()
+{
+    pause();pendingTextEdit_=-1;selectionToolActive_=false;textOverlay_->armTextTool();updateTextOverlay();
+}
+void MediaPreviewWidget::activateSelectionTool()
+{
+    pause();pendingTextEdit_=-1;selectionToolActive_=true;
+    textOverlay_->setSelectionTool(true);imageLabel_->setCursor(Qt::ArrowCursor);videoWidget_->setCursor(Qt::ArrowCursor);
+}
+void MediaPreviewWidget::updateTextOverlay()
+{
+    if(!textOverlay_) return;
+    textOverlay_->setGeometry(stack_->geometry());
+    const QSize canvas=projectSize_.isValid()?projectSize_:sourceSize_;
+    if(canvas.isEmpty()) {textOverlay_->setView({},canvas,0);return;}
+    QRectF frame;
+    if(stack_->currentWidget()==videoSurface_) frame=videoWidget_->geometry();
+    else {
+        const QRectF view=mediaViewRect();
+        const double fitted=std::min(view.width()/canvas.width(),view.height()/canvas.height());
+        const double scale=comparisonZoom_?fitted*(zoom_>0?zoom_:1.):zoom_>0?zoom_:fitted;
+        const QSizeF size(canvas.width()*scale,canvas.height()*scale);
+        frame=QRectF(view.center()-QPointF(size.width()/2,size.height()/2)+pan_,size);
+    }
+    textOverlay_->setView(frame,canvas,positionMs()/1000.);
+    textOverlay_->raise();
+    if(pendingTextEdit_>=0 && textOverlay_->beginEditing(pendingTextEdit_)) pendingTextEdit_=-1;
+}
+
 void MediaPreviewWidget::updateVideoGeometry()
 {
     QSize size = videoWidget_->videoSink()->videoFrame().size();
@@ -1505,6 +1575,7 @@ void MediaPreviewWidget::updateVideoGeometry()
     size.scale(area.size(), Qt::KeepAspectRatio);
     videoWidget_->setGeometry(QRect(QPoint(area.x()+(area.width()-size.width())/2,
         area.y()+(area.height()-size.height())/2), size));
+    updateTextOverlay();
 }
 
 void MediaPreviewWidget::setRightOverlayInset(int pixels)
@@ -1548,6 +1619,10 @@ void MediaPreviewWidget::showImage(const QImage& image)
 
 bool MediaPreviewWidget::eventFilter(QObject* watched, QEvent* event)
 {
+    if(textOverlay_ && (event->type()==QEvent::KeyPress || event->type()==QEvent::KeyRelease || event->type()==QEvent::ShortcutOverride)) {
+        auto* focus=QApplication::focusWidget();
+        if(focus && textOverlay_->isAncestorOf(focus)) return QWidget::eventFilter(watched,event);
+    }
     if (watched == dock_ && event->type() == QEvent::LayoutRequest) {
         // Timeline cards include ten pixels below their painted surface.
         // Without a timeline the preview controls need the full panel inset.
@@ -1579,6 +1654,16 @@ bool MediaPreviewWidget::eventFilter(QObject* watched, QEvent* event)
     if (watched == stack_ && event->type() == QEvent::Resize) updateMediaDimensions();
     if (watched == videoSurface_ && event->type() == QEvent::Resize) updateVideoGeometry();
     if (watched == imageLabel_ || watched == videoWidget_) {
+        if(layerEditing_ && textOverlay_ && event->type()==QEvent::MouseButtonPress && !spaceHeld_) {
+            auto* mouse=static_cast<QMouseEvent*>(event);
+            if(mouse->button()==Qt::LeftButton) {
+                updateTextOverlay();auto* surface=qobject_cast<QWidget*>(watched);
+                const QPointF point=surface->mapTo(textOverlay_,mouse->position());
+                QMouseEvent forwarded(QEvent::MouseButtonPress,point,mouse->globalPosition(),mouse->button(),mouse->buttons(),mouse->modifiers());
+                forwarded.setAccepted(false);QApplication::sendEvent(textOverlay_,&forwarded);
+                if(forwarded.isAccepted()) return true;
+            }
+        }
         if (event->type() == QEvent::ShortcutOverride && static_cast<QKeyEvent*>(event)->key() == Qt::Key_Space) {
             event->accept();
             return true;
@@ -1737,6 +1822,7 @@ void MediaPreviewWidget::updateImageSize()
     painter.drawImage(media, orientedFrame(image_));
     painter.end();
     imageLabel_->setPixmap(pixels);
+    updateTextOverlay();
 }
 
 void MediaPreviewWidget::updatePlaybackControls()
@@ -2154,8 +2240,12 @@ void MediaPreviewWidget::showTimelineMenu(const QPoint& position) {
 }
 
 void MediaPreviewWidget::setLayerEditorWidget(QWidget* editor) {
-    if(auto* layout=qobject_cast<QVBoxLayout*>(dock_->layout()))
+    if(auto* layout=qobject_cast<QVBoxLayout*>(dock_->layout())) {
+        if(auto* tools=editor->findChild<QWidget*>("timelineTools")) {
+            if(auto* row=dock_->findChild<QHBoxLayout*>("previewControlsRow")) {tools->setParent(dock_);row->insertWidget(0,tools);}
+        }
         layout->insertWidget(layout->indexOf(timeline_),editor);
+    }
 }
 
 void MediaPreviewWidget::showLayerVolume(const QPoint& position) {

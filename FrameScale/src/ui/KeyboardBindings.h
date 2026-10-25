@@ -12,6 +12,8 @@ inline const Command commands[] = {
     {"paste", "Colar imagem ou ficheiro", "Ctrl+V", 0}, {"quit", "Sair do programa", "Ctrl+Q", 0},
     {"undo", "Desfazer", "Ctrl+Z", 1}, {"redo", "Refazer", "Ctrl+Shift+Z", 1},
     {"delete", "Excluir camadas selecionadas", "Del", 1},
+    {"selection", "Ferramenta de seleção", "V", 1},
+    {"textTool", "Ferramenta de texto", "T", 1},
     {"play", "Reproduzir / pausar", "Space", 2}, {"previous", "Fotograma anterior", "Left", 2},
     {"next", "Fotograma seguinte", "Right", 2}, {"zoomIn", "Aumentar zoom", "+", 2},
     {"zoomOut", "Diminuir zoom", "-", 2}, {"resetView", "Repor vista da timeline", "0", 2},

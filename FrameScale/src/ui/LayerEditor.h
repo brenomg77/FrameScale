@@ -3,6 +3,7 @@
 #include "processing/LayerComposition.h"
 #include "processing/RuntimePaths.h"
 #include "ui/SelectionComboBox.h"
+#include "ui/TextLayerDialog.h"
 #include "ui/ControlSymbols.h"
 #include <QFileDialog>
 #include <QJsonDocument>
@@ -13,6 +14,8 @@
 #include <QTimer>
 #include "ui/TrimTimeline.h"
 #include <QToolButton>
+#include <QToolTip>
+#include <QHelpEvent>
 #include <QVBoxLayout>
 #include <QMouseEvent>
 #include <QKeyEvent>
@@ -39,6 +42,11 @@ class LayerEditor final : public QWidget {
             setFocusPolicy(Qt::StrongFocus); setMouseTracking(true);
         }
         bool event(QEvent* e) override {
+            if(e->type()==QEvent::ToolTip) {
+                auto* help=static_cast<QHelpEvent*>(e);const int index=owner->rowAt(help->pos().y());
+                const auto box=owner->textSettingsRect(index);
+                if(box.contains(help->pos())) {QToolTip::showText(mapToGlobal(box.bottomLeft().toPoint()+QPoint(0,5)),tr("Edit"),this,box.toRect());return true;}
+            }
             if(e->type()==QEvent::ShortcutOverride) {
                 auto* key=static_cast<QKeyEvent*>(e);
                 if(KeyboardBindings::matches(key,"undo") || KeyboardBindings::matches(key,"redo")
@@ -63,7 +71,7 @@ class LayerEditor final : public QWidget {
         }
         void mouseReleaseEvent(QMouseEvent* e) override {
             if(navigating_) { navigating_=false; TrimTimeline::mouseReleaseEvent(e); }
-            else owner->release();
+            else owner->release(e);
         }
         void leaveEvent(QEvent* e) override { unsetCursor(); TrimTimeline::leaveEvent(e); }
         void contextMenuEvent(QContextMenuEvent* e) override { if(suppressContext_) { suppressContext_=false; e->accept(); return; } owner->context(e->pos(), e->globalPos()); }
@@ -83,7 +91,25 @@ public:
     explicit LayerEditor(QWidget* parent = nullptr) : QWidget(parent) {
         setObjectName("layerEditor"); setAcceptDrops(true);
         setMinimumWidth(0); setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Fixed);
-        auto* layout = new QVBoxLayout(this); layout->setContentsMargins(0,0,0,0); layout->setSpacing(0);
+        auto* layout = new QVBoxLayout(this); layout->setContentsMargins(0,0,0,0); layout->setSpacing(0); layout->setAlignment(Qt::AlignTop);
+        auto* tools=new QWidget(this);tools->setObjectName("timelineTools");tools->setFixedHeight(38);tools->setSizePolicy(QSizePolicy::Maximum,QSizePolicy::Fixed);tools->setProperty("appearanceManaged",true);tools->setStyleSheet("QWidget#timelineTools {background:transparent;border:0;}");
+        auto* toolRow=new QHBoxLayout(tools);toolRow->setContentsMargins(6,5,6,5);toolRow->setSpacing(4);
+        selectionTool_=new QToolButton(tools);selectionTool_->setObjectName("selectionToolButton");
+        selectionTool_->setCheckable(true);selectionTool_->setChecked(true);selectionTool_->setFixedSize(28,28);
+        selectionTool_->setIcon(ControlSymbols::icon(ControlSymbols::Symbol::Selection,true));selectionTool_->setIconSize(QSize(18,18));
+        selectionTool_->setToolTip(tr("Ferramenta de seleção")+QStringLiteral(" (V)"));selectionTool_->setAccessibleName(tr("Ferramenta de seleção"));
+        selectionTool_->setProperty("appearanceManaged",true);
+        selectionTool_->setStyleSheet("QToolButton {background:rgba(128,128,140,35);border:0;border-radius:5px;padding:4px;} QToolButton:hover {background:rgba(128,128,140,65);} QToolButton:checked {background:#007aff;} QToolButton:checked:hover {background:#0064d2;}");
+        toolRow->addWidget(selectionTool_);
+        textTool_=new QToolButton(tools);textTool_->setObjectName("textToolButton");textTool_->setFixedSize(28,28);
+        textTool_->setCheckable(true);textTool_->setIcon(ControlSymbols::icon(ControlSymbols::Symbol::Text,true));textTool_->setIconSize(QSize(18,18));
+        textTool_->setToolTip(tr("Texto")+QStringLiteral(" (T)"));textTool_->setAccessibleName(tr("Texto"));textTool_->setProperty("appearanceManaged",true);
+        textTool_->setStyleSheet(selectionTool_->styleSheet());toolRow->addWidget(textTool_);
+        connect(textTool_,&QToolButton::clicked,this,[this]{setTextToolActive();if(textToolRequested) textToolRequested();});
+        toolRow->addStretch();layout->addWidget(tools);
+        connect(selectionTool_,&QToolButton::clicked,this,[this]{activateSelectionTool();});
+        connect(KeyboardBindings::bind("selection",this),&QShortcut::activated,this,[this]{if(active_) activateSelectionTool();});
+        connect(KeyboardBindings::bind("textTool",this),&QShortcut::activated,this,[this]{if(active_) {setTextToolActive();if(textToolRequested) textToolRequested();}});
         tracks_ = new Tracks(this); tracks_->setObjectName("layerTracks");
         tracks_->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Fixed);
         tracks_->paintLayerTracks = [this](QPainter& painter) { paintTracks(painter); };
@@ -95,13 +121,21 @@ public:
         connect(undoShortcut,&QShortcut::activated,this,[this]{if(active_) undo();});
         auto* redoShortcut=KeyboardBindings::bind("redo",this);
         connect(redoShortcut,&QShortcut::activated,this,[this]{if(active_) redo();});
+        connect(KeyboardBindings::bind("delete",this),&QShortcut::activated,this,[this]{
+            if(active_ && hasSelection() && !textInput(QApplication::focusWidget())) removeSelected();
+        });
         qApp->installEventFilter(this);
         hide();
     }
-    ~LayerEditor() override { cancelRender(); cancelReaders(); }
+    ~LayerEditor() override { delete textDialog_; cancelRender(); cancelReaders(); }
     std::function<void()> changed, selectionChanged, playRequested, previewInvalidated;
     std::function<void(double)> seekRequested;
     std::function<void(const QPoint&)> volumeRequested;
+    std::function<void(int)> textEditRequested;
+    std::function<void()> selectionToolRequested, textToolRequested;
+    std::function<void(int)> textCreated;
+    void activateSelectionTool() {textTool_->setChecked(false);textTool_->setIcon(ControlSymbols::icon(ControlSymbols::Symbol::Text,true));selectionTool_->setChecked(true);selectionTool_->setIcon(ControlSymbols::icon(ControlSymbols::Symbol::Selection,true));if(selectionToolRequested) selectionToolRequested();}
+    void setTextToolActive() {textTool_->setChecked(true);textTool_->setIcon(ControlSymbols::icon(ControlSymbols::Symbol::Text,true));selectionTool_->setChecked(false);selectionTool_->setIcon(ControlSymbols::icon(ControlSymbols::Symbol::Selection,false));}
     std::function<void(const QString&)> previewReady, status, previewFailed;
     const std::vector<Layer>& layers() const { return layers_; }
     bool active() const { return active_; }
@@ -127,17 +161,18 @@ public:
         remember();
         // Mute and visibility belong to individual tracks, even in a linked group.
         layers_[index].enabled=!layers_[index].enabled;
-        edited();
+        edited(layers_[index].kind==Kind::Text);
     }
     void toggleSelectedLink() { toggleLink(); }
     bool originalLayers() const {
         if(layers_.size()!=2) return false;
         return layers_[0].path==layers_[1].path && layers_[0].kind!=layers_[1].kind
             && std::all_of(layers_.begin(),layers_.end(),[](const Layer& l) {
-                return l.enabled && l.start==0 && l.in==0 && l.out==l.sourceDuration && l.speed==1;
+                return l.transform.isIdentity() && l.enabled && l.start==0 && l.in==0 && l.out==l.sourceDuration && l.speed==1;
             });
     }
     bool hasSelection() const { return selected_ >= 0 && selected_ < int(layers_.size()); }
+    int selectedLayer() const { return hasSelection()?selected_:-1; }
     void setSpeed(double speed) {
         if (!hasSelection() || !std::isfinite(speed)) return;
         speed = std::clamp(speed, .25, 4.);
@@ -152,6 +187,7 @@ public:
     QPointF timelineView() const { return pendingView_ ? savedView_ : QPointF(tracks_->zoomFactor(),tracks_->visibleStart()); }
     void restoreTimelineView(const QPointF& view) { savedView_=view;pendingView_=true;updateRange(); }
     void setProject(const QString& path, const framescale::ProcessingOptions& options, bool active) {
+        if(textDialog_) {textDialog_->hide();textDialog_->clearSelection();}
         ++generation_; cancelRender(); cancelReaders(); renderTimer_.stop();sourceVersions_.clear();
         initialized_ = options.layered;
         workStart_=options.trimStartSeconds; workEnd_=options.trimEndSeconds; projectExtent_=1; seeking_=false; drag_=0; active_ = active; pendingImports_ = 0; layers_.clear(); thumbnails_.clear();
@@ -171,6 +207,58 @@ public:
             tr("Multimédia (*.mp4 *.mkv *.mov *.avi *.webm *.gif *.m4v *.mp3 *.wav *.flac *.aac *.m4a *.ogg *.opus);;Todos os ficheiros (*)"));
         for (const auto& file : files) importMedia(file);
     }
+    void addTextLayer(bool showSettings=false,QPointF position=QPointF(50,50),bool empty=false) {
+        if(!active_ || !initialized_) return;
+        remember(); Layer layer; layer.kind=Kind::Text;layer.text.x=position.x();layer.text.y=position.y();
+        layer.text.content=empty?std::string():tr("Texto").toStdString();
+        if(!QFontDatabase::families().contains(QString::fromStdString(layer.text.fontFamily)))
+            layer.text.fontFamily=font().family().toStdString();
+        layer.start=std::clamp(position_,0.,std::max(0.,extent()-1./25));
+        layer.sourceDuration=std::max(5.,extent());
+        layer.out=std::max(1./25,std::min(5.,extent()-layer.start));
+        for(const auto& source:layers_) if(source.kind==Kind::Video) {
+            layer.width=source.width;layer.height=source.height;layer.sourceFps=source.sourceFps;break;
+        }
+        layers_.insert(layers_.begin(),layer);selected_=0;edited(samePreviewMedia(undo_.back(),layers_));
+        if(showSettings) openTextSettings();else if(textCreated) textCreated(selected_);else if(textEditRequested) textEditRequested(selected_);
+    }
+    void setSelectedText(const framescale::TextLayerOptions& text) {
+        if(!hasSelection() || layers_[selected_].kind!=Kind::Text) return;
+        if(framescale::textLayerKey(layers_[selected_].text)==framescale::textLayerKey(text)) return;
+        remember();layers_[selected_].text=text;edited(true);
+    }
+    QSize canvasSize() const {
+        for(const auto& l:layers_) if(l.kind==Kind::Video && l.width>0 && l.height>0) return QSize(l.width,l.height);
+        for(const auto& l:layers_) if(l.width>0 && l.height>0) return QSize(l.width,l.height);
+        return QSize(1280,720);
+    }
+    void requestTextEdit() {
+        if(!hasSelection() || layers_[selected_].kind!=Kind::Text) return;
+        const auto& l=layers_[selected_];if(position_<l.start || position_>=l.start+l.duration()) {position_=l.start;updateRange();if(seekRequested) seekRequested(position_);}
+        if(textEditRequested) textEditRequested(selected_);
+    }
+    void setSelectedTransform(const framescale::LayerTransform& value,bool dragging=false,bool finished=true) {
+        if(!hasSelection() || layers_[selected_].kind==Kind::Audio) return;
+        if(!value.valid()) return;
+        auto t=value;t.x=std::clamp(t.x,-1000.,1000.);t.y=std::clamp(t.y,-1000.,1000.);
+        t.scaleX=std::clamp(t.scaleX,1.,500.);t.scaleY=std::clamp(t.scaleY,1.,500.);t.opacity=std::clamp(t.opacity,0.,100.);
+        const bool different=!(framescale::layerTransform(layers_[selected_])==t);
+        if(!different && !(dragging && finished && transformDragging_)) return;
+        if(different && !transformDragging_) remember();
+        transformDragging_=dragging && !finished;
+        framescale::setLayerTransform(layers_[selected_],t);
+        edited(layers_[selected_].kind==Kind::Text || transformDragging_);
+    }
+    void openTextSettings() {
+        if(!hasSelection() || layers_[selected_].kind==Kind::Audio) return;
+        if(!textDialog_) {
+            textDialog_=new TextLayerDialog(this);
+            textDialog_->changed=[this](const framescale::TextLayerOptions& text){setSelectedText(text);};
+            textDialog_->transformChanged=[this](const framescale::LayerTransform& t){setSelectedTransform(t);};
+        }
+        textDialog_->setLayer(layers_[selected_],canvasSize());
+        textDialog_->show();textDialog_->raise();
+    }
     void removeSelected() {
         if (!hasSelection()) return;
         remember();
@@ -179,26 +267,32 @@ public:
             if(i==selected_ || (group && layers_[i].link==group)) layers_.erase(layers_.begin()+i);
         }
         for(auto& layer:layers_) if(layer.link && std::count_if(layers_.begin(),layers_.end(),[&](const Layer& other){return other.link==layer.link;})<2) layer.link=0;
-        selected_ = layers_.empty() ? -1 : std::min(selected_, int(layers_.size())-1); edited();
+        selected_ = layers_.empty() ? -1 : std::min(selected_, int(layers_.size())-1); edited(samePreviewMedia(undo_.back(),layers_));
     }
     void undo() {
         if (undo_.empty()) return;
         redo_.push_back(layers_); layers_ = undo_.back(); undo_.pop_back();
-        selected_ = layers_.empty() ? -1 : 0; edited();
+        selected_ = layers_.empty() ? -1 : 0; edited(samePreviewMedia(redo_.back(),layers_));
     }
     void redo() {
         if (redo_.empty()) return;
         undo_.push_back(layers_); layers_ = redo_.back(); redo_.pop_back();
-        selected_ = layers_.empty() ? -1 : 0; edited();
+        selected_ = layers_.empty() ? -1 : 0; edited(samePreviewMedia(undo_.back(),layers_));
     }
 protected:
+    static bool textInput(QWidget* widget) {
+        for(auto* w=widget;w;w=w->parentWidget()) if(w->inherits("QLineEdit") || w->inherits("QPlainTextEdit") || w->inherits("QTextEdit") || w->inherits("QAbstractSpinBox")) return true;
+        return false;
+    }
     bool eventFilter(QObject* watched,QEvent* event) override {
+        if(active_ && hasSelection() && event->type()==QEvent::ShortcutOverride && textInput(QApplication::focusWidget())
+            && KeyboardBindings::matches(static_cast<QKeyEvent*>(event),"delete")) {event->accept();return true;}
         if(active_ && hasSelection() && event->type()==QEvent::MouseButtonPress) {
             auto* widget=qobject_cast<QWidget*>(watched);
             if(widget && widget->window()==window() && widget!=this && !isAncestorOf(widget)) {
                 bool control=false;
                 for(auto* item=widget;item && item!=window();item=item->parentWidget())
-                    if(item->inherits("QAbstractButton") || item->inherits("QAbstractSpinBox") || item->inherits("QComboBox") || item->inherits("QAbstractSlider") || item->inherits("QLineEdit")) control=true;
+                    if(item->inherits("QAbstractButton") || item->inherits("QAbstractSpinBox") || item->inherits("QComboBox") || item->inherits("QAbstractSlider") || item->inherits("QLineEdit") || item->inherits("QPlainTextEdit") || item->inherits("QTextEdit")) control=true;
                 if(!control) selectLayer(-1);
             }
         }
@@ -213,11 +307,24 @@ protected:
         event->acceptProposedAction();
     }
 private:
+    static bool samePreviewMedia(const std::vector<Layer>& before,const std::vector<Layer>& after) {
+        if(std::abs(framescale::compositionDuration(before)-framescale::compositionDuration(after))>.0001) return false;
+        auto media=[](const std::vector<Layer>& layers) {
+            std::vector<Layer> result;
+            for(const auto& layer:layers) if(layer.kind!=Kind::Text) result.push_back(layer);
+            return result;
+        };
+        const auto a=media(before),b=media(after);
+        return a.size()==b.size() && std::equal(a.begin(),a.end(),b.begin(),[](const Layer& l,const Layer& r) {
+            return l.path==r.path && l.kind==r.kind && l.enabled==r.enabled && l.start==r.start
+                && l.in==r.in && l.out==r.out && l.speed==r.speed && l.audioTimeScale==r.audioTimeScale && l.transform==r.transform;
+        });
+    }
     void remember() { undo_.push_back(layers_); if (undo_.size()>100) undo_.erase(undo_.begin()); redo_.clear(); }
     double extent() const { return drag_ ? dragExtent_ : projectExtent_; }
     std::vector<int> displayOrder() const {
         std::vector<int> order;
-        for(auto kind : {Kind::Video, Kind::Audio})
+        for(auto kind : {Kind::Text, Kind::Video, Kind::Audio})
             for(int i=0;i<int(layers_.size());++i) if(layers_[i].kind==kind) order.push_back(i);
         return order;
     }
@@ -234,8 +341,15 @@ private:
         const int row=int(std::find(order.begin(),order.end(),index)-order.begin());
         const auto& l=layers_[index]; return QRectF(x(l.start), 56+row*50, std::max(2.,l.duration()*pixelsPerSecond()),47);
     }
+    QRectF textSettingsRect(int index) const {
+        if(index<0 || index>=int(layers_.size()) || layers_[index].kind==Kind::Audio) return {};
+        const auto visible=clip(index).intersected(QRectF(tracks_->contentLeft(),56,tracks_->contentWidth(),tracks_->height()));
+        if(visible.width()<44) return {};
+        // Keep the trim handle at the end separate from the settings button.
+        return QRectF(visible.right()-36,visible.top()+11,22,24);
+    }
     bool hasLinkPartner() const {
-        return hasSelection() && std::count_if(layers_.begin(),layers_.end(),[&](const Layer& l){return l.path==layers_[selected_].path;})>1;
+        return hasSelection() && layers_[selected_].kind!=Kind::Text && std::count_if(layers_.begin(),layers_.end(),[&](const Layer& l){return l.path==layers_[selected_].path;})>1;
     }
     QString timecode(double seconds) const {
         double fps=25;
@@ -254,21 +368,28 @@ private:
         if(pendingView_ && initialized_) {tracks_->restoreView(savedView_.x(),savedView_.y());pendingView_=false;}
     }
     void refresh() {
+        textTool_->setEnabled(initialized_);
         double fps=25;
         for(const auto& layer:layers_) if(layer.kind==Kind::Video) {fps=layer.sourceFps;break;}
         tracks_->setFrameRate(fps);
         tracks_->setLayerRows(int(layers_.size()));
         updateRange();
         tracks_->update();
+        if(textDialog_) {
+            if(hasSelection() && layers_[selected_].kind!=Kind::Audio) textDialog_->setLayer(layers_[selected_],canvasSize());
+            else textDialog_->clearSelection();
+        }
         if (selectionChanged) selectionChanged();
     }
-    void edited() {
+    void edited(bool textOnly=false) {
+        projectExtent_=std::max(projectExtent_,framescale::compositionDuration(layers_));
+        if(textOnly) {refresh();if(changed) changed();return;}
         cancelRender(); refresh(); if (changed) changed();
         if(previewInvalidated) previewInvalidated();
         renderTimer_.start();
     }
     void toggleLink() {
-        if (!hasSelection()) return;
+        if (!hasSelection() || layers_[selected_].kind==Kind::Text) return;
         remember(); const auto target = layers_[selected_];
         if (target.link) { for (auto& layer : layers_) if(layer.link==target.link) layer.link=0; }
         else {
@@ -337,7 +458,8 @@ private:
             if(imported.empty()) { if(status) status(tr("O ficheiro não contém vídeo nem áudio.")); return; }
             if(!initial) remember();
             // New visual layers appear above the existing stack.
-            layers_.insert(layers_.begin(),imported.begin(),imported.end()); selected_=-1;
+            const auto firstMedia=std::find_if(layers_.begin(),layers_.end(),[](const Layer& l){return l.kind!=Kind::Text;});
+            layers_.insert(firstMedia,imported.begin(),imported.end()); selected_=-1;
             for(const auto& layer:imported) loadThumbnail(layer);
             projectExtent_=std::max(projectExtent_,framescale::compositionDuration(layers_));
             initialized_=true; edited();
@@ -355,6 +477,7 @@ private:
     }
     struct ThumbnailTask { Layer layer; QString id; qint64 frame=-1; };
     void loadThumbnail(const Layer& layer) {
+        if(layer.kind==Kind::Text) return;
         if(layer.kind==Kind::Video) {
             for(int i=0;i<16;++i) queueVideoThumbnail(layer,layer.sourceDuration*i/16.);
             return;
@@ -445,20 +568,27 @@ private:
         if(!active_ || pendingImports_) return;
         cancelRender();
         if(layers_.empty()) { if(previewReady) previewReady({}); return; }
+        auto previewLayers=layers_;
+        // Text is painted live over the decoded media, never baked into the
+        // editor's playback proxy. Export still composes every text layer.
+        for(auto& layer:previewLayers) if(layer.kind==Kind::Text) layer.enabled=false;
+        auto mediaLayers=previewLayers;
+        mediaLayers.erase(std::remove_if(mediaLayers.begin(),mediaLayers.end(),[](const Layer& l){return l.kind==Kind::Text;}),mediaLayers.end());
+        framescale::ProcessingOptions direct;direct.layered=true;direct.layers=mediaLayers;
+        for(const auto& layer:mediaLayers) if(layer.kind==Kind::Video) {direct.inputPath=layer.path;break;}
         // An untouched clip must be inspected from its original pixels, not a
         // re-encoded layer proxy whose resolution is hidden by project metadata.
-        if (originalLayers() || (layers_.size()==1 && layers_[0].kind==framescale::LayerKind::Video
-            && layers_[0].enabled && layers_[0].start==0 && layers_[0].in==0
-            && layers_[0].out==layers_[0].sourceDuration && layers_[0].speed==1)) {
+        if(framescale::usesOriginalLayerSource(direct)
+            && framescale::compositionDuration(layers_)<=framescale::compositionDuration(mediaLayers)+.001) {
             const auto previous = displayedPreview_;
-            if(previewReady) previewReady(framescale::layerPath(layers_[0].path));
+            if(previewReady) previewReady(framescale::layerPath(direct.inputPath));
             QTimer::singleShot(1000, this, [previous] {});
             displayedPreview_.reset();
             return;
         }
         pendingPreview_=std::make_shared<QTemporaryDir>();
         const QString output=pendingPreview_->filePath("layers.mp4");
-        const auto plan=framescale::composeLayers(layers_,output,true);
+        const auto plan=framescale::composeLayers(previewLayers,output,true);
         if(!plan.error.isEmpty()) { if(status) status(plan.error); if(previewFailed) previewFailed(plan.error); return; }
         if(status) status(tr("Atualizando prévia das camadas…"));
         auto* process=new QProcess(this); render_=process;
@@ -519,6 +649,13 @@ private:
                     const QRectF source(image.width()*l.in/l.sourceDuration,0,image.width()*(l.out-l.in)/l.sourceDuration,image.height());
                     p.drawImage(rect,image,source);
                 }
+            } else if(l.kind==Kind::Text) {
+                p.fillRect(rect,QColor("#514372"));p.setPen(Qt::white);
+                auto labelRect=rect.adjusted(12,0,-8,0);
+                const auto settings=textSettingsRect(i);
+                if(!settings.isEmpty()) labelRect.setRight(settings.left()-6);
+                p.drawText(labelRect,Qt::AlignVCenter|Qt::AlignLeft,
+                    QString::fromStdString(l.text.content).replace('\n',' '));
             } else for(int cell=0;cell<cells;++cell) {
                 const QRectF target(tracks_->contentLeft()+cell*cellWidth,rect.top(),cellWidth,rect.height());
                 if(!target.intersects(rect)) continue;
@@ -530,6 +667,16 @@ private:
             if(isLayerSelected(i)) { QColor color=accent; color.setAlpha(45); p.fillRect(rect,color); }
             if(!l.enabled) p.fillRect(rect,QColor(24,24,24,150));
             p.restore();
+            if(l.kind!=Kind::Audio) {
+                const auto settings=textSettingsRect(i);
+                if(!settings.isEmpty()) {
+                    p.save();p.setPen(Qt::NoPen);
+                    const bool hover=settings.contains(tracks_->mapFromGlobal(QCursor::pos()));
+                    p.setBrush(QColor(0,0,0,110));p.drawRoundedRect(settings.translated(0,2),5,5);p.setBrush(QColor(35,38,44,hover?220:180));p.drawRoundedRect(settings,5,5);
+                    ControlSymbols::paint(p,settings.adjusted(3,4,-3,-4),ControlSymbols::Symbol::Sliders,Qt::white);
+                    p.restore();
+                }
+            }
             if(isLayerSelected(i)) {
                 p.setBrush(Qt::NoBrush); p.setPen(QPen(accent,1)); p.drawRoundedRect(rect,7,7);
                 p.fillRect(QRectF(rect.left()-1,rect.top()-2,2,51),accent);
@@ -545,6 +692,7 @@ private:
     }
     void press(QMouseEvent* event) {
         if(event->button()!=Qt::LeftButton) return;
+        textSettingsPressed_=-1;
         if(event->position().x()<tracks_->contentLeft()-8 && event->position().y()>=56) {
             toggleLayerEnabled(rowAt(event->position().y())); return;
         }
@@ -559,6 +707,7 @@ private:
         const int index=rowAt(event->position().y());
         if(index<0 || index>=int(layers_.size())) { selectLayer(-1); return; }
         selected_=index; refresh();
+        if(textSettingsRect(index).contains(event->position())) {textSettingsPressed_=index;return;}
         const auto rect=clip(index);
         if(!rect.adjusted(-12,-3,12,3).contains(event->position())) return;
         dragExtent_=extent(); before_=layers_; pressX_=event->position().x(); pressScale_=pixelsPerSecond();
@@ -567,18 +716,25 @@ private:
     void move(QMouseEvent* event) {
         if(seeking_) { seekFromMouse(event->position().x()); return; }
         if(!drag_) {
+            tracks_->setProperty("helpAnchorRect",QVariant());
             if(event->position().y()>=35 && event->position().y()<=49 &&
                 std::min(std::abs(event->position().x()-x(workStart_)),std::abs(event->position().x()-x(workEnd_>0 ? workEnd_ : extent())))<=10) {
                 tracks_->setCursor(Qt::SizeHorCursor); tracks_->setToolTip(tr("Intervalo de exportacao")); return;
             }
             const int index=rowAt(event->position().y());
+            tracks_->update();
+            if(textSettingsRect(index).contains(event->position())) {
+                tracks_->setProperty("helpAnchorRect",textSettingsRect(index).toRect());tracks_->setCursor(Qt::PointingHandCursor);tracks_->setToolTip(tr("Edit"));return;
+            }
             if(index>=0 && event->position().x()<tracks_->contentLeft()-8) {
                 tracks_->setCursor(Qt::PointingHandCursor);
                 tracks_->setToolTip(layers_[index].kind==Kind::Audio ? tr("Clique: ativar/silenciar. Botao direito: volume.") : tr("Mostrar/ocultar camada")); return;
             }
             const bool edge=index>=0 && (std::abs(event->position().x()-clip(index).left())<=12 || std::abs(event->position().x()-clip(index).right())<=12);
             tracks_->setCursor(edge ? Qt::SizeHorCursor : Qt::ArrowCursor);
-            tracks_->setToolTip(index>=0 ? (layers_[index].kind==Kind::Audio ? tr("Áudio · ") : tr("Vídeo · "))+QFileInfo(framescale::layerPath(layers_[index].path)).fileName() : QString());
+            tracks_->setToolTip(index<0 ? QString() : layers_[index].kind==Kind::Text
+                ? tr("Texto")+QStringLiteral(" · ")+QString::fromStdString(layers_[index].text.content)
+                : (layers_[index].kind==Kind::Audio ? tr("Áudio · ") : tr("Vídeo · "))+QFileInfo(framescale::layerPath(layers_[index].path)).fileName());
             return;
         }
         if(drag_==4 || drag_==5) {
@@ -627,16 +783,30 @@ private:
         }
         tracks_->update();
     }
-    void release() {
+    void release(QMouseEvent* event) {
         seeking_=false;
+        if(textSettingsPressed_>=0) {
+            const int index=textSettingsPressed_;textSettingsPressed_=-1;
+            if(index==selected_ && textSettingsRect(index).contains(event->position())) openTextSettings();
+            return;
+        }
         if(!drag_) return;
         const int finished=drag_; drag_=0; tracks_->unsetCursor();
         if(finished==4 || finished==5) { if(changed) changed(); return; }
         const bool identical=layers_.size()==before_.size() && std::equal(layers_.begin(),layers_.end(),before_.begin(),[](const Layer& a,const Layer& b) {
             return a.path==b.path && a.start==b.start && a.in==b.in && a.out==b.out && a.speed==b.speed && a.link==b.link && a.enabled==b.enabled;
         });
-        if(identical) return;
-        undo_.push_back(before_); if(undo_.size()>100) undo_.erase(undo_.begin()); redo_.clear(); edited();
+        if(identical) {
+            if(finished==3 && hasSelection() && layers_[selected_].kind==Kind::Text && textEditRequested) {
+                const auto& layer=layers_[selected_];
+                if(position_<layer.start || position_>=layer.start+layer.duration()) {
+                    position_=layer.start;updateRange();if(seekRequested) seekRequested(position_);
+                }
+                textEditRequested(selected_);
+            }
+            return;
+        }
+        undo_.push_back(before_); if(undo_.size()>100) undo_.erase(undo_.begin()); redo_.clear(); edited(samePreviewMedia(before_,layers_));
     }
     void context(const QPoint& local,const QPoint& global) {
         const int index=rowAt(local.y());
@@ -646,19 +816,32 @@ private:
         }
         if(index>=0) selected_=index;
         refresh(); SelectionMenu menu(this);
-        auto* add=menu.addAction(ControlSymbols::icon(ControlSymbols::Symbol::Plus),tr("Adicionar camada…"));
-        connect(add,&QAction::triggered,this,[this]{chooseMedia();});
+        auto* add=new SelectionMenu(&menu);add->setTitle(tr("Adicionar camada…"));
+        add->setIcon(ControlSymbols::icon(ControlSymbols::Symbol::Plus));menu.addMenu(add);
+        auto* files=add->addAction(ControlSymbols::icon(ControlSymbols::Symbol::Folder),tr("Arquivos"));
+        connect(files,&QAction::triggered,this,[this]{chooseMedia();});
         if(hasSelection()) {
+            if(layers_[selected_].kind==Kind::Text) {
+                auto* edit=menu.addAction(ControlSymbols::icon(ControlSymbols::Symbol::Text),tr("Editar texto"));
+                connect(edit,&QAction::triggered,this,[this]{openTextSettings();});
+            } else {
+            if(layers_[selected_].kind==Kind::Video) {
+                auto* transform=menu.addAction(ControlSymbols::icon(ControlSymbols::Symbol::Sliders),tr("Transform"));
+                connect(transform,&QAction::triggered,this,[this]{openTextSettings();});
+            }
             const bool linked=layers_[selected_].link!=0;
             auto* link=menu.addAction(ControlSymbols::icon(linked ? ControlSymbols::Symbol::Unlink : ControlSymbols::Symbol::Link),linked ? tr("Separar áudio e vídeo") : tr("Juntar \u00e1udio e v\u00eddeo"));
             link->setEnabled(hasLinkPartner());
             connect(link,&QAction::triggered,this,[this]{toggleLink();});
+            }
             auto* remove=menu.addAction(ControlSymbols::icon(ControlSymbols::Symbol::Trash),tr("Excluir camada"));
             connect(remove,&QAction::triggered,this,[this]{removeSelected();});
 
         }
         menu.exec(global);
     }
+    TextLayerDialog* textDialog_=nullptr;
+    QToolButton* selectionTool_=nullptr;
     Tracks* tracks_;
     std::vector<Layer> layers_,before_;
     std::vector<ThumbnailTask> thumbnailQueue_;
@@ -670,6 +853,9 @@ private:
     std::vector<std::vector<Layer>> undo_,redo_;
     QHash<QString,QImage> thumbnails_;
     int selected_=-1,nextLink_=0,pendingImports_=0,drag_=0;
+    QToolButton *textTool_=nullptr;
+    bool transformDragging_=false;
+    int textSettingsPressed_=-1;
     bool active_=false, initialized_=false, seeking_=false;
     bool pendingView_=false;
     QPointF savedView_{1,0};

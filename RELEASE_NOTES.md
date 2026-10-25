@@ -1,6 +1,15 @@
 # FrameScale 0.1.0 Alpha 1
 
-Atualizada em 22 de outubro de 2026, mantendo a mesma pré-release.
+Atualizada em 25 de outubro de 2026, mantendo a mesma pré-release.
+
+## Atualização de 25 de outubro
+
+- Camadas de texto editáveis diretamente na prévia, com ferramenta Texto (T), exclusão e Desfazer/Refazer.
+- Ferramenta Seleção (V) para mover camadas na prévia; ajustes de posição, escala vinculada ou independente, rotação e opacidade.
+- Janela Editar com navegação lateral, controles de tipografia, alinhamento por ícones e botão Restaurar transformação.
+- Menus de fontes compactos e propriedades com recorte arredondado; o fundo desfocado da janela Editar é composto pelo programa.
+- Correções de alinhamento do hover, ícones, menus da timeline e controles compartilhados com o instalador.
+- Prévia preservada durante atualizações das camadas e ajustes no fluxo de criação, seleção e edição de texto.
 
 ## Atualização de 22 de outubro
 

@@ -836,16 +836,19 @@ QWidget* MainWindow::buildInspector()
     exportButton_ = new QPushButton(tr("Adicionar à fila"), footer);
     exportButton_->setObjectName("addToQueueButton");
     exportButton_->setProperty("variant", "primary");
-    exportButton_->setFixedHeight(24);
+    exportButton_->setFixedHeight(30);
+    exportButton_->setMinimumWidth(0);
+    exportButton_->setIconSize(QSize(16,16));
     exportButton_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     auto* queueRow = new QHBoxLayout;
     queueRow->setSpacing(8);
     auto* view = new QPushButton(tr("Ver fila"), footer);
     view->setObjectName("viewQueueButton");
-    view->setFixedHeight(24);
+    view->setFixedHeight(28);
+    view->setIconSize(QSize(16,16));
     view->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    queueRow->addWidget(view, 2);
-    queueRow->addWidget(exportButton_, 3);
+    queueRow->addWidget(view);
+    f->addWidget(exportButton_);
 
     f->setContentsMargins(12, 12, 12, 16);
     f->addLayout(queueRow);
@@ -966,7 +969,23 @@ QWidget* MainWindow::buildEditorPage()
     v->setRowStretch(0, 1);
     layers_ = new LayerEditor(canvas);
     preview_->setLayerEditorWidget(layers_);
+    preview_->layerTransformChanged=[this](int index,const framescale::LayerTransform& t,bool finished) {
+        if(layers_->selectedLayer()!=index) layers_->selectLayer(index);
+        layers_->setSelectedTransform(t,true,finished);
+    };
+    preview_->textLayerSelected=[this](int index){layers_->selectLayer(index);};
+    layers_->textToolRequested=[this]{preview_->activateTextTool();};
+    preview_->textCreationRequested=[this](const QPointF& point){layers_->addTextLayer(false,point,true);};
+    layers_->textCreated=[this](int index){layers_->setTextToolActive();preview_->editTextLayer(index);};
+    layers_->selectionToolRequested=[this]{preview_->activateSelectionTool();};
+    layers_->textEditRequested=[this](int index){layers_->setTextToolActive();preview_->editTextLayer(index,false);};
+    preview_->textContentChanged=[this](int index,const std::string& content) {
+        if(index<0 || index>=int(layers_->layers().size())) return;
+        if(layers_->selectedLayer()!=index) layers_->selectLayer(index);
+        auto text=layers_->layers()[index].text;text.content=content;layers_->setSelectedText(text);
+    };
     layers_->selectionChanged = [this] {
+        preview_->setTextLayers(layers_->layers(),layers_->selectedLayer());
         if (!playbackSpeed_) return;
         const QSignalBlocker block(playbackSpeed_);
         playbackSpeed_->setValue(layers_->selectedSpeed());
@@ -996,6 +1015,7 @@ QWidget* MainWindow::buildEditorPage()
         preview_->setProjectMediaInfo(inputPath_,projectSize);
         preview_->setOrientation(orientation);
         preview_->setLayerEditing(true);
+        preview_->setTextLayers(layers_->layers(),layers_->selectedLayer());
         if(projectTransition_ && !preview_->currentFrame().isNull()) projectTransition_->reveal();
     };
     auto* layerClock = new QTimer(this);
@@ -1006,9 +1026,10 @@ QWidget* MainWindow::buildEditorPage()
             layers_->setPosition(seconds);
             const auto& layers=layers_->layers();
             const bool video=std::any_of(layers.begin(),layers.end(),[seconds](const auto& layer) {
-                return layer.enabled && layer.kind==framescale::LayerKind::Video && seconds>=layer.start && seconds<layer.start+layer.duration();
+                return layer.enabled && layer.kind!=framescale::LayerKind::Audio && seconds>=layer.start && seconds<layer.start+layer.duration();
             });
             preview_->setLayerVideoVisible(video);
+            preview_->updateTextOverlay();
         }
     });
     layerClock->start();

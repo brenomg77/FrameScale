@@ -59,7 +59,7 @@ public:
         const QRect available = screen->availableGeometry().adjusted(6,6,-6,-6);
         const int maxTextWidth = qMax(80, qMin(330, available.width() - 40));
         const QFontMetrics metrics(font);
-        const int textWidth = qMin(maxTextWidth, qMax(130,
+        const int textWidth = qMin(maxTextWidth, qMax(12,
             qMax(metrics.horizontalAdvance(title), metrics.horizontalAdvance(description))));
         document_.setTextWidth(textWidth);
         resize(textWidth + 40, qCeil(document_.size().height()) + 34);
@@ -132,6 +132,8 @@ public:
                 widget = widget->parentWidget();
             QString tip=widget->toolTip();
             QRect local=widget->rect();
+            const QRect customAnchor=widget->property("helpAnchorRect").toRect();
+            if(!customAnchor.isEmpty()) local=customAnchor;
             QString label;
             if (auto* button=qobject_cast<QAbstractButton*>(widget)) label=button->text();
             else if (auto* caption=qobject_cast<QLabel*>(widget)) label=caption->text();

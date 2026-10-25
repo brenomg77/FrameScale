@@ -11,6 +11,7 @@
 #include "ui/ExportDialog.h"
 #include "ui/InterfaceTranslator.h"
 #include "ui/MediaPreviewWidget.h"
+#include "ui/TextLayerOverlay.h"
 #include "ui/TrimTimeline.h"
 #include "ui/AudioTrack.h"
 #include "ui/HelpPopover.h"
@@ -107,6 +108,50 @@ int main(int argc, char* argv[])
             ++failures;
         }
     };
+    {
+        // Exercise the real preview hierarchy and hit testing, not a direct
+        // event sent to an isolated overlay: stacked media pages must not hide it.
+        MediaPreviewWidget preview;
+        preview.resize(900,650);preview.show();preview.setLayerEditing(true);
+        preview.setProjectMediaInfo(QString(),QSize(1280,720));
+        QImage frame(1280,720,QImage::Format_RGB32);frame.fill(Qt::darkGray);
+        preview.presentPairedFrame(frame);
+        framescale::MediaLayer layer;layer.kind=framescale::LayerKind::Video;
+        layer.width=1280;layer.height=720;layer.sourceDuration=layer.out=5;
+        preview.setTextLayers({layer},0);app.processEvents();
+        int creations=0,selections=0;
+        preview.textCreationRequested=[&](const QPointF&){++creations;};
+        preview.textLayerSelected=[&](int){++selections;};
+        auto clickPreview=[&] {
+            preview.updateTextOverlay();app.processEvents();
+            auto* overlay=preview.findChild<QWidget*>("textLayerOverlay");
+            auto* receiver=preview.childAt(overlay->geometry().center());
+            check(receiver==overlay,"preview surface intercepts tool clicks");
+            if(receiver) {
+                const QPoint global=preview.mapToGlobal(overlay->geometry().center());
+                const QPoint local=receiver->mapFromGlobal(global);
+                QMouseEvent down(QEvent::MouseButtonPress,local,global,Qt::LeftButton,Qt::LeftButton,Qt::NoModifier);
+                QApplication::sendEvent(receiver,&down);
+                QMouseEvent up(QEvent::MouseButtonRelease,local,global,Qt::LeftButton,Qt::NoButton,Qt::NoModifier);
+                QApplication::sendEvent(receiver,&up);
+            }
+        };
+        for(int attempt=0;attempt<3;++attempt) {
+            preview.activateTextTool();clickPreview();
+            preview.presentPairedFrame(frame);preview.activateSelectionTool();clickPreview();
+        }
+        check(creations==3,"text tool fails after preview surface refresh");
+        check(selections==3,"selection tool fails after switching tools");
+        QTemporaryDir replacement;
+        const QString imagePath=replacement.filePath("replacement.png");frame.save(imagePath);
+        preview.invalidateLayerPreview(false);
+        preview.setMedia(imagePath);
+        check(preview.currentFrame()==frame,"layer preview replacement clears the retained frame");
+        auto* stack=preview.findChild<QStackedWidget*>();
+        check(stack && stack->currentWidget()->objectName()!="previewPlaceholder",
+            "layer preview replacement shows the loading page");
+
+    }
     {
         QWidget host;
         QSpinBox field(&host);
@@ -1795,6 +1840,12 @@ int main(int argc, char* argv[])
     window.resize(1440, 900);
     InterfaceTranslator::applyLanguage(true);
     check(menus->actions()[1]->text() == "Settings", "language change did not update open menus");
+    {
+        auto* add=window.findChild<QPushButton*>("addToQueueButton");
+        auto* view=window.findChild<QPushButton*>("viewQueueButton");
+        check(add && view && add->width()>=add->sizeHint().width(),"English render queue label is clipped");
+        if(add && view) check(add->geometry().bottom()<view->geometry().top(),"Render queue actions overlap instead of using separate rows");
+    }
     check(tabs->count() >= 2, "language change lost projects");
     check(!window.findChild<QLabel*>("titleLogo")->pixmap().isNull(), "language change cleared logo");
     InterfaceTranslator::applyLanguage(false);

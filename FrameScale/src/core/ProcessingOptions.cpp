@@ -182,10 +182,11 @@ std::vector<std::string> validate(const ProcessingOptions& requested)
     if (options.layered && options.layers.empty())
         errors.emplace_back("Adicione uma camada ao projeto antes de exportar.");
     for (const auto& layer : options.layers) {
+        if(layer.kind!=LayerKind::Audio && !layerTransform(layer).valid()) errors.emplace_back("Uma camada tem uma transformação inválida.");
         std::error_code ec;
-        if (!std::filesystem::is_regular_file(layer.path, ec) || ec)
+        if (layer.kind != LayerKind::Text && (!std::filesystem::is_regular_file(layer.path, ec) || ec))
             errors.emplace_back("O ficheiro de uma camada não existe.");
-        if (layer.path == options.outputPath || std::filesystem::equivalent(layer.path, options.outputPath, ec))
+        if (layer.kind != LayerKind::Text && (layer.path == options.outputPath || std::filesystem::equivalent(layer.path, options.outputPath, ec)))
             errors.emplace_back("A saída não pode substituir o ficheiro de uma camada.");
         if (!std::isfinite(layer.speed) || layer.speed < .25 || layer.speed > 4
             || !std::isfinite(layer.in) || !std::isfinite(layer.out) || layer.in < 0 || layer.out <= layer.in

@@ -146,6 +146,14 @@ void configureGlassWindow(QWidget* widget, bool enabled, bool dark)
     static auto setComposition = reinterpret_cast<SetComposition>(
         GetProcAddress(GetModuleHandleW(L"user32.dll"), "SetWindowCompositionAttribute"));
     const auto hwnd = reinterpret_cast<HWND>(widget->winId());
+    if(widget->property("framelessToolSurface").toBool()) {
+        const LONG_PTR style=GetWindowLongPtr(hwnd,GWL_STYLE);
+        const LONG_PTR extended=GetWindowLongPtr(hwnd,GWL_EXSTYLE);
+        SetWindowLongPtr(hwnd,GWL_STYLE,style & ~(WS_BORDER|WS_DLGFRAME|WS_THICKFRAME));
+        SetWindowLongPtr(hwnd,GWL_EXSTYLE,extended & ~(WS_EX_WINDOWEDGE|WS_EX_CLIENTEDGE|WS_EX_STATICEDGE|WS_EX_DLGMODALFRAME));
+        const MARGINS margins{0,0,0,0};DwmExtendFrameIntoClientArea(hwnd,&margins);
+        SetWindowPos(hwnd,nullptr,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOZORDER|SWP_NOACTIVATE|SWP_FRAMECHANGED);
+    }
     const bool blur = enabled && !widget->property("stableSurface").toBool();
     AccentPolicy policy { blur ? 3 : 0, 0, 0, 0 };
     CompositionData data {19, &policy, sizeof(policy)};

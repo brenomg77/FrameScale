@@ -357,6 +357,17 @@ set_tests_properties(FrameScaleLayerStateTests PROPERTIES
     TIMEOUT 30)
 add_dependencies(framescale-tests FrameScaleLayerStateTests)
 
+add_executable(FrameScaleTextLayerTests EXCLUDE_FROM_ALL
+    tests/text_layer_tests.cpp src/platform/WindowBackdrop.cpp src/processing/RuntimePaths.cpp)
+target_include_directories(FrameScaleTextLayerTests PRIVATE src)
+target_link_libraries(FrameScaleTextLayerTests PRIVATE Qt6::Widgets)
+if(WIN32)
+    target_link_libraries(FrameScaleTextLayerTests PRIVATE dwmapi)
+endif()
+add_test(NAME FrameScaleTextLayerTests COMMAND FrameScaleTextLayerTests)
+set_tests_properties(FrameScaleTextLayerTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 30)
+add_dependencies(framescale-tests FrameScaleTextLayerTests)
+
 add_executable(FrameScaleKeyboardBindingsTests EXCLUDE_FROM_ALL tests/keyboard_bindings_tests.cpp)
 target_include_directories(FrameScaleKeyboardBindingsTests PRIVATE src)
 target_link_libraries(FrameScaleKeyboardBindingsTests PRIVATE Qt6::Widgets)
@@ -382,3 +393,13 @@ endif()
 add_test(NAME FrameScaleUrlImageTests COMMAND FrameScaleUrlImageTests)
 set_tests_properties(FrameScaleUrlImageTests PROPERTIES
     ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 20)
+
+add_executable(FrameScaleHoverLayoutTests EXCLUDE_FROM_ALL tests/hover_layout_tests.cpp src/platform/WindowBackdrop.cpp ${FRAMESCALE_BRAND_OBJECTS})
+target_include_directories(FrameScaleHoverLayoutTests PRIVATE src)
+target_link_libraries(FrameScaleHoverLayoutTests PRIVATE Qt6::Widgets)
+if(WIN32)
+    target_link_libraries(FrameScaleHoverLayoutTests PRIVATE dwmapi)
+endif()
+add_test(NAME FrameScaleHoverLayoutTests COMMAND FrameScaleHoverLayoutTests)
+set_tests_properties(FrameScaleHoverLayoutTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 30)
+add_dependencies(framescale-tests FrameScaleHoverLayoutTests)

@@ -1,4 +1,5 @@
 #pragma once
+#include "ControlSurfaceGeometry.h"
 #include "RoundedWindow.h"
 #include "ControlSymbols.h"
 #include <QAbstractButton>
@@ -354,6 +355,7 @@ QWidget#enhancementPanel QPushButton:checked {background:#007aff;border-color:#1
 QWidget#enhancementPanel QPushButton:checked:hover {background:#0064d2;border-color:#0064d2;color:white;}
 QWidget#enhancementPanel QPushButton:checked:pressed {background:#0054b0;border-color:#0054b0;color:white;}
 )";
+    style += controlSurfaceGeometry();
     if (widget->styleSheet() != style) widget->setStyleSheet(style);
     for (auto* button : widget->findChildren<QAbstractButton*>()) {
         if (button->property("presetIconOnly").toBool()) continue;
