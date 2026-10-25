@@ -77,9 +77,11 @@ int main(int argc,char** argv) {
         auto* input=value.findChild<QLineEdit*>();
         auto drag=[&](int start) {
             QMouseEvent down(QEvent::MouseButtonPress,QPointF(start,10),QPointF(start,10),Qt::LeftButton,Qt::LeftButton,Qt::NoModifier);
+            QApplication::sendEvent(input,&down);
             QMouseEvent move(QEvent::MouseMove,QPointF(start+20,10),QPointF(start+20,10),Qt::NoButton,Qt::LeftButton,Qt::NoModifier);
+            QApplication::sendEvent(input,&move);
             QMouseEvent up(QEvent::MouseButtonRelease,QPointF(start+20,10),QPointF(start+20,10),Qt::LeftButton,Qt::NoButton,Qt::NoModifier);
-            QApplication::sendEvent(input,&down);QApplication::sendEvent(input,&move);QApplication::sendEvent(input,&up);
+            QApplication::sendEvent(input,&up);
         };
         drag(130);check(value.value()==24,"Dragging blank space changes transform value");
         drag(4);check(value.value()==44,"Dragging number no longer changes transform value");
