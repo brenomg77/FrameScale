@@ -4,8 +4,6 @@
 <br />
 <img src=".github/branding/wordmark-compact.svg" width="400" alt="FrameScale" />
 
-**Amplie, restaure e interpole vídeos e imagens com inteligência artificial.**
-
 <a href="https://github.com/brenomg77/FrameScale/releases/tag/v0.1.0-alpha.1"><img src="https://img.shields.io/badge/release-v0.1.0--alpha.1-007aff" alt="Release v0.1.0-alpha.1" /></a>
 <a href="https://github.com/brenomg77/FrameScale/releases/download/v0.1.0-alpha.1/FrameScale-0.1.0-Windows-x64-Setup.exe"><img src="https://img.shields.io/badge/baixar-Windows_x64-28a745" alt="Baixar para Windows x64" /></a>
 <a href="https://github.com/brenomg77/FrameScale/releases/download/v0.1.0-alpha.1/FrameScale-0.1.0-Linux-x86_64.AppImage"><img src="https://img.shields.io/badge/baixar-Linux_x86__64-fcc624" alt="Baixar para Linux x86_64" /></a>
