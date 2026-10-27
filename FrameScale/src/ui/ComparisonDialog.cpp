@@ -217,6 +217,7 @@ ComparisonDialog::ComparisonDialog(framescale::ProcessingOptions options, double
     clock_->start();
     connect(original_, &MediaPreviewWidget::previewError, this, &ComparisonDialog::fail);
     connect(processed_, &MediaPreviewWidget::previewError, this, &ComparisonDialog::fail);
+    Appearance::apply(this);
     if (options_.mediaType == framescale::MediaType::Video) {
         fps = std::isfinite(fps) && fps > 0 ? fps : 25;
         sourceFps_ = fps;
@@ -224,9 +225,10 @@ ComparisonDialog::ComparisonDialog(framescale::ProcessingOptions options, double
         const double end = options_.trimEndSeconds > 0 ? std::min(duration, options_.trimEndSeconds) : duration;
         // Count first, then convert to time: subtraction of fractional frame
         // timestamps can make an exact one-frame selection look too short.
-        const qint64 firstFrame = static_cast<qint64>(std::ceil(options_.trimStartSeconds * fps - 1e-9));
-        const qint64 lastFrame = options_.trimEndSeconds > 0
+        const qint64 firstFrame = options_.layered ? qRound64(options_.trimStartSeconds*fps) : static_cast<qint64>(std::ceil(options_.trimStartSeconds * fps - 1e-9));
+        qint64 lastFrame = options_.trimEndSeconds > 0
             ? static_cast<qint64>(std::floor(end * fps + 1e-9)) : qRound64(end * fps);
+        if(options_.layered && end>options_.trimStartSeconds) lastFrame=std::max(firstFrame+1,qRound64(end*fps));
         const qint64 frameCount = lastFrame - firstFrame;
         if (frameCount < 1) {
             QTimer::singleShot(0, this, [this] { fail(tr("O trecho selecionado é curto demais para a preview.")); });
@@ -243,6 +245,13 @@ ComparisonDialog::ComparisonDialog(framescale::ProcessingOptions options, double
     timeline_->setRange(std::max(.001, (options_.trimEndSeconds - options_.trimStartSeconds)), 0, 0, 0);
     // The reference is always decoded from the selected source, never a job output.
     original_->setMedia(text(options_.inputPath), sourceOffset_);
+    if(options_.layered) {
+        std::vector<framescale::MediaLayer> textLayers;
+        for(const auto& layer:options_.layers) if(layer.kind==framescale::LayerKind::Text) textLayers.push_back(layer);
+        original_->setTextLayers(textLayers,-1);
+        if(auto* overlay=original_->findChild<QWidget*>("textLayerOverlay")) overlay->setAttribute(Qt::WA_TransparentForMouseEvents);
+    }
+
     original_->setTrimRange(options_.trimStartSeconds, options_.trimEndSeconds);
     original_->setAudioOffset(options_.audioOffsetMs);
     original_->setPlaybackSpeed(options_.playbackSpeed);
@@ -250,7 +259,6 @@ ComparisonDialog::ComparisonDialog(framescale::ProcessingOptions options, double
     // add no navigation information and are much more expensive to decode.
     original_->enableFilmstrip(sourceOffset_,clipLength_);
     setProperty("comparisonSource", text(options_.inputPath));
-    Appearance::apply(this);
     QTimer::singleShot(0, this, [this] { render(); });
 }
 ComparisonDialog::~ComparisonDialog()

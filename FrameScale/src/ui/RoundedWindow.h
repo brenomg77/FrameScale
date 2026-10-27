@@ -27,6 +27,16 @@
 class RoundedWindowEffect final : public QGraphicsEffect {
 public:
     explicit RoundedWindowEffect(QWidget* window):QGraphicsEffect(window),window_(window) {
+        // Owned glass windows must compose both blur and tint inside Qt's
+        // alpha outline. Native accent blur has a separate rectangular surface.
+        const bool ownedGlass=window_->isWindow() && (qobject_cast<QDialog*>(window_)
+            || (window_->parentWidget() && window_->property("glassWindowSurface").toBool()));
+        if(ownedGlass && (!window_->property("stableSurface").toBool() || window_->property("cachedGlassSurface").toBool())) {
+            window_->setProperty("cachedGlassSurface",true);
+            window_->setProperty("stableSurface",true);
+        }
+        backdropTimer_.setInterval(150);
+        connect(&backdropTimer_,&QTimer::timeout,this,[this]{refreshBackdrop();});
         window_->installEventFilter(this);
         reveal_.setDuration(150);
         reveal_.setEasingCurve(QEasingCurve::OutCubic);
@@ -38,11 +48,13 @@ protected:
             if (event->type()==QEvent::DynamicPropertyChange) {
                 const auto property=static_cast<QDynamicPropertyChangeEvent*>(event)->propertyName();
                 if (property=="glassBackdrop" || property=="glassWindowSurface") update();
+                if(property=="glassWindowSurface") scheduleBackdrop();
             }
             if (event->type()==QEvent::Show && window_->isWindow() && !window_->inherits("QMainWindow")
                 && !QSettings().value("reduceMotion",false).toBool()) {
                 reveal_.stop(); reveal_.setStartValue(0.); reveal_.setEndValue(1.); reveal_.start();
             }
+            if(event->type()==QEvent::Hide) backdropTimer_.stop();
             switch (event->type()) {
             case QEvent::Move:
             case QEvent::WinIdChange:
@@ -64,6 +76,7 @@ protected:
                         update();
                     });
                 }
+                scheduleBackdrop();
                 alpha_ = {};
                 update();
                 break;
@@ -143,6 +156,60 @@ protected:
         painter->restore();
     }
 private:
+    void scheduleBackdrop() {
+        if(!window_->property("cachedGlassSurface").toBool() || backdropPending_) return;
+        backdropPending_=true;QTimer::singleShot(0,this,[this]{
+            backdropPending_=false;refreshBackdrop();
+            if(window_->isVisible() && window_->parentWidget()
+                && window_->property("glassWindowSurface").toBool() && !GlassMaterial::reduced()) backdropTimer_.start();
+        });
+    }
+    void refreshBackdrop() {
+        if(!window_->isVisible() || !window_->property("cachedGlassSurface").toBool()) return;
+        if(GlassMaterial::reduced() || !window_->property("glassWindowSurface").toBool()) {
+            backdropTimer_.stop();backdropSample_={};GlassMaterial::updateBackdrop(window_,{});return;
+        }
+        if(!window_->parentWidget()) return;
+        QWidget* owner=window_->parentWidget()->window();
+        if(owner==window_ || !owner->isVisible()) return;
+        const QRect requested(owner->mapFromGlobal(window_->mapToGlobal(QPoint())),window_->size());
+        const QRect visible=requested.intersected(owner->rect());
+        if(visible.isEmpty()) {backdropSample_={};GlassMaterial::updateBackdrop(window_,{});return;}
+        // Only render our own application surface. Child tool windows are
+        // excluded by QWidget::grab, so the snapshot cannot capture itself.
+        const QImage capture=owner->grab(visible).toImage();
+        const QSize sampleSize=window_->size().scaled(160,160,Qt::KeepAspectRatio).expandedTo(QSize(1,1));
+        QImage sample(sampleSize,QImage::Format_ARGB32_Premultiplied);
+        sample.fill(Qt::transparent);
+        QPainter p(&sample);p.setRenderHint(QPainter::SmoothPixmapTransform);
+        p.scale(sample.width()/double(window_->width()),sample.height()/double(window_->height()));
+        p.drawImage(QRect(visible.topLeft()-requested.topLeft(),visible.size()),capture);p.end();
+        if(owner->property("glassWindowSurface").toBool()) {
+            // The owner's translucent tint is already beneath this window in
+            // the compositor. Copying it again makes Welcome almost opaque.
+            // Recover only the content above that tint before blurring it.
+            QImage tint(sample.size(),QImage::Format_ARGB32_Premultiplied);tint.fill(Qt::transparent);
+            QPainter base(&tint);
+            base.scale(sample.width()/double(window_->width()),sample.height()/double(window_->height()));
+            base.translate(-requested.topLeft());
+            GlassMaterial::paintWindowSurface(base,owner->rect(),QSettings().value("appearance","macos-light").toString()!="macos-dark");
+            base.end();
+            for(int y=0;y<sample.height();++y) {
+                auto* row=reinterpret_cast<QRgb*>(sample.scanLine(y));
+                const auto* background=reinterpret_cast<const QRgb*>(tint.constScanLine(y));
+                for(int x=0;x<sample.width();++x) {
+                    const QRgb src=row[x],bg=background[x];
+                    const int alpha=qBound(0,(qAlpha(src)-qAlpha(bg))*255/qMax(1,255-qAlpha(bg)),255);
+                    row[x]=qRgba(qBound(0,qRed(src)-qRed(bg)*(255-alpha)/255,alpha),
+                        qBound(0,qGreen(src)-qGreen(bg)*(255-alpha)/255,alpha),
+                        qBound(0,qBlue(src)-qBlue(bg)*(255-alpha)/255,alpha),alpha);
+                }
+            }
+        }
+        if(sample==backdropSample_ && !window_->property("glassBackdrop").value<QImage>().isNull()) return;
+        backdropSample_=sample;GlassMaterial::updateBackdrop(window_,sample,160);update();
+    }
+    QTimer backdropTimer_;QImage backdropSample_;bool backdropPending_=false;
     QWidget* window_;
     QVariantAnimation reveal_;
     qreal opacity_ = 1.;

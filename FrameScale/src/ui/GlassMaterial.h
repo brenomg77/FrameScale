@@ -32,24 +32,27 @@ inline bool reduced()
 inline QImage blur(const QImage& input, int maximum = 160, int radius = 3)
 {
     if (input.isNull()) return {};
-    QImage image = input.scaled(maximum, maximum, Qt::KeepAspectRatio, Qt::SmoothTransformation).convertToFormat(QImage::Format_RGB32);
+    // Widget backdrops can contain genuinely transparent areas. Blur their
+    // premultiplied alpha too, rather than flattening them to an opaque slab.
+    const auto format = input.hasAlphaChannel() ? QImage::Format_ARGB32_Premultiplied : QImage::Format_RGB32;
+    QImage image = input.scaled(maximum, maximum, Qt::KeepAspectRatio, Qt::SmoothTransformation).convertToFormat(format);
     image.setDevicePixelRatio(1);
     radius=std::clamp(radius,1,12);
     const int count = radius*2+1;
     for (int pass=0; pass<3; ++pass) {
-        QImage work(image.size(),QImage::Format_RGB32);
+        QImage work(image.size(),format);
         for (int y=0;y<image.height();++y) {
-            int r=0,g=0,b=0;
+            int r=0,g=0,b=0,alpha=0;
             auto sample=[&](int x) {return image.pixel(std::clamp(x,0,image.width()-1),y);};
-            for(int k=-radius;k<=radius;++k) {auto p=sample(k);r+=qRed(p);g+=qGreen(p);b+=qBlue(p);}
+            for(int k=-radius;k<=radius;++k) {auto p=sample(k);r+=qRed(p);g+=qGreen(p);b+=qBlue(p);alpha+=qAlpha(p);}
             auto* line=reinterpret_cast<QRgb*>(work.scanLine(y));
-            for(int x=0;x<image.width();++x) {line[x]=qRgb(r/count,g/count,b/count);auto a=sample(x-radius),z=sample(x+radius+1);r+=qRed(z)-qRed(a);g+=qGreen(z)-qGreen(a);b+=qBlue(z)-qBlue(a);}
+            for(int x=0;x<image.width();++x) {line[x]=qRgba(r/count,g/count,b/count,alpha/count);auto a=sample(x-radius),z=sample(x+radius+1);r+=qRed(z)-qRed(a);g+=qGreen(z)-qGreen(a);b+=qBlue(z)-qBlue(a);alpha+=qAlpha(z)-qAlpha(a);}
         }
         for(int x=0;x<image.width();++x) {
-            int r=0,g=0,b=0;
+            int r=0,g=0,b=0,alpha=0;
             auto sample=[&](int y) {return work.pixel(x,std::clamp(y,0,work.height()-1));};
-            for(int k=-radius;k<=radius;++k) {auto p=sample(k);r+=qRed(p);g+=qGreen(p);b+=qBlue(p);}
-            for(int y=0;y<image.height();++y) {reinterpret_cast<QRgb*>(image.scanLine(y))[x]=qRgb(r/count,g/count,b/count);auto a=sample(y-radius),z=sample(y+radius+1);r+=qRed(z)-qRed(a);g+=qGreen(z)-qGreen(a);b+=qBlue(z)-qBlue(a);}
+            for(int k=-radius;k<=radius;++k) {auto p=sample(k);r+=qRed(p);g+=qGreen(p);b+=qBlue(p);alpha+=qAlpha(p);}
+            for(int y=0;y<image.height();++y) {reinterpret_cast<QRgb*>(image.scanLine(y))[x]=qRgba(r/count,g/count,b/count,alpha/count);auto a=sample(y-radius),z=sample(y+radius+1);r+=qRed(z)-qRed(a);g+=qGreen(z)-qGreen(a);b+=qBlue(z)-qBlue(a);alpha+=qAlpha(z)-qAlpha(a);}
         }
     }
     return image;

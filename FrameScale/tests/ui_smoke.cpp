@@ -706,6 +706,14 @@ int main(int argc, char* argv[])
         QTimer::singleShot(180, &reveal, &QEventLoop::quit);
         reveal.exec();
         QCoreApplication::processEvents();
+        if(qobject_cast<QDialog*>(widget) && widget->property("roundedWindowInstalled").toBool()) {
+            check(!widget->property("nativeGlassActive").toBool(),"Dialog still uses rectangular native blur");
+            const QImage surface=widget->grab().toImage();
+            for(const QPoint corner:{surface.rect().topLeft(),surface.rect().topRight(),surface.rect().bottomLeft(),surface.rect().bottomRight()})
+                check(surface.pixelColor(corner).alpha()==0,"Dialog paints outside its rounded corners");
+            if(widget->property("cachedGlassSurface").toBool() && widget->property("glassWindowSurface").toBool() && !GlassMaterial::reduced())
+                check(!widget->property("glassBackdrop").value<QImage>().isNull(),"Dialog lost its blurred application backdrop");
+        }
         if (!captures.isEmpty())
             check(widget->grab().save(QDir(captures).filePath(name)),
                 "could not save screenshot");
@@ -1520,6 +1528,24 @@ int main(int argc, char* argv[])
         check(waitUntil([&]{return singleFrame.property("comparisonReady").toBool() || singleFrame.property("comparisonFailed").toBool();},15000), "single fractional frame timed out");
         check(singleFrame.property("comparisonReady").toBool(), "one-frame fractional preview rejected");
         singleFrame.close();
+        auto layeredSingle=singleOptions;layeredSingle.layered=true;
+        framescale::MediaLayer title;title.kind=framescale::LayerKind::Text;title.text.content="Breno";
+        title.sourceDuration=title.out=3;title.width=64;title.height=48;title.sourceFps=fractionalFps;
+        title.text.fontSize=14;layeredSingle.layers={title};layeredSingle.trimStartSeconds=0;layeredSingle.trimEndSeconds=1./25.;
+        ComparisonDialog textReference(layeredSingle,0,3,fractionalFps,&window);textReference.show();
+        check(waitUntil([&]{return textReference.property("comparisonReady").toBool() || textReference.property("comparisonFailed").toBool();},15000),"Layered one-frame preview timed out");
+        check(textReference.property("comparisonReady").toBool(),"Layered timeline frame rejected due to preview FPS rounding");
+        auto* referencePane=textReference.findChild<MediaPreviewWidget*>("comparisonOriginal");
+        auto* textOverlay=referencePane?referencePane->findChild<QWidget*>("textLayerOverlay"):nullptr;
+        check(textOverlay && !textOverlay->isHidden(),"Original comparison omits project text layers");
+        check(textOverlay && textOverlay->testAttribute(Qt::WA_TransparentForMouseEvents),"Comparison text is editable");
+        textReference.close();
+        auto emptyRange=singleOptions;emptyRange.trimStartSeconds=2;emptyRange.trimEndSeconds=1;
+        ComparisonDialog invalidRange(emptyRange,0,3,fractionalFps,&window);invalidRange.show();
+        check(waitUntil([&]{return invalidRange.property("comparisonFailed").toBool();},1000),"Invalid preview range was not reported");
+        check(invalidRange.property("roundedWindowInstalled").toBool() && !invalidRange.styleSheet().isEmpty(),"Preview failure bypasses window appearance initialization");
+        invalidRange.close();
+
     }
     {
         ExportDialog queue({ }, { }, &window);
@@ -1838,7 +1864,12 @@ int main(int argc, char* argv[])
     window.resize(900, 620);
     capture(&window, "compact-studio.png");
     window.resize(1440, 900);
+    QWidget helpTranslationFixture;
+    helpTranslationFixture.setToolTip(helpToolTip(QString::fromUtf8("Redução de ruído"),QString::fromUtf8("Remove ruído leve.\nUse em imagens com poucos pontos ou manchas indesejados.")));
     InterfaceTranslator::applyLanguage(true);
+    check(helpTranslationFixture.toolTip().contains("Removes light noise.<br>"),"Rich help description or line break was not translated");
+    auto* translatedEngine=window.findChild<QComboBox*>("upscaleEngine");
+    check(translatedEngine && translatedEngine->itemData(0,Qt::ToolTipRole).toString().contains("photos"),"Engine balloon remains Portuguese after switching to English");
     check(menus->actions()[1]->text() == "Settings", "language change did not update open menus");
     {
         auto* add=window.findChild<QPushButton*>("addToQueueButton");
@@ -1849,6 +1880,7 @@ int main(int argc, char* argv[])
     check(tabs->count() >= 2, "language change lost projects");
     check(!window.findChild<QLabel*>("titleLogo")->pixmap().isNull(), "language change cleared logo");
     InterfaceTranslator::applyLanguage(false);
+    check(helpTranslationFixture.toolTip().contains(QString::fromUtf8("Remove ruído leve.")),"Rich help did not return to Portuguese");
     check(window.findChild<QCheckBox*>("enableEnhancement")->text() == QString::fromUtf8("Melhoria de imagem"), "Enhancement not translated back to Portuguese");
     check(menus->actions()[1]->text() == QString::fromUtf8("Definições"), "language did not switch back to Portugal");
     InterfaceTranslator::applyLanguage(QStringLiteral("pt-BR"));

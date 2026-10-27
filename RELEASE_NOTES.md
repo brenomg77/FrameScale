@@ -1,6 +1,13 @@
 # FrameScale 0.1.0 Alpha 1
 
-Atualizada em 25 de outubro de 2026, mantendo a mesma pré-release.
+Atualizada em 27 de outubro de 2026, mantendo a mesma pré-release.
+
+## Atualização de 27 de outubro
+
+- Balões de ajuda traduzidos em inglês, inclusive ao mudar o idioma com a interface aberta.
+- Correção dos cantos das janelas flutuantes, preservando a transparência.
+- Duplo clique na camada de texto ativa a edição na prévia; apagar todas as camadas preserva dimensão e FPS.
+- Correções da prévia Original, intervalos de um quadro e indicadores dos menus.
 
 ## Atualização de 25 de outubro
 

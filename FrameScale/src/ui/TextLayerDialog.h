@@ -91,8 +91,6 @@ public:
         // A single rounded outline, without a second inset frame.
         setProperty("glassEdgeInset",0);
         setProperty("framelessToolSurface",true);
-        setProperty("stableSurface",true);
-        setProperty("cachedGlassSurface",true);
         setWindowFlag(Qt::NoDropShadowWindowHint,true);
         setProperty("dialogTitleHeight",42);
         setMinimumWidth(460);setMaximumWidth(480);
@@ -198,22 +196,7 @@ public:
         pages_->updateGeometry();layout()->activate();adjustSize();
     }
     void clearSelection() {controls_->setEnabled(false);transform_->setEnabled(false);hint_->setText(tr("Selecione uma camada na timeline."));}
-protected:
-    bool event(QEvent* event) override {
-        const bool result=QDialog::event(event);
-        if((event->type()==QEvent::Show || event->type()==QEvent::Move || event->type()==QEvent::Resize) && isVisible() && !backdropPending_) {
-            backdropPending_=true;QTimer::singleShot(0,this,[this]{
-                backdropPending_=false;if(!parentWidget() || !isVisible()) return;
-                auto* owner=parentWidget()->window();
-                const QPoint origin=owner->mapFromGlobal(mapToGlobal(QPoint()));
-                const QPixmap background=owner->grab(QRect(origin,size()));
-                GlassMaterial::updateBackdrop(this,background.toImage(),160);update();
-            });
-        }
-        return result;
-    }
 private:
-    bool backdropPending_=false;
     QDoubleSpinBox* number(QFormLayout* form,const QString& label,double min,double max,double value,const QString& suffix,const char* name) {
         auto* spin=new QDoubleSpinBox(controls_);spin->setObjectName(name);spin->setRange(min,max);spin->setDecimals(1);
         spin->setValue(value);spin->setSuffix(suffix);spin->setKeyboardTracking(false);form->addRow(label,spin);

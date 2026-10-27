@@ -86,6 +86,15 @@ int main(int argc,char** argv) {
         drag(130);check(value.value()==24,"Dragging blank space changes transform value");
         drag(4);check(value.value()==44,"Dragging number no longer changes transform value");
     }
+    {
+        framescale::ProcessingOptions original;original.layered=true;
+        framescale::MediaLayer video;video.path="fixture.mp4";video.sourceDuration=video.out=5;video.width=3840;video.height=2160;video.sourceFps=24000./1001.;original.layers={video};
+        LayerEditor retained;retained.setProject("fixture.mp4",original,true);retained.selectLayer(0);retained.removeSelected();
+        check(retained.layers().empty() && retained.canvasSize()==QSize(3840,2160) && std::abs(retained.canvasFps()-video.sourceFps)<.0001,"Deleting all layers resets project format");
+        framescale::ProcessingOptions empty;empty.layered=true;empty.projectWidth=retained.canvasSize().width();empty.projectHeight=retained.canvasSize().height();empty.projectFps=retained.canvasFps();
+        retained.setProject("fixture.mp4",empty,true);retained.addTextLayer(false,QPointF(50,50),true);
+        check(retained.layers()[0].width==3840 && retained.layers()[0].height==2160 && std::abs(retained.layers()[0].sourceFps-video.sourceFps)<.0001,"New text loses the format of the emptied project");
+    }
     framescale::ProcessingOptions project;project.layered=true;
     framescale::MediaLayer layer;layer.sourceDuration=layer.out=10;layer.path="fixture.mp4";
     layer.width=1280;layer.height=720;project.layers={layer};
@@ -101,6 +110,11 @@ int main(int argc,char** argv) {
     clickTrack(QPointF(tracks->pixelAt(2),79));
     check(!editor.findChild<QDialog*>("textLayerDialog"),"Clicking a text layer opened settings instead of requesting inline editing");
     check(requested==0,"Clicking a text layer did not request preview text editing");
+    int focused=-1;editor.textFocusRequested=[&](int index){focused=index;};
+    const QPointF textPoint(tracks->pixelAt(2),79);
+    QMouseEvent doubleClick(QEvent::MouseButtonDblClick,textPoint,textPoint,Qt::LeftButton,Qt::LeftButton,Qt::NoModifier);
+    QApplication::sendEvent(tracks,&doubleClick);
+    check(focused==0,"Double click does not focus inline text typing");
     clickTrack(QPointF(tracks->pixelAt(5)-25,79));
     auto* dialog=dynamic_cast<TextLayerDialog*>(editor.findChild<QDialog*>("textLayerDialog"));
     check(dialog && dialog->isVisible() && !dialog->isModal(),"Text settings icon did not open the modeless dialog");

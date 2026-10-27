@@ -18,6 +18,8 @@
 #include <QTabBar>
 #include <QTableWidget>
 #include <QTranslator>
+#include <QTextDocument>
+#include <functional>
 
 // Qt does not translate standard message-box buttons with the application
 // dictionary. Keep the small set used by FrameScale local to its language choice.
@@ -101,12 +103,24 @@ public:
         for (auto it = oldDictionary.begin(); it != oldDictionary.end(); ++it)
             if (it.key() == it.value().toString())
                 sources.insert(it.key(), it.key());
-        auto text = [&sources, &oldDictionary](const QString& value) {
+        std::function<QString(const QString&)> text;
+        text = [&sources, &oldDictionary, &text](const QString& value) -> QString {
             if (value.isEmpty())
                 return value;
             const QString source = sources.value(value, value);
             if (translator->translations_.contains(source))
                 return translator->translations_.value(source).toString();
+            // Help is assembled from separately translated title/description
+            // strings. The complete HTML is not a dictionary key.
+            if(value.startsWith("<qt><p><b>") && value.endsWith("</p></qt>")) {
+                static const QRegularExpression parts("^<qt><p><b>(.*?)</b></p><p>(.*?)</p></qt>$",QRegularExpression::DotMatchesEverythingOption);
+                const auto match=parts.match(value);
+                if(match.hasMatch()) {
+                    auto decode=[](QString html) {html.replace("<br>","\n");QTextDocument doc;doc.setHtml(html.replace('\n',"<br>"));return doc.toPlainText();};
+                    return QString("<qt><p><b>%1</b></p><p>%2</p></qt>")
+                        .arg(text(decode(match.captured(1))).toHtmlEscaped(),text(decode(match.captured(2))).toHtmlEscaped().replace('\n',"<br>"));
+                }
+            }
             // Preserve values already substituted with .arg(), including names
             // and durations, while translating the surrounding sentence.
             for (auto it = oldDictionary.begin(); it != oldDictionary.end(); ++it) {
@@ -117,7 +131,7 @@ public:
                 if (!translated.isNull())
                     return translated;
             }
-            return value;
+            return source;
         };
         for (auto* widget : QApplication::allWidgets()) {
             const QSignalBlocker blocker(widget);
@@ -125,6 +139,7 @@ public:
             widget->setWindowTitle(text(widget->windowTitle()));
             widget->setToolTip(text(widget->toolTip()));
             widget->setAccessibleName(text(widget->accessibleName()));
+            widget->setAccessibleDescription(text(widget->accessibleDescription()));
             if (auto* label = qobject_cast<QLabel*>(widget); label && !label->text().isEmpty())
                 label->setText(text(label->text()));
             if (auto* button = qobject_cast<QAbstractButton*>(widget))

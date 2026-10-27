@@ -37,6 +37,14 @@ int main(int argc,char** argv) {
     check(!window.property("glassBackdrop").value<QImage>().isNull(),"Material image is missing");
     const auto colour=window.property("glassBackdrop").value<QImage>().pixelColor(0,0);
     check(colour.red()!=colour.blue(),"Glass blur discarded all backdrop colour");
+    QImage translucent(24,24,QImage::Format_ARGB32_Premultiplied);
+    translucent.fill(QColor(30,100,220,96));
+    const auto blurredAlpha=GlassMaterial::blur(translucent,24).pixelColor(12,12);
+    check(blurredAlpha.alpha()==96 && blurredAlpha.blue()>blurredAlpha.red()+150,
+        "Blur flattens translucent window content or loses premultiplied colour");
+    translucent.fill(Qt::transparent);
+    check(GlassMaterial::blur(translucent,24).pixelColor(12,12).alpha()==0,
+        "Blur adds opaque pixels to an empty window backdrop");
     check(!GlassMaterial::updateBackdrop(&window,source),"Unchanged frame rebuilt the material");
     window.setProperty("glassBackdrop",QVariant());
     check(GlassMaterial::updateBackdrop(&window,source),"Cleared material with the same frame key was not rebuilt");

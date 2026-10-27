@@ -66,6 +66,17 @@ class LayerEditor final : public QWidget {
             if(e->button()==Qt::MiddleButton) { navigating_=true; TrimTimeline::mousePressEvent(e); }
             else owner->press(e);
         }
+        void mouseDoubleClickEvent(QMouseEvent* e) override {
+            const int index=owner->rowAt(e->position().y());
+            if(e->button()==Qt::LeftButton && index>=0 && index<int(owner->layers_.size())
+                && owner->layers_[index].kind==Kind::Text && owner->clip(index).contains(e->position())
+                && !owner->textSettingsRect(index).contains(e->position())) {
+                owner->drag_=0;owner->selectLayer(index);owner->requestTextEdit();
+                if(owner->textFocusRequested) owner->textFocusRequested(index);
+                e->accept();return;
+            }
+            TrimTimeline::mouseDoubleClickEvent(e);
+        }
         void mouseMoveEvent(QMouseEvent* e) override {
             if(navigating_) TrimTimeline::mouseMoveEvent(e); else owner->move(e);
         }
@@ -131,7 +142,7 @@ public:
     std::function<void()> changed, selectionChanged, playRequested, previewInvalidated;
     std::function<void(double)> seekRequested;
     std::function<void(const QPoint&)> volumeRequested;
-    std::function<void(int)> textEditRequested;
+    std::function<void(int)> textEditRequested,textFocusRequested;
     std::function<void()> selectionToolRequested, textToolRequested;
     std::function<void(int)> textCreated;
     void activateSelectionTool() {textTool_->setChecked(false);textTool_->setIcon(ControlSymbols::icon(ControlSymbols::Symbol::Text,true));selectionTool_->setChecked(true);selectionTool_->setIcon(ControlSymbols::icon(ControlSymbols::Symbol::Selection,true));if(selectionToolRequested) selectionToolRequested();}
@@ -189,6 +200,8 @@ public:
     void setProject(const QString& path, const framescale::ProcessingOptions& options, bool active) {
         if(textDialog_) {textDialog_->hide();textDialog_->clearSelection();}
         ++generation_; cancelRender(); cancelReaders(); renderTimer_.stop();sourceVersions_.clear();
+        canvas_=options.projectWidth>0 && options.projectHeight>0?QSize(options.projectWidth,options.projectHeight):QSize(1280,720);
+        canvasFps_=options.projectFps>0?options.projectFps:25;
         initialized_ = options.layered;
         workStart_=options.trimStartSeconds; workEnd_=options.trimEndSeconds; projectExtent_=1; seeking_=false; drag_=0; active_ = active; pendingImports_ = 0; layers_.clear(); thumbnails_.clear();
         undo_.clear(); redo_.clear(); selected_ = -1; position_ = 0; pendingView_=false;tracks_->resetView();
@@ -209,13 +222,13 @@ public:
     }
     void addTextLayer(bool showSettings=false,QPointF position=QPointF(50,50),bool empty=false) {
         if(!active_ || !initialized_) return;
-        remember(); Layer layer; layer.kind=Kind::Text;layer.text.x=position.x();layer.text.y=position.y();
+        remember(); Layer layer; layer.width=canvasSize().width();layer.height=canvasSize().height();layer.sourceFps=canvasFps_;layer.kind=Kind::Text;layer.text.x=position.x();layer.text.y=position.y();
         layer.text.content=empty?std::string():tr("Texto").toStdString();
         if(!QFontDatabase::families().contains(QString::fromStdString(layer.text.fontFamily)))
             layer.text.fontFamily=font().family().toStdString();
-        layer.start=std::clamp(position_,0.,std::max(0.,extent()-1./25));
+        layer.start=std::clamp(position_,0.,std::max(0.,extent()-1./canvasFps_));
         layer.sourceDuration=std::max(5.,extent());
-        layer.out=std::max(1./25,std::min(5.,extent()-layer.start));
+        layer.out=std::max(1./canvasFps_,std::min(5.,extent()-layer.start));
         for(const auto& source:layers_) if(source.kind==Kind::Video) {
             layer.width=source.width;layer.height=source.height;layer.sourceFps=source.sourceFps;break;
         }
@@ -230,8 +243,9 @@ public:
     QSize canvasSize() const {
         for(const auto& l:layers_) if(l.kind==Kind::Video && l.width>0 && l.height>0) return QSize(l.width,l.height);
         for(const auto& l:layers_) if(l.width>0 && l.height>0) return QSize(l.width,l.height);
-        return QSize(1280,720);
+        return canvas_;
     }
+    double canvasFps() const {return canvasFps_;}
     void requestTextEdit() {
         if(!hasSelection() || layers_[selected_].kind!=Kind::Text) return;
         const auto& l=layers_[selected_];if(position_<l.start || position_>=l.start+l.duration()) {position_=l.start;updateRange();if(seekRequested) seekRequested(position_);}
@@ -352,7 +366,7 @@ private:
         return hasSelection() && layers_[selected_].kind!=Kind::Text && std::count_if(layers_.begin(),layers_.end(),[&](const Layer& l){return l.path==layers_[selected_].path;})>1;
     }
     QString timecode(double seconds) const {
-        double fps=25;
+        double fps=canvasFps_;
         for(const auto& layer:layers_) if(layer.kind==Kind::Video) {fps=layer.sourceFps;break;}
         const qint64 whole=qFloor(std::max(0.,seconds)+1.e-7);
         const int frame=std::clamp(int(qRound64(seconds*fps)-qRound64(whole*fps)),0,qMax(0,qCeil(fps)-1));
@@ -368,8 +382,13 @@ private:
         if(pendingView_ && initialized_) {tracks_->restoreView(savedView_.x(),savedView_.y());pendingView_=false;}
     }
     void refresh() {
+        const Layer* source=nullptr;
+        for(const auto& layer:layers_) if(layer.kind==Kind::Video && layer.width>0 && layer.height>0) {source=&layer;break;}
+        if(!source) for(const auto& layer:layers_) if(layer.kind==Kind::Text && layer.width>0 && layer.height>0) {source=&layer;break;}
+        if(source) {canvas_=QSize(source->width,source->height);if(source->sourceFps>0) canvasFps_=source->sourceFps;}
+
         textTool_->setEnabled(initialized_);
-        double fps=25;
+        double fps=canvasFps_;
         for(const auto& layer:layers_) if(layer.kind==Kind::Video) {fps=layer.sourceFps;break;}
         tracks_->setFrameRate(fps);
         tracks_->setLayerRows(int(layers_.size()));
@@ -840,6 +859,7 @@ private:
         }
         menu.exec(global);
     }
+    QSize canvas_{1280,720};double canvasFps_=25;
     TextLayerDialog* textDialog_=nullptr;
     QToolButton* selectionTool_=nullptr;
     Tracks* tracks_;

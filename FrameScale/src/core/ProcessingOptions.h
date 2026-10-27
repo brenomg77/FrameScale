@@ -80,6 +80,8 @@ inline void setLayerTransform(MediaLayer& l,const LayerTransform& t) {
     else l.transform=t;
 }
 struct ProcessingOptions {
+    int projectWidth=0, projectHeight=0;
+    double projectFps=0;
     bool layered = false;
     std::vector<MediaLayer> layers;
     VideoOrientation orientation;

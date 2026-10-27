@@ -38,7 +38,7 @@ public:
         const QString ink = Appearance::light() ? "#252329" : "#f2f1f5";
         QString style = QString(R"(
 QMenu#selectionPopup {background:transparent;border:0;padding:14px;color:%1;font-size:14px;font-weight:500;font-family:"%2";}
-QMenu#selectionPopup::item {background:transparent;border:0;border-radius:7px;padding:4px 10px 4px 8px;min-height:20px;}
+QMenu#selectionPopup::item {background:transparent;border:0;border-radius:7px;padding:4px 10px 4px 30px;min-height:20px;}
 QMenu#selectionPopup::item:checked {background:#007aff;color:white;}
 QMenu#selectionPopup::item:selected {background:#0064d2;color:white;}
 QMenu#selectionPopup::item:disabled {color:#96939e;}

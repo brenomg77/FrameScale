@@ -979,6 +979,7 @@ QWidget* MainWindow::buildEditorPage()
     layers_->textCreated=[this](int index){layers_->setTextToolActive();preview_->editTextLayer(index);};
     layers_->selectionToolRequested=[this]{preview_->activateSelectionTool();};
     layers_->textEditRequested=[this](int index){layers_->setTextToolActive();preview_->editTextLayer(index,false);};
+    layers_->textFocusRequested=[this](int index){layers_->setTextToolActive();preview_->editTextLayer(index,true);};
     preview_->textContentChanged=[this](int index,const std::string& content) {
         if(index<0 || index>=int(layers_->layers().size())) return;
         if(layers_->selectedLayer()!=index) layers_->selectLayer(index);
@@ -1010,8 +1011,7 @@ QWidget* MainWindow::buildEditorPage()
         if (path.isEmpty()) { preview_->invalidateLayerPreview(true); return; }
         else preview_->setMedia(path, position);
         preview_->restoreView(zoom,pan);
-        QSize projectSize;
-        for(const auto& layer:layers_->layers()) if(layer.kind==framescale::LayerKind::Video) { projectSize=QSize(layer.width,layer.height); break; }
+        const QSize projectSize=layers_->canvasSize();
         preview_->setProjectMediaInfo(inputPath_,projectSize);
         preview_->setOrientation(orientation);
         preview_->setLayerEditing(true);
@@ -1693,6 +1693,7 @@ MainWindow::processingOptions(const QString& output) const
     o.trimEndSeconds = preview_->trimEndSeconds();
     if (layers_->active() && layers_->initialized()) {
         o.layered = true; o.layers = layers_->layers();
+        o.projectWidth=layers_->canvasSize().width();o.projectHeight=layers_->canvasSize().height();o.projectFps=layers_->canvasFps();
         o.playbackSpeed = 1.; o.audioOffsetMs = 0;
         o.trimStartSeconds = layers_->exportStart(); o.trimEndSeconds = layers_->exportEnd();
     }
