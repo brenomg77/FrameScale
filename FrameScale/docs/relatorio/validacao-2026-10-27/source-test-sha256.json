@@ -1,0 +1,334 @@
+﻿[
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\core\\ModelCatalog.cpp",
+        "Hash":  "C127A29C266F487BB2B167E328D559F3128ADD5BDE3D2E164DBAF2CC0EF70D36"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\core\\ModelCatalog.h",
+        "Hash":  "4954A86290A859916B00A6F816451895A22B567717181AE5FB126CA9C3F9D847"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\core\\ProcessingOptions.cpp",
+        "Hash":  "615CE6667F8818D5C9A8294998641411E4E21497AC24406535290B627F2F50B9"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\core\\ProcessingOptions.h",
+        "Hash":  "312772C088410F268E73D6AF36B69218692C46B3DA06C2E778FA863394841564"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\main.cpp",
+        "Hash":  "4304BF6723990856728F2C1990A242252E2C8A78E7EFB9981F0F220F0A6B6521"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\MainWindow.cpp",
+        "Hash":  "5C6CECE0E3E19E987C0191B83F2060A604E94EEF5DC1A1F4EC2184A81A6C16C2"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\MainWindow.h",
+        "Hash":  "1B22E2F0FAD7C28A89081F74F233B742B79B9DDFABFBE3B63C481CE50633F725"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\platform\\ProcessingResources.h",
+        "Hash":  "505B7FB58BE6AD182BD27946FCBCE9BCAC9B434CBEA3F71F24D8A7F0806913DE"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\platform\\TaskbarProgress.cpp",
+        "Hash":  "5C1025CE747A3AE042822B43FA4BAA3D7EE2ADFF032E6475125FE73E85E73A3E"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\platform\\TaskbarProgress.h",
+        "Hash":  "CE2D9A95A241F9DBEEAEB7357D65B307458609ED12FE5399143F2390F4E1D14B"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\platform\\WindowBackdrop.cpp",
+        "Hash":  "EDCD161B277D2D1161BC2D57AD8A7DA8077218470F30EC0606B2BE55695C1EE3"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\platform\\WindowBackdrop.h",
+        "Hash":  "4F90CD88BB4CAFA0AE1ADCE6344D133E693E4943CFE9590928B31D246BD88152"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\processing\\LayerComposition.h",
+        "Hash":  "97B27D0C6424BBE36E443BB525EFD6EDC3EBC470E9D81010072BD00F367BF3E7"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\processing\\PreviewFrameReader.cpp",
+        "Hash":  "FA0519A129A491E3846C0C713625C9476FA93C201F31507B18F74C567CA7D8ED"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\processing\\PreviewFrameReader.h",
+        "Hash":  "16AE65B4B9CE18EE3B77DD6B6D062B31FEDE3C242423B80B7A29BEE219E391E9"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\processing\\ProcessingJob.cpp",
+        "Hash":  "8D6463E60A935B5E154D5FFA0A06E8CFE914FD119FD2E8E3F749339A57AF9915"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\processing\\ProcessingJob.h",
+        "Hash":  "E402583B0FB3346E1A05E741FEE0E6CB71B066B70E1D51F158A0C27320988309"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\processing\\RuntimePaths.cpp",
+        "Hash":  "EE2ABED4B502232AE1144EB5E0744069F7F0DDF2AFAA70C8DD0735ED66308767"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\processing\\RuntimePaths.h",
+        "Hash":  "B5FF22BA2C398D6915AD53EFAE504F1B584C036A1CD190D38DA2977DB567B3DC"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\processing\\TextLayerRenderer.h",
+        "Hash":  "A830BF766F6D06DCFBC1C65C3FB0EB22AA7BDF5E6A87DE48B8BCB03C07978416"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\ui\\Appearance.h",
+        "Hash":  "9793EAB102269D41D27C13284DB2CD4B6DA73F518389A8187BBC611FC6171237"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\ui\\AudioTrack.h",
+        "Hash":  "17774E0B3F3971685A599602F0CB94C9BDEBDB1A3C787E8426889DCBED47C16C"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\ui\\ComparisonDialog.cpp",
+        "Hash":  "0049BCB5D0786369C1D9FCC3D9CA282F02535D0292CFD1B4F66CFAA69D513F36"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\ui\\ComparisonDialog.h",
+        "Hash":  "40FB0259A2E4B80CD8817553E7C44ED74454CF7EE542DB988C7090616CE3F0BD"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\ui\\ContinuousPreviewAudio.h",
+        "Hash":  "C6FEF4D968576F795C36B58A95D64F39228A26210C67A35F6FB8719A8D05BF1D"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\ui\\ControlSurfaceGeometry.h",
+        "Hash":  "E2AD24E5C5CB064FCAA37471347B7BC2A1BECD8F332F76299D0CD595E34399DE"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\ui\\ControlSymbols.h",
+        "Hash":  "C50935E0B729E394E69B6B8EC63E829766D8EF7BBD895B97CEBA1BF4357498E5"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\ui\\EditorControls.h",
+        "Hash":  "20084EBFFF4139578B16F025CF0A0E181D581AE7BD610ED6DCC9E776E3090585"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\ui\\EncoderOptionsWidget.cpp",
+        "Hash":  "6F1DA06E8A9AC6B8C33C0A54E007F6AA43DB44116555CC852DC756BEB4869DE8"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\ui\\EncoderOptionsWidget.h",
+        "Hash":  "C93AEA2E8A20995CAD9E16C4429E0C34AC2F89735F11174E33D7A20A61746594"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\ui\\EnhancementWidget.h",
+        "Hash":  "8F53444F580596AF12B1E8E4E850C7B7A7BBD5BF6779351BF0F318D73204F49E"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\ui\\ExportDialog.cpp",
+        "Hash":  "7C4B2494B91F1AA48426B3031D09DCFCD9524193938547AC2E23CAB5FD5F2C73"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\ui\\ExportDialog.h",
+        "Hash":  "29ED7A2165B2A94C7C182A759FA06A69CDF30BA87257F1326D8FAB91F41CD678"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\ui\\GlassMaterial.h",
+        "Hash":  "D686FFBAD55A978A8AE8742EBB1F5CE324CD97A7A9A3BCCCEFCD809C2AA39410"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\ui\\HelpPopover.h",
+        "Hash":  "C19C3F4DD7BD0C29FB73F821C0C520EB03A32B3CEFF1BA7F690CC79D0D6BA7BB"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\ui\\HelpToolTip.h",
+        "Hash":  "57D101C99AD818D12663ACC2DCC25B2135F3F8BD6AD1562A9131224DC5291A6B"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\ui\\InterfaceTranslator.h",
+        "Hash":  "722A74372A4FD427662375551250916BEEB28426B58784C8E4F0ECE0C126E319"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\ui\\KeyboardBindings.h",
+        "Hash":  "31BF59E430558E71B861A173AFDA6ACC564C5CCEFF280C14A822A865C1FAB6E0"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\ui\\KeyboardShortcutsPage.h",
+        "Hash":  "CE14ECC4E868D24322EDDB7FA02CCCD41A4BB15B0E35261D86E06E14B8342723"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\ui\\LayerEditor.h",
+        "Hash":  "4500E9136774907E02323CA50D3996E054EB3CB2139F7C9C8F3C1FD0BF456CFA"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\ui\\LayerTransformControls.h",
+        "Hash":  "D08643278F1306E549F82DA0F01B339A9C894FCC8EF57EFEF183CAFC37D90ABE"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\ui\\MediaPreviewWidget.cpp",
+        "Hash":  "A3112B74A8268A649EFA6D27B7B3158903FB2E12F969A85F9A8521F05FDDE1ED"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\ui\\MediaPreviewWidget.h",
+        "Hash":  "58521AEF202FF8C0A0ECC2C133CF83FA824CB0698F2BD15FCCFCE7AB681DFA7B"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\ui\\ModelHelp.h",
+        "Hash":  "97CFEE8D207B4A39E119383B8FA12A7909334D4F65CFC80C551638A7AD235C80"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\ui\\ProgramTour.h",
+        "Hash":  "AF7E39EB4C93B99E80126325122001F7657FA71357B91E3EA6C071F973FC4C1D"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\ui\\ProjectTransition.h",
+        "Hash":  "FA9D6F5254C5DB36D44CD3CDB75440D7E53DA3CC0F01A7283AC52AE4D2499C09"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\ui\\RoundedWindow.h",
+        "Hash":  "4BC6FB354F0CBDD26503C7EE7A2A0D67E10E99A5222690D1EB6DAA9D9807860A"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\ui\\SelectionComboBox.h",
+        "Hash":  "D79F81E93233487F2EF8149D579D3CB5CD2FCE9980302440F6B5A7E481E0AC4E"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\ui\\TextLayerDialog.h",
+        "Hash":  "B79E3CD6088B4B0075630E478552C89FCE80D89B540580B7977C4E21E16436B3"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\ui\\TextLayerOverlay.h",
+        "Hash":  "740CE2C530A5C810BDE2ABD912FF65D2D8C649FC6F740158DADD70881AADBD57"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\ui\\TrimTimeline.h",
+        "Hash":  "02F4BAC1507F6024C03812BE319EB4F1FF730903E1042C74D69073EB55F67604"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\ui\\Typography.h",
+        "Hash":  "6D6632FCE0D015782FA20C6EF019F29407A11C7D290D6FF658ABC33120403C93"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\src\\ui\\VideoDownloadDialog.h",
+        "Hash":  "428B12B6C4D50E8F0A9A80399E56AC7467550DD7C23B97A1E75E1A769564B9A7"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\tests\\core_tests.cpp",
+        "Hash":  "56BA52861CF93C05221899E71D8BAEF278B6560B0F4959AEB3007FD2589FA5F2"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\tests\\export_queue_smoke.cpp",
+        "Hash":  "D13D3FAFD2BF2E7D3EE7D17B76A1E05984F94AF0F6C6121A2715381D999368AB"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\tests\\fake_processing_tool.cpp",
+        "Hash":  "7B2F78E97A4782611ACA08FD49F9849B149A36A8BD2EB0B2CA90824633F44810"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\tests\\glass_material_tests.cpp",
+        "Hash":  "714D7BBC4FAEE70F5FCEADA35FF71D16F8D79093C4F7AA155860CABC3D355E80"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\tests\\hover_layout_tests.cpp",
+        "Hash":  "404173EA5C53A25DF4348272B86E47E8B5298B2FE72E283BEDEB34A8FE55FA6A"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\tests\\inspect-user-interpolation.py",
+        "Hash":  "9277135D933366C62508436A0B956B2C80430C185F86AE066084AC619D30FF65"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\tests\\keyboard_bindings_tests.cpp",
+        "Hash":  "A6BFBE16FE44B30E786AC63F154035168736C9E7A9DABC22DA81F0CB6595B61B"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\tests\\layer_state_tests.cpp",
+        "Hash":  "4868A19FE6B3F4DA500F4BE047478567F5E9E969FDC12FF28D8E9A13A0A52E24"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\tests\\playback_check.cpp",
+        "Hash":  "514D7CBADFA935F17441ACCE4A1B245D12F36E708F7D3B555F03057CB4825F8E"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\tests\\preview_decode_check.cpp",
+        "Hash":  "9530C8408B0FEA6CB69A49D0D252A4F1070ACD3FD117C9B17E7E59674639922C"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\tests\\probe-enhancement-filters.py",
+        "Hash":  "5E958EB316A190E55A123F2C11DD09B939B73641C8C30722E9D6B066C43958B2"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\tests\\processing_smoke.cpp",
+        "Hash":  "2AE84C08C5052CBF78FBC71E0EDB2E98C3B3BBECE90121E0779B24C8DA0F9A78"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\tests\\program_tour_tests.cpp",
+        "Hash":  "13B24A1F20D71B29004148EED3420DAC47A4BB02D3C6B4BDDA68E06852711B7D"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\tests\\setup_actions_tests.cpp",
+        "Hash":  "C6768A006E0A0939618D2FBEB835761B6F1CCE4B4B6686147DD29C6323D17C29"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\tests\\test_paths.py",
+        "Hash":  "555558BD0D1785847E4D28CE331A7F57E5124DC56780A7D6E2CE08D0E3889CB9"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\tests\\text_layer_tests.cpp",
+        "Hash":  "65BB5119B237E875C617F620779F11703B8C08F5118F8960ED487460CCADCC23"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\tests\\ui_smoke.cpp",
+        "Hash":  "7E1BD227FF4CEC6E48007A7E26B8E7AAC0C0D48054E2B385A4C6B4BCF9D80F51"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\tests\\url_image_tests.cpp",
+        "Hash":  "CB67BB2E23BC7DB0441BFA54F8CE9137791C6C1513C7C314D16CF1E1C23BEADA"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\tests\\validate-audit-processing.py",
+        "Hash":  "D0745F1D56DE5404748C44320D6C5B6E2100898988C30792F0988E446AF73039"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\tests\\validate-combined-processing.py",
+        "Hash":  "00810F6678CF81DDACE180D6774C1F57849EBE91EA07331E3C5E7A73C018ADFE"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\tests\\validate-denoise-motion.py",
+        "Hash":  "0C703CCFBD804F7E6457C9317E915B6231ECAA952A7ECBAD4D978CB7BC6539E1"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\tests\\validate-enhancement-quality.py",
+        "Hash":  "F97E41C817FC48B62774EF59C91FBA89BB4841886C816C3BF8A92807F077E07D"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\tests\\validate-enhancements.py",
+        "Hash":  "41999609B9F6A0CDD6179E0FA993DD7F6AF38611B76CBE0EEE78402882862626"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\tests\\validate-layers.py",
+        "Hash":  "711A4F7AEE7A34E62B2256414266C2727FBE5B996D1D7507CE397532517B0AE4"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\tests\\validate-media-pipelines.ps1",
+        "Hash":  "A26AD880342F293CFDF2F101332123D64B2DE4C178212ED40FA98449828D1CE6"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\tests\\validate-orientation.py",
+        "Hash":  "A60DA3B633DDE6A1825C2F7904C2016E008C3C38F0BA55EB03B518C0CA8DC588"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\tests\\validate-output-modules.py",
+        "Hash":  "9CC2DCABA16538A0F5E217FBBB24F04694B0B92EC006F0AE62F44809ECDB3F02"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\tests\\validate-partial-export.py",
+        "Hash":  "42AADBC2CC12FFAAA72DC2726D77A8B5F7D45023ED8CCD57E797F27107721503"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\tests\\validate-prores.py",
+        "Hash":  "CDE9BB312900530A952966EC1118E5BC2040061476019BF8C50A6B7D445F0A22"
+    },
+    {
+        "Path":  "C:\\Users\\Admin\\Downloads\\FrameScale v0.1.0\\FrameScale\\tests\\verify-mediainfo.py",
+        "Hash":  "1CBEFFC02AD5D3C68C9F32D8C79A296786A51A02860ABC172129E7D47D0EB45A"
+    }
+]

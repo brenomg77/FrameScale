@@ -172,6 +172,14 @@ QProgressBar {color:white;background:#292d34;border:1px solid #697383;border-rad
 QProgressBar::chunk {background:#0968cf;border-radius:5px;}
 )";
     widget->setProperty("appearanceManaged", true);
+    style += QString(R"(
+QScrollBar:horizontal {background:transparent;height:10px;margin:1px 0;border:0;}
+QScrollBar::handle:horizontal {background:%1;min-width:36px;border:0;border-radius:4px;}
+QScrollBar::handle:horizontal:hover {background:%2;}
+QScrollBar::handle:horizontal:pressed {background:%2;}
+QScrollBar::add-line:horizontal,QScrollBar::sub-line:horizontal {width:0;height:0;border:0;background:transparent;}
+QScrollBar::add-page:horizontal,QScrollBar::sub-page:horizontal {background:transparent;}
+)").arg(light()?"rgba(80,82,90,100)":"rgba(190,194,205,100)",light()?"rgba(65,67,75,155)":"rgba(210,214,225,155)");
     if (widget->isWindow() && (qobject_cast<QDialog*>(widget) || widget->inherits("QMainWindow"))) installRoundedWindow(widget);
     if (widget->isWindow() && widget->property("roundedWindowInstalled").toBool()) {
         const bool glass = theme() != "studio" && !GlassMaterial::reduced();

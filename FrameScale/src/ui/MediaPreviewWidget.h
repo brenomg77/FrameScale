@@ -124,6 +124,7 @@ protected:
     bool eventFilter(QObject* watched, QEvent* event) override;
 
 private:
+    QRectF displayedMediaRect() const;
     QRectF mediaViewRect() const;
     TextLayerOverlay* textOverlay_=nullptr;
     int pendingTextEdit_=-1;

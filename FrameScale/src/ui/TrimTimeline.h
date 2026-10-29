@@ -257,6 +257,7 @@ protected:
             p.save();
             p.setClipRect(QRectF(14, 30, width()-28, 77+extraTrackHeight()), Qt::IntersectClip);
             paintLayerTracks(p);
+            p.setClipRect(QRectF(contentLeft(),30,contentWidth(),77+extraTrackHeight()),Qt::IntersectClip);
             const double px=x(position_);
             p.setPen(QPen(accent,1.5)); p.drawLine(QPointF(px,32),QPointF(px,106+extraTrackHeight()));
             p.setBrush(accent);

@@ -1,0 +1,11 @@
+﻿1b667f339303fa956a39ddcf12ae37ed38b2c932
+ M FrameScale/src/MainWindow.cpp
+ M FrameScale/src/core/ProcessingOptions.h
+ M FrameScale/src/platform/WindowBackdrop.cpp
+ M FrameScale/src/ui/ComparisonDialog.cpp
+ M FrameScale/src/ui/LayerEditor.h
+ M FrameScale/src/ui/RoundedWindow.h
+ M FrameScale/src/ui/SelectionComboBox.h
+ M FrameScale/src/ui/TextLayerDialog.h
+ M FrameScale/tests/text_layer_tests.cpp
+ M FrameScale/tests/ui_smoke.cpp

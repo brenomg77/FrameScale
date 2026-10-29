@@ -3,6 +3,7 @@
 #include "TextLayerRenderer.h"
 #include <QStringList>
 #include <QFileInfo>
+#include <QImageReader>
 #include <cmath>
 #include <algorithm>
 
@@ -96,6 +97,9 @@ inline LayerComposition composeLayers(const std::vector<MediaLayer>& sourceLayer
             args << "-loop" << "1" << "-framerate" << number(plan.fps)
                  << "-t" << number(plan.duration) << "-i" << raster;
         } else {
+            QImageReader image(layerPath(layer.path));
+            if(layer.kind==LayerKind::Video && image.canRead() && (!image.supportsAnimation() || image.imageCount()==1))
+                args << "-loop" << "1" << "-framerate" << number(plan.fps);
             if(ranged) args << "-ss" << number(layer.in);
             args << "-i" << layerPath(layer.path);
         }

@@ -98,6 +98,42 @@ int main(int argc,char** argv) {
     framescale::ProcessingOptions project;project.layered=true;
     framescale::MediaLayer layer;layer.sourceDuration=layer.out=10;layer.path="fixture.mp4";
     layer.width=1280;layer.height=720;project.layers={layer};
+    // Zoom and horizontal scrolling must never paint moving clips over the
+    // fixed visibility/mute gutter, including selection and disabled tracks.
+    for(const QString theme:{QString("macos-light"),QString("macos-dark"),QString("studio")}) {
+        QSettings().setValue("appearance",theme);Appearance::palette();
+        LayerEditor timeline;timeline.setAttribute(Qt::WA_DontShowOnScreen);
+        auto longProject=project;
+        auto picture=longProject.layers.front();picture.kind=framescale::LayerKind::Video;
+        picture.sourceDuration=picture.out=60;picture.link=0;
+        auto sound=picture;sound.kind=framescale::LayerKind::Audio;
+        longProject.layers={picture,sound};
+        timeline.setProject("fixture.mp4",longProject,true);timeline.resize(900,timeline.sizeHint().height());
+        Appearance::apply(&timeline);timeline.show();app.processEvents();
+        auto* tracks=dynamic_cast<TrimTimeline*>(timeline.findChild<QWidget*>("layerTracks"));
+        auto* scroll=timeline.findChild<QScrollBar*>("timelineScroll");
+        for(int selected:{0,1}) {
+            timeline.selectLayer(selected);timeline.restoreTimelineView(QPointF(1,0));app.processEvents();
+            const auto before=tracks->grab().toImage();
+            timeline.restoreTimelineView(QPointF(4,20));app.processEvents();
+            const auto after=tracks->grab().toImage();
+            const qreal ratio=after.devicePixelRatio();
+            for(int row=0;row<2;++row) {
+                const QRect gutter(qRound(18*ratio),qRound((56+row*50)*ratio),qRound(29*ratio),qRound(47*ratio));
+                check(before.copy(gutter)==after.copy(gutter),"Zoomed clips overwrite the fixed visibility/audio gutter");
+            }
+            check(scroll && scroll->isVisible(),"Zoomed timeline has no horizontal navigation");
+        }
+        timeline.restoreTimelineView(QPointF(4,20));
+        const bool enabled=timeline.layers()[0].enabled;
+        const QPointF point(32,79);
+        QMouseEvent press(QEvent::MouseButtonPress,point,tracks->mapToGlobal(point.toPoint()),Qt::LeftButton,Qt::LeftButton,Qt::NoModifier);
+        QMouseEvent release(QEvent::MouseButtonRelease,point,tracks->mapToGlobal(point.toPoint()),Qt::LeftButton,Qt::NoButton,Qt::NoModifier);
+        QApplication::sendEvent(tracks,&press);QApplication::sendEvent(tracks,&release);
+        check(timeline.layers()[0].enabled!=enabled,"Visibility control stops working after horizontal scrolling");
+        const QString captures=qEnvironmentVariable("FRAMESCALE_TIMELINE_CAPTURES");
+        if(!captures.isEmpty()) {QDir().mkpath(captures);tracks->grab().save(captures+"/timeline-zoom-"+theme+".png");}
+    }
     LayerEditor editor;editor.setProject("fixture.mp4",project,true);editor.addTextLayer();
     auto* tracks=dynamic_cast<TrimTimeline*>(editor.findChild<QWidget*>("layerTracks"));
     tracks->resize(900,260);

@@ -6,6 +6,7 @@
 #include "ui/TextLayerDialog.h"
 #include "ui/ControlSymbols.h"
 #include <QFileDialog>
+#include <QImageReader>
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -418,6 +419,25 @@ private:
         refresh(); if (changed) changed();
     }
     void importMedia(const QString& file, bool initial = false, framescale::ProcessingOptions legacy = {}) {
+        QImageReader image(file);image.setAutoTransform(true);
+        if(image.canRead() && (!image.supportsAnimation() || image.imageCount()==1)) {
+            const QImage pixels=image.read();
+            if(!pixels.isNull()) {
+                if(!initial) remember();
+                Layer layer;
+#ifdef _WIN32
+                layer.path=std::filesystem::path(file.toStdWString());
+#else
+                layer.path=std::filesystem::path(file.toStdString());
+#endif
+                layer.width=pixels.width();layer.height=pixels.height();
+                layer.sourceDuration=layer.out=5;layer.sourceFps=25;
+                layers_.push_back(layer);selected_=-1;initialized_=true;
+                thumbnails_[key(layer)]=pixels.scaled(180,100,Qt::KeepAspectRatio,Qt::SmoothTransformation);
+                projectExtent_=std::max(projectExtent_,framescale::compositionDuration(layers_));
+                edited();return;
+            }
+        }
         const auto generation = generation_; ++pendingImports_;
         auto* probe = new QProcess(this);
         auto* timeout = new QTimer(probe); timeout->setSingleShot(true);
@@ -498,6 +518,11 @@ private:
     void loadThumbnail(const Layer& layer) {
         if(layer.kind==Kind::Text) return;
         if(layer.kind==Kind::Video) {
+            QImageReader image(framescale::layerPath(layer.path));image.setAutoTransform(true);
+            if(image.canRead() && (!image.supportsAnimation() || image.imageCount()==1)) {
+                thumbnails_[key(layer)]=image.read().scaled(180,100,Qt::KeepAspectRatio,Qt::SmoothTransformation);
+                return;
+            }
             for(int i=0;i<16;++i) queueVideoThumbnail(layer,layer.sourceDuration*i/16.);
             return;
         }
@@ -515,6 +540,8 @@ private:
         return id;
     }
     QImage videoThumbnail(const Layer& layer,double sourceTime) {
+        const auto still=thumbnails_.value(key(layer));
+        if(!still.isNull()) return still;
         // Sample the source time represented by this cell, including trim and speed.
         // Zoom requests finer samples without stretching a single picture over the clip.
         const double step=std::max(1./layer.sourceFps,layer.sourceDuration/(16.*tracks_->zoomFactor()));
@@ -644,6 +671,9 @@ private:
     void paintTracks(QPainter& p) {
         const auto background=palette().color(QPalette::Window),accent=palette().color(QPalette::Highlight);
         p.save();
+        // Horizontal navigation moves the content, never the track controls.
+        p.setClipRect(QRectF(tracks_->contentLeft(),30,tracks_->contentWidth(),77+(int(layers_.size())-1)*50),Qt::IntersectClip);
+        p.save();
         const double workLeft=x(workStart_),workRight=x(workEnd_>0 ? workEnd_ : extent());
         p.setPen(Qt::NoPen); p.setBrush(QColor(0,122,255,65));
         p.drawRect(QRectF(workLeft,37,workRight-workLeft,7));
@@ -655,11 +685,6 @@ private:
         const double cellWidth=tracks_->contentWidth()/cells;
         for(int i=0;i<int(layers_.size());++i) {
             const auto& l=layers_[i]; const auto rect=clip(i);
-            const QRectF button(24,rect.top()+15,16,16);
-            const auto ink=palette().color(QPalette::WindowText);
-            ControlSymbols::paint(p,button,l.kind==Kind::Audio ? ControlSymbols::Symbol::Audio : ControlSymbols::Symbol::Eye,ink);
-            if(!l.enabled) { p.setPen(QPen(ink,1.5)); p.drawLine(button.topLeft(),button.bottomRight()); }
-
             p.save(); QPainterPath border; border.addRoundedRect(rect,7,7); p.setClipPath(border,Qt::IntersectClip);
             if(l.kind==Kind::Video) p.fillRect(rect,QColor("#25272b"));
             if(l.kind==Kind::Audio) {
@@ -701,6 +726,18 @@ private:
                 p.fillRect(QRectF(rect.left()-1,rect.top()-2,2,51),accent);
                 p.fillRect(QRectF(rect.right()-1,rect.top()-2,2,51),accent);
             }
+        }
+        p.restore();
+        // Paint the fixed gutter after the clips, so neither thumbnails nor
+        // waveforms can cover these controls at any zoom or scroll position.
+        for(int i=0;i<int(layers_.size());++i) {
+            const auto& layer=layers_[i];
+            const QRectF button(24,clip(i).top()+15,16,16);
+            const auto ink=palette().color(QPalette::WindowText);
+            p.save();
+            ControlSymbols::paint(p,button,layer.kind==Kind::Audio ? ControlSymbols::Symbol::Audio : ControlSymbols::Symbol::Eye,ink);
+            if(!layer.enabled) {p.setPen(QPen(ink,1.5));p.drawLine(button.topLeft(),button.bottomRight());}
+            p.restore();
         }
         if(layers_.empty()) { p.setPen(palette().color(QPalette::WindowText)); p.drawText(QRectF(18,56,tracks_->width()-36,47),Qt::AlignCenter,tr("Adicione ou arraste vídeo e áudio para criar camadas")); }
     }

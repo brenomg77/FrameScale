@@ -239,6 +239,8 @@ if(WIN32)
 endif()
 add_test(NAME FrameScaleUiSmoke COMMAND FrameScaleUiSmoke)
 add_test(NAME FrameScaleOrientationUi COMMAND FrameScaleUiSmoke --orientation-only)
+add_test(NAME FrameScaleClipboardUi COMMAND FrameScaleUiSmoke --clipboard-only)
+set_tests_properties(FrameScaleClipboardUi PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 60)
 set_tests_properties(FrameScaleOrientationUi PROPERTIES
     ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     TIMEOUT 30
@@ -375,6 +377,13 @@ add_test(NAME FrameScaleKeyboardBindingsTests COMMAND FrameScaleKeyboardBindings
 set_tests_properties(FrameScaleKeyboardBindingsTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 30)
 add_dependencies(framescale-tests FrameScaleKeyboardBindingsTests)
 
+add_executable(FrameScaleClipboardStorageTests EXCLUDE_FROM_ALL tests/clipboard_storage_tests.cpp)
+target_include_directories(FrameScaleClipboardStorageTests PRIVATE src)
+target_link_libraries(FrameScaleClipboardStorageTests PRIVATE Qt6::Gui)
+add_test(NAME FrameScaleClipboardStorageTests COMMAND FrameScaleClipboardStorageTests)
+set_tests_properties(FrameScaleClipboardStorageTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 20)
+add_dependencies(framescale-tests FrameScaleClipboardStorageTests)
+
 add_executable(FrameScaleGlassMaterialTests EXCLUDE_FROM_ALL tests/glass_material_tests.cpp)
 target_include_directories(FrameScaleGlassMaterialTests PRIVATE src)
 target_link_libraries(FrameScaleGlassMaterialTests PRIVATE Qt6::Widgets)
@@ -393,6 +402,9 @@ endif()
 add_test(NAME FrameScaleUrlImageTests COMMAND FrameScaleUrlImageTests)
 set_tests_properties(FrameScaleUrlImageTests PROPERTIES
     ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 20)
+add_test(NAME FrameScaleUrlVideoTests COMMAND FrameScaleUrlImageTests --video)
+set_tests_properties(FrameScaleUrlVideoTests PROPERTIES
+    ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 90 SKIP_RETURN_CODE 77)
 
 add_executable(FrameScaleHoverLayoutTests EXCLUDE_FROM_ALL tests/hover_layout_tests.cpp src/platform/WindowBackdrop.cpp ${FRAMESCALE_BRAND_OBJECTS})
 target_include_directories(FrameScaleHoverLayoutTests PRIVATE src)

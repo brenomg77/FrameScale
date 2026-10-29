@@ -12,9 +12,11 @@
 #include "ui/InterfaceTranslator.h"
 #include "ui/MediaPreviewWidget.h"
 #include "ui/TextLayerOverlay.h"
+#include "ui/LayerEditor.h"
 #include "ui/TrimTimeline.h"
 #include "ui/AudioTrack.h"
 #include "ui/HelpPopover.h"
+#include "ui/ClipboardStorage.h"
 #include <QAction>
 #include <QAbstractItemView>
 #include <QApplication>
@@ -478,6 +480,63 @@ int main(int argc, char* argv[])
     QSettings::setDefaultFormat(QSettings::IniFormat);
     QSettings::setPath(QSettings::IniFormat, QSettings::UserScope,
         fixture.path());
+    if (app.arguments().contains("--clipboard-only")) {
+        QSettings().setValue("onboarding/tourSeen", true);
+        QStringList cached;
+        {
+            MainWindow owner;
+            QImage original(32,24,QImage::Format_ARGB32);original.fill(Qt::red);
+            const QString initial=fixture.filePath("initial.png");original.save(initial);
+            const QString source=fixture.filePath("pasted.png");original.save(source);
+            owner.openInputFile(initial);owner.show();
+            auto* preview=owner.findChild<MediaPreviewWidget*>("mediaPreview");
+            auto* tabs=owner.findChild<QTabBar*>("projectTabs");
+            QTimer acceptPrompt;
+            QObject::connect(&acceptPrompt,&QTimer::timeout,&owner,[]{
+                auto* prompt=qobject_cast<QDialog*>(QApplication::activeModalWidget());
+                if(prompt && prompt->objectName()=="openProjectDialog")prompt->accept();
+            });
+            acceptPrompt.start(10);
+            auto paste=[&] {
+                owner.activateWindow();owner.setFocus();app.processEvents();
+                QApplication::setActiveWindow(&owner);
+                QKeyEvent key(QEvent::KeyPress,Qt::Key_V,Qt::ControlModifier);
+                QApplication::sendEvent(&owner,&key);
+            };
+            auto* data=new QMimeData;data->setUrls({QUrl::fromLocalFile(source)});
+            QApplication::clipboard()->setMimeData(data);paste();
+            check(owner.findChild<QObject*>("clipboardImportWatcher")!=nullptr,"paste did not start a background import");
+            // Change clipboard before completion: import must use its snapshot.
+            QImage next(24,16,QImage::Format_ARGB32);next.fill(Qt::blue);
+            QApplication::clipboard()->setImage(next);
+            check(waitUntil([&]{return tabs->count()==2 && !owner.findChild<QObject*>("clipboardImportWatcher");}),
+                "file paste did not complete");
+            cached.append(preview->mediaPath());
+            check(framescale::ClipboardStorage().contains(cached.last()) && cached.last()!=source,
+                "pasted media still references its original file");
+            check(QImage(cached.last())==original && QFileInfo::exists(source),"paste changed source bytes or clipboard snapshot");
+            QFile::remove(source);
+            check(QImage(cached.last())==original,"cached paste depended on original source lifetime");
+            paste();
+            check(waitUntil([&]{return tabs->count()==3 && !owner.findChild<QObject*>("clipboardImportWatcher");}),
+                "raw clipboard image import did not complete");
+            cached.append(preview->mediaPath());
+            check(framescale::ClipboardStorage().contains(cached.last()) && QImage(cached.last())==next,
+                "raw clipboard image is outside shared Clipboard or has wrong pixels");
+            data=new QMimeData;data->setUrls({QUrl::fromLocalFile(cached.first())});
+            QApplication::clipboard()->setMimeData(data);paste();
+            check(waitUntil([&]{return tabs->count()==4 && !owner.findChild<QObject*>("clipboardImportWatcher");}),
+                "application-owned clipboard paste did not complete");
+            check(preview->mediaPath()==cached.first(),"application-owned clipboard file was duplicated");
+            QApplication::clipboard()->clear();
+        }
+        for(const auto& path:cached) {
+            QFile::remove(path);
+            QDir().rmdir(QFileInfo(path).absolutePath());
+        }
+        if(!failures)std::cout<<"Clipboard UI: async file/image imports, stable snapshot, source independence and reuse OK\n";
+        return failures?1:0;
+    }
     if (app.arguments().contains("--processing-regressions")) {
         // Generate a short 24 FPS fixture for real CPU copy processing. An
         // explicit fixture can be supplied to reproduce a particular input.
@@ -512,6 +571,9 @@ int main(int argc, char* argv[])
             check(rows->item(0, 2)->text() == "Na fila", "copy created a phantom running export");
             check(waitUntil([&] { return owner.findChildren<framescale::ProcessingJob*>().isEmpty(); }, 30000),
                 "clipboard job did not release its worker");
+            const auto firstUrls = QApplication::clipboard()->mimeData()->urls();
+            const QString firstCopy = firstUrls.isEmpty() ? QString() : firstUrls.first().toLocalFile();
+            check(framescale::ClipboardStorage().contains(firstCopy), "copied video is outside application Clipboard");
             check(start->isEnabled(), "clipboard completion left export locked");
             start->click();
             check(waitUntil([&] { const auto state = rows->item(0, 2)->text();
@@ -530,10 +592,19 @@ int main(int argc, char* argv[])
                 "cancelled clipboard job did not release its worker");
             check(start->isEnabled() && rows->item(0, 2)->text() == "Na fila",
                 "clipboard cancellation locked or changed the pending export");
+            preview->copyRequested();
+            check(waitUntil([&] { return owner.findChildren<framescale::ProcessingJob*>().isEmpty(); }, 30000),
+                "third clipboard copy did not finish");
+            check(QFileInfo::exists(firstCopy), "a later copy deleted a previous clipboard video");
             const auto copied = QApplication::clipboard()->mimeData()->urls();
             QApplication::clipboard()->clear();
+            QFile::remove(firstCopy);
+            QDir().rmdir(QFileInfo(firstCopy).absolutePath());
             for (const auto& url : copied)
-                if (url.isLocalFile()) QFile::remove(url.toLocalFile());
+                if (url.isLocalFile()) {
+                    QFile::remove(url.toLocalFile());
+                    QDir().rmdir(QFileInfo(url.toLocalFile()).absolutePath());
+                }
         }
         framescale::ProcessingOptions options;
         options.inputPath = std::filesystem::u8path(source.toUtf8().constData());
@@ -795,6 +866,37 @@ int main(int argc, char* argv[])
         || !window.property("glassBackdrop").value<QImage>().isNull(); }),
         "panel material has no source image");
     capture(&window, "editor-image.png");
+    {
+        auto* tools=window.findChild<QWidget*>("timelineTools");
+        auto* controls=window.findChild<QWidget*>("previewZoomBar");
+        check(tools && controls && tools->mapTo(preview,QPoint()).x()+tools->width()+100<controls->mapTo(preview,QPoint()).x(),
+            "Image preview collapses the separate floating toolbars together");
+        auto* picture=window.findChild<QLabel*>("previewImage");
+        auto menuAt=[&](QPoint point) {
+            bool opened=false;
+            QTimer::singleShot(0,[&]{for(auto* top:QApplication::topLevelWidgets()) if(auto* menu=qobject_cast<QMenu*>(top);menu && menu->isVisible()) {opened=true;menu->close();}});
+            emit picture->customContextMenuRequested(point);QApplication::processEvents();
+            return opened;
+        };
+        check(!menuAt(QPoint(1,1)),"Media context menu opens outside the displayed image");
+        check(menuAt(picture->rect().center()),"Media context menu no longer opens on the image");
+        auto* textTool=window.findChild<QToolButton*>("textToolButton");
+        auto* editor=dynamic_cast<LayerEditor*>(window.findChild<QWidget*>("layerEditor"));
+        check(textTool && textTool->isEnabled() && editor && editor->active(),"Image project disables the text tool");
+        if(textTool && editor) {
+            auto* tracks=editor->findChild<QWidget*>("layerTracks");
+            const QImage strip=tracks->grab().toImage();const qreal ratio=strip.devicePixelRatio();
+            check(strip.pixelColor(qRound((tracks->width()-50)*ratio),qRound(60*ratio))!=QColor("#25272b"),
+                "Still image leaves empty thumbnail cells along its layer");
+            const auto count=editor->layers().size();textTool->click();
+            const QPointF point=picture->rect().center();
+            QMouseEvent click(QEvent::MouseButtonPress,point,picture->mapToGlobal(point.toPoint()),Qt::LeftButton,Qt::LeftButton,Qt::NoModifier);
+            QApplication::sendEvent(picture,&click);QApplication::processEvents();
+            check(editor->layers().size()==count+1 && editor->layers().front().kind==framescale::LayerKind::Text,
+                "Clicking the image with the text tool does not create a text layer");
+            editor->undo();preview->activateSelectionTool();
+        }
+    }
     check(tabs->height() <= 28, "project title bar is oversized");
     auto* compactPreview = window.findChild<QPushButton*>("comparePreviewButton");
     check(compactPreview && compactPreview->height() <= 32
@@ -1357,10 +1459,10 @@ int main(int argc, char* argv[])
             QTimer confirm;
             confirm.setInterval(20);
             QObject::connect(&confirm, &QTimer::timeout, dialog, [&] {
-                auto* message = qobject_cast<QMessageBox*>(QApplication::activeModalWidget());
+                auto* message = qobject_cast<QDialog*>(QApplication::activeModalWidget());
                 if (message && message->windowTitle() == QString::fromUtf8("Substituir arquivo?")) {
                     ++confirmations;
-                    for (auto* button : message->buttons())
+                    for (auto* button : message->findChildren<QPushButton*>())
                         if (button->text() == QString::fromUtf8("Substituir"))
                             button->click();
                 }
@@ -1398,8 +1500,8 @@ int main(int argc, char* argv[])
             QTimer keep;
             keep.setInterval(20);
             QObject::connect(&keep, &QTimer::timeout, dialog, [&] {
-                if (auto* prompt = qobject_cast<QMessageBox*>(QApplication::activeModalWidget()))
-                    for (auto* button : prompt->buttons())
+                if (auto* prompt = qobject_cast<QDialog*>(QApplication::activeModalWidget()))
+                    for (auto* button : prompt->findChildren<QPushButton*>())
                         if (button->text() == QString::fromUtf8("Manter ambos")) {
                             keptBoth = true;
                             button->click();

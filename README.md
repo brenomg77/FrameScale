@@ -27,7 +27,7 @@
 
 ## 🌟 Versão 0.1.0 Alpha 1
 
-A versão de teste para Windows e Linux reúne ampliação e restauração com IA, interpolação, projetos com camadas e comparação de resultados. Os ajustes recentes incluem atalhos personalizáveis, refinamentos do tema Liquid Glass e correções das prévias de intervalos curtos.
+A versão de teste para Windows e Linux reúne ampliação e restauração com IA, interpolação, projetos com camadas e comparação de resultados. As novidades incluem texto editável na prévia, transformação de camadas, tour de sete etapas e instalador Windows com opções de instalar, reparar e desinstalar. [Veja as notas da versão](RELEASE_NOTES.md).
 
 [Baixar a versão de teste](https://github.com/brenomg77/FrameScale/releases/tag/v0.1.0-alpha.1) · [Ver demonstrações](docs/DEMOS.md)
 
@@ -74,12 +74,14 @@ O pacote Linux é experimental, com compilação e testes automáticos no Ubuntu
 | **Restauração** | Usar modelos compatíveis para tratar imagens e vídeos com ruído ou compressão. |
 | **Interpolação** | Criar frames intermediários com RIFE e combinar a interpolação com ampliação e corte. |
 | **Ajustes de imagem** | Controlar redução de ruído, nitidez, blocos de compressão, faixas de cor, grão, contraste e intensidade das cores. |
-| **Timeline** | Trabalhar com camadas de vídeo e áudio, cortar trechos, mover pistas, ajustar velocidade e escolher o intervalo de exportação. |
+| **Timeline** | Trabalhar com camadas de vídeo, áudio e texto, cortar trechos, mover pistas, ajustar velocidade e escolher o intervalo de exportação. |
+| **Texto e transformação** | Escrever na prévia com Texto (T), mover camadas com Seleção (V) e ajustar fonte, posição, escala, rotação e opacidade. |
 | **Prévia** | Comparar a origem com um trecho processado, navegar por frames e ajustar o zoom. |
 | **Projetos e presets** | Alternar entre projetos em abas e guardar configurações em presets `.fspreset`. |
 | **Fila de exportação** | Adicionar trabalhos com configurações independentes, acompanhar o progresso, pausar ou cancelar o processamento. |
 | **Abrir por URL** | Baixar vídeos de serviços compatíveis e imagens por links diretos. |
 | **Personalização** | Escolher idioma e aparência, configurar atalhos e restaurar as combinações originais. |
+| **Tour** | Conhecer o programa em sete etapas e repetir o percurso em Definições → Geral → Tour. |
 
 ### Motores de processamento
 
@@ -146,7 +148,7 @@ Os três modelos abaixo processam o mesmo trecho de vídeo HD com ruído acresce
 ## 🚀 Como usar
 
 1. **Abra o arquivo.** Arraste uma imagem ou vídeo para a janela de boas-vindas, use **Abrir** ou escolha **Abrir por URL**.
-2. **Prepare o trecho.** Ajuste os limites na timeline e organize as camadas de vídeo e áudio.
+2. **Prepare o trecho.** Ajuste os limites na timeline e organize as camadas de vídeo e áudio. Use **Texto (T)** para escrever na prévia e **Seleção (V)** para mover camadas visuais.
 3. **Escolha o processamento.** Ative ampliação, interpolação ou melhoria de imagem e selecione os modelos e parâmetros.
 4. **Compare na prévia.** Clique em **Preview** para conferir o intervalo selecionado antes da exportação.
 5. **Configure a saída.** Na aba de codificação, escolha o formato, o codec e as opções disponíveis.
@@ -194,6 +196,9 @@ O tempo de processamento e o uso de memória variam conforme a resolução, a du
 | :--- | :--- |
 | [Documentação do projeto](FrameScale/README.md) | Compilação, processamento, validação e estrutura técnica |
 | [Instalador Windows](FrameScale/docs/windows-installer.md) | Empacotamento e verificação do instalador |
+| [Linux x86_64](FrameScale/docs/linux-package.md) | AppImage, requisitos e validação do pacote Linux |
+| [Texto e transformação](FrameScale/docs/text-layers.md) | Edição de texto na prévia e propriedades de camadas |
+| [Tour do programa](FrameScale/docs/program-tour.md) | Primeira abertura, navegação e repetição do tour |
 | [Abertura por URL](FrameScale/docs/url-downloads.md) | Comportamento, serviços e limites dos downloads |
 | [Manifesto de dependências](FrameScale/runtime/manifest.json) | Arquivos, versões e hashes das ferramentas e modelos |
 | [Avisos de terceiros](FrameScale/THIRD_PARTY_NOTICES.md) | Licenças, atribuições e proveniência das dependências |

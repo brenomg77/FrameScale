@@ -231,6 +231,7 @@ MediaPreviewWidget::MediaPreviewWidget(QWidget* parent)
     imageLabel_->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(imageLabel_, &QLabel::customContextMenuRequested, this, [this](const QPoint& point) {
         if (mediaPath_.isEmpty()) return;
+        if(!displayedMediaRect().contains(point)) return;
         SelectionMenu menu(this);
         auto* copy = menu.addAction(ControlSymbols::icon(ControlSymbols::Symbol::Frames),tr("Copiar"));
         connect(copy, &QAction::triggered, this, [this] { emit copyRequested(); });
@@ -332,12 +333,18 @@ MediaPreviewWidget::MediaPreviewWidget(QWidget* parent)
     videoWidget_->setCursor(Qt::ArrowCursor);
     videoWidget_->setToolTip(imageLabel_->toolTip());
     videoWidget_->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(videoWidget_, &QWidget::customContextMenuRequested, imageLabel_, &QWidget::customContextMenuRequested);
+    connect(videoWidget_, &QWidget::customContextMenuRequested, this,[this](const QPoint& point) {
+        emit imageLabel_->customContextMenuRequested(imageLabel_->mapFromGlobal(videoWidget_->mapToGlobal(point)));
+    });
     videoWidget_->setAspectRatioMode(Qt::KeepAspectRatio);
     videoWidget_->setMinimumSize(1, 1);
     videoWidget_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
     stack_->addWidget(videoSurface_);
     textOverlay_=new TextLayerOverlay(this);textOverlay_->hide();
+    textOverlay_->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(textOverlay_,&QWidget::customContextMenuRequested,this,[this](const QPoint& point) {
+        emit imageLabel_->customContextMenuRequested(imageLabel_->mapFromGlobal(textOverlay_->mapToGlobal(point)));
+    });
     textOverlay_->setSelectionTool(true);
     textOverlay_->createText=[this](const QPointF& point){pause();if(textCreationRequested) textCreationRequested(point);};
     textOverlay_->selected=[this](int index){pause();if(textLayerSelected) textLayerSelected(index);};
@@ -1085,8 +1092,8 @@ void MediaPreviewWidget::setMedia(const QString& path, qint64 initialPosition)
         QStringLiteral("tiff")
     };
     if (imageExtensions.contains(info.suffix().toLower())) {
-        layout()->setAlignment(dock_, Qt::AlignRight);
-        dock_->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+        layout()->setAlignment(dock_, compact_?Qt::AlignRight:Qt::Alignment());
+        dock_->setSizePolicy(compact_?QSizePolicy::Maximum:QSizePolicy::Expanding, QSizePolicy::Preferred);
         QImageReader reader(mediaPath_);
         sourceSize_ = reader.size();
         updateMediaDimensions();
@@ -1546,6 +1553,27 @@ void MediaPreviewWidget::activateSelectionTool()
     pause();pendingTextEdit_=-1;selectionToolActive_=true;
     textOverlay_->setSelectionTool(true);imageLabel_->setCursor(Qt::ArrowCursor);videoWidget_->setCursor(Qt::ArrowCursor);
 }
+QRectF MediaPreviewWidget::displayedMediaRect() const
+{
+    if(stack_->currentWidget()==videoSurface_) {
+        QSizeF size=sourceSize_;
+        if(orientation_.quarterTurns%2) size.transpose();
+        size.scale(videoWidget_->size(),Qt::KeepAspectRatio);
+        const QPoint origin=imageLabel_->mapFromGlobal(videoWidget_->mapToGlobal(QPoint()));
+        return QRectF(QPointF(origin)+QPointF((videoWidget_->width()-size.width())/2,(videoWidget_->height()-size.height())/2),size);
+    }
+    QSize size=sourceSize_.isValid()?sourceSize_:image_.size();
+    if(size.isEmpty() || image_.isNull()) return {};
+    const double aspect=double(image_.width())/image_.height();
+    if(qAbs(aspect-double(size.height())/size.width())<.01 && qAbs(aspect-double(size.width())/size.height())>.01) size.transpose();
+    if(orientation_.quarterTurns%2) size.transpose();
+    const QRectF view=mediaViewRect();
+    const double fit=std::min(view.width()/size.width(),view.height()/size.height());
+    const double scale=comparisonZoom_?fit*(zoom_>0?zoom_:1.):zoom_>0?zoom_:fit;
+    const QSizeF target(size.width()*scale,size.height()*scale);
+    return QRectF(view.center()-QPointF(target.width()/2,target.height()/2)+pan_,target).intersected(imageLabel_->rect());
+}
+
 void MediaPreviewWidget::updateTextOverlay()
 {
     if(!textOverlay_) return;

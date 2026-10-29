@@ -1,4 +1,8 @@
 #include "ui/ExportDialog.h"
+#include "ui/OutputConflictDialog.h"
+#include <QTemporaryDir>
+#include <QFontDatabase>
+#include <QDir>
 
 #include <QApplication>
 #include <QElapsedTimer>
@@ -42,7 +46,31 @@ framescale::ProcessingOptions options(const char* input, const char* output, int
 int main(int argc, char** argv)
 {
     QApplication application(argc, argv);
+#ifdef Q_OS_WIN
+    QFontDatabase::addApplicationFont("C:/Windows/Fonts/segoeui.ttf");
+    application.setFont(QFont("Segoe UI",10));
+#endif
     application.setQuitOnLastWindowClosed(false);
+    QTemporaryDir settings;
+    QSettings::setDefaultFormat(QSettings::IniFormat);
+    QSettings::setPath(QSettings::IniFormat,QSettings::UserScope,settings.path());
+    QSettings().setValue("reduceMotion",true);
+    for(const QString theme:{QString("macos-light"),QString("macos-dark"),QString("studio")}) {
+        QSettings().setValue("appearance",theme);Appearance::palette();
+        OutputConflictDialog prompt("C:/Documents/Images/existing-result.png");
+        prompt.setAttribute(Qt::WA_DontShowOnScreen);prompt.show();events();
+        check(prompt.windowFlags().testFlag(Qt::FramelessWindowHint) && prompt.property("roundedWindowInstalled").toBool(),"Output conflict uses a native frame instead of shared window styling");
+        check(prompt.findChild<QWidget*>("dialogTitleBar") && prompt.width()==460 && prompt.height()<260,"Output conflict layout is not compact or lacks the shared title bar");
+        const auto image=prompt.grab().toImage();
+        check(image.pixelColor(0,0).alpha()==0 && image.pixelColor(image.width()-1,image.height()-1).alpha()==0,"Output conflict has square corners");
+        auto* keep=prompt.findChild<QPushButton*>("keepBothOutputButton");
+        check(keep->isDefault() && keep->property("variant")=="primary","Keep both lost the primary/default action");
+        keep->click();check(prompt.result()==OutputConflictDialog::KeepBoth,"Keep both returns the wrong choice");
+        prompt.show();prompt.findChild<QPushButton*>("replaceOutputButton")->click();check(prompt.result()==OutputConflictDialog::Replace,"Replace returns the wrong choice");
+        prompt.show();prompt.findChild<QPushButton*>("cancelOutputButton")->click();check(prompt.result()==OutputConflictDialog::Cancelled,"Cancel returns the wrong choice");
+        const QString captures=qEnvironmentVariable("FRAMESCALE_CONFLICT_CAPTURES");
+        if(!captures.isEmpty()) {QDir().mkpath(captures);prompt.show();events();prompt.grab().save(captures+'/'+theme+".png");prompt.hide();}
+    }
     ExportDialog queue({ }, { });
     queue.addItem(options("a.png", "a-out.png", 10), "10x");
     queue.addItem(options("b.png", "b-out.png", 2), "2x");

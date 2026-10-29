@@ -77,7 +77,9 @@ private:
     void consume(){buffer_+=process_.readAllStandardOutput();int end;while((end=buffer_.indexOf('\n'))>=0){QString line=QString::fromUtf8(buffer_.left(end)).trimmed();buffer_.remove(0,end+1);
         if(line.startsWith("FS_READY:"))lookupTimer_.stop();
         else if(line.startsWith("FS_FILE:"))downloaded_=line.mid(8);
-        else if(line.startsWith("FS_PROGRESS:")){QString value=line.mid(12).trimmed();value.remove('%');bool ok=false;double percent=value.toDouble(&ok);if(ok){progress_->setRange(0,100);progress_->setValue(qBound(0,int(percent),100));}}
+        // This timer only bounds discovery. A transfer may legitimately take
+        // much longer than 45 seconds, even before a numeric percent is known.
+        else if(line.startsWith("FS_PROGRESS:")){lookupTimer_.stop();QString value=line.mid(12).trimmed();value.remove('%');bool ok=false;double percent=value.toDouble(&ok);if(ok){progress_->setRange(0,100);progress_->setValue(qBound(0,int(percent),100));}}
         else if(line.startsWith("ERROR:"))error_=(error_+"\n"+line).right(1500);
     }if(buffer_.size()>65536)buffer_=buffer_.right(65536);}
     void completeDownload(){
@@ -127,7 +129,9 @@ private:
         destination_=QDir(folder_->text()).absolutePath();if(!QDir(destination_).exists()){showError(tr("Escolha uma pasta existente para salvar."));return;}
         temporary_=std::make_unique<QTemporaryDir>(QDir(destination_).filePath(".framescale-download-XXXXXX"));if(!temporary_->isValid()){busy_=false;controls(true);showError(tr("Não foi possível gravar nessa pasta."));return;}
         downloaded_.clear();error_.clear();buffer_.clear();cancelled_=false;busy_=true;controls(false);progress_->show();progress_->setRange(0,0);status_->clear();status_->hide();
-        QStringList args={"--ignore-config","--no-plugin-dirs","--no-playlist","--playlist-items","1","--no-simulate","--match-filters","!is_live & !is_upcoming","--print","before_dl:FS_READY:1","--newline","--no-colors","--encoding","utf-8","--socket-timeout","30","--retries","3","--no-overwrites","--no-remote-components","--ffmpeg-location",QFileInfo(paths.tool("ffmpeg")).absolutePath(),"--js-runtimes","deno:"+paths.tool("deno"),"-f","bv*+ba/b","--merge-output-format","mkv","--windows-filenames","--trim-filenames","150","-P",temporary_->path(),"-o","%(title).120B [%(id)s].%(ext)s","--progress","--progress-template","download:FS_PROGRESS:%(progress._percent_str)s","--print","after_move:FS_FILE:%(filepath)s","--",url.toString()};
+        // yt-dlp treats a --print argument without a %(...) field as a field
+        // name: the old literal FS_READY:1 printed NA instead of our marker.
+        QStringList args={"--ignore-config","--no-plugin-dirs","--no-playlist","--playlist-items","1","--no-simulate","--match-filters","!is_live & !is_upcoming","--print","before_dl:FS_READY:%(id)s","--newline","--no-colors","--encoding","utf-8","--socket-timeout","30","--retries","3","--no-overwrites","--no-remote-components","--ffmpeg-location",QFileInfo(paths.tool("ffmpeg")).absolutePath(),"--js-runtimes","deno:"+paths.tool("deno"),"-f","bv*+ba/b","--merge-output-format","mkv","--windows-filenames","--trim-filenames","150","-P",temporary_->path(),"-o","%(title).120B [%(id)s].%(ext)s","--progress","--progress-template","download:FS_PROGRESS:%(progress._percent_str)s","--print","after_move:FS_FILE:%(filepath)s","--",url.toString()};
         lookupTimer_.start();
         process_.start(tool,args);
     }

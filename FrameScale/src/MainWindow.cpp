@@ -7,12 +7,15 @@
 #include "ui/KeyboardShortcutsPage.h"
 #include <QShortcut>
 #include <QClipboard>
+#include "ui/ClipboardStorage.h"
+#include <QFutureWatcher>
+#include <QPromise>
+#include <QThreadPool>
 #include <QDir>
 #include <QKeyEvent>
 #include <QLineEdit>
 #include <QTextEdit>
 #include <QPlainTextEdit>
-#include <QUuid>
 #include "ui/GlassMaterial.h"
 #include <QResizeEvent>
 #include <QRegion>
@@ -54,6 +57,7 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
+#include "ui/OutputConflictDialog.h"
 #include <QMimeData>
 #include <QMouseEvent>
 #include <QPainter>
@@ -1396,6 +1400,7 @@ bool MainWindow::eventFilter(QObject* watched, QEvent* event)
 
 void MainWindow::pasteMedia()
 {
+    if (clipboardImportPending_) return;
     const auto* mime = QApplication::clipboard()->mimeData();
     if (!mime) return;
     QStringList paths;
@@ -1404,23 +1409,45 @@ void MainWindow::pasteMedia()
             paths.append(url.toLocalFile());
     }
     paths.removeDuplicates();
-    if (!paths.isEmpty()) {
-        for (const auto& path : paths)
-            if (!trySetInputFile(path)) break;
-        return;
-    }
-    const QImage image = QApplication::clipboard()->image();
-    if (image.isNull()) return;
-    // Keep the source beyond this window's lifetime: queued exports may still use it.
-    const QString directory = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation)
-        + QStringLiteral("/Clipboard");
-    const QString path = directory + QStringLiteral("/Clipboard-%1.png")
-        .arg(QUuid::createUuid().toString(QUuid::WithoutBraces));
-    if (!QDir().mkpath(directory) || !image.save(path, "PNG")) {
-        QMessageBox::warning(this, tr("Colar imagem"), tr("Não foi possível guardar a imagem copiada."));
-        return;
-    }
-    if (!trySetInputFile(path)) QFile::remove(path);
+    const QImage image = paths.isEmpty() ? QApplication::clipboard()->image() : QImage();
+    if (paths.isEmpty() && image.isNull()) return;
+
+    // Videos can be several GB. Copy the clipboard snapshot off the UI thread;
+    // never move the user's source or keep the project dependent on that file.
+    clipboardImportPending_ = true;
+    setStatusText(tr("Guardando arquivo da área de transferência…"));
+    using Entries = QList<framescale::ClipboardStorage::Entry>;
+    auto* watcher = new QFutureWatcher<Entries>(this);
+    watcher->setObjectName("clipboardImportWatcher");
+    connect(watcher, &QFutureWatcher<Entries>::finished, this, [this, watcher] {
+        const auto entries = watcher->result();
+        watcher->deleteLater();
+        clipboardImportPending_ = false;
+        setStatusText({});
+        for (const auto& entry : entries) {
+            if (entry.path.isEmpty()) {
+                QMessageBox::warning(this, tr("Colar arquivo"),
+                    tr("Não foi possível guardar o arquivo na pasta Clipboard.\n%1").arg(entry.error));
+                break;
+            }
+            if (!trySetInputFile(entry.path)) break;
+            entry.keep();
+        }
+    });
+    auto promise = std::make_shared<QPromise<Entries>>();
+    promise->start();
+    watcher->setFuture(promise->future());
+    QThreadPool::globalInstance()->start([paths, image, promise] {
+        framescale::ClipboardStorage storage;
+        Entries entries;
+        if (paths.isEmpty()) entries.append(storage.storeImage(image));
+        else for (const auto& path : paths) {
+            entries.append(storage.storeFile(path));
+            if (entries.last().path.isEmpty()) break;
+        }
+        promise->addResult(entries);
+        promise->finish();
+    });
 }
 
 void MainWindow::openInputFile(const QString& path) { trySetInputFile(path); }
@@ -1564,7 +1591,7 @@ void MainWindow::activateProject(int index)
     encoderOptions_->applyOptions(o);
     updateOperationControls();
     pageStack_->setCurrentWidget(editorPage_);
-    preview_->setLayerEditing(!isImage(inputPath_));
+    preview_->setLayerEditing(true);
     if(preview_->mediaPath()==inputPath_) preview_->seek(view.position);
     else preview_->setMedia(inputPath_,view.position);
     preview_->restoreView(view.zoom,view.pan);
@@ -1574,7 +1601,7 @@ void MainWindow::activateProject(int index)
     preview_->setAudioOffset(o.audioOffsetMs);
     preview_->setPlaybackSpeed(o.playbackSpeed);
     preview_->setAudioLinked(o.audioVideoLinked);
-    layers_->setProject(inputPath_, o, !isImage(inputPath_));
+    layers_->setProject(inputPath_, o, true);
     layers_->restoreTimelineView(view.timelineView);
     layers_->setPosition(view.position/1000.);
 }
@@ -1734,14 +1761,14 @@ void MainWindow::copyToClipboard()
     if (processingJob_)
         return;
 
-    pendingClipboardDirectory_ = std::make_unique<QTemporaryDir>(QDir::tempPath() + "/FrameScale-copy-XXXXXX");
-    if (!pendingClipboardDirectory_->isValid()) {
-        setStatusText(tr("Não foi possível copiar o vídeo: %1").arg(tr("Não foi possível criar a pasta temporária.")));
+    pendingClipboardDirectory_ = framescale::ClipboardStorage().videoCopyDirectory();
+    if (!pendingClipboardDirectory_ || !pendingClipboardDirectory_->isValid()) {
+        setStatusText(tr("Não foi possível copiar o vídeo: %1").arg(tr("Não foi possível criar a pasta Clipboard.")));
         pendingClipboardDirectory_.reset();
         return;
     }
 
-    // Clipboard copies are ordinary videos, independent of export settings.
+    // Preserve the source container independently of the export settings.
     framescale::ProcessingOptions options;
     options.inputPath = toPath(inputPath_);
     options.operation = framescale::Operation::Copy;
@@ -1756,7 +1783,21 @@ void MainWindow::copyToClipboard()
         options.playbackSpeed=1.; options.audioOffsetMs=0;
         options.trimStartSeconds=layers_->exportStart(); options.trimEndSeconds=layers_->exportEnd();
     }
-    const QString output = pendingClipboardDirectory_->filePath(QStringLiteral("selection.mp4"));
+    const QString suffix = QFileInfo(inputPath_).suffix().toLower();
+    options.outputSuffix = ("." + suffix).toStdString();
+    if (suffix == "webm") {
+        options.videoCodec = "libvpx-vp9";
+        options.audioCodec = "libopus";
+        options.audioSampleRate = 48000;
+    } else if (suffix == "avi") {
+        options.videoCodec = "mjpeg";
+        options.pixelFormat = "yuvj420p";
+        options.audioCodec = "pcm_s16le";
+    } else if (suffix == "gif") {
+        options.videoCodec = "gif";
+        options.keepAudio = false;
+    }
+    const QString output = pendingClipboardDirectory_->filePath("selection." + suffix);
     options.outputPath = toPath(output);
     const auto errors = framescale::validate(options);
     if (!errors.empty()) {
@@ -1788,10 +1829,9 @@ void MainWindow::copyToClipboard()
             auto* data = new QMimeData;
             data->setUrls({ QUrl::fromLocalFile(path) });
             QApplication::clipboard()->setMimeData(data);
-            if (clipboardDirectory_)
-                clipboardDirectory_->remove();
+            // Earlier copies may be referenced by other programs, tabs or jobs.
             pendingClipboardDirectory_->setAutoRemove(false);
-            clipboardDirectory_ = std::move(pendingClipboardDirectory_);
+            pendingClipboardDirectory_.reset();
             setStatusText(tr("Vídeo copiado."));
             processingStopped();
         });
@@ -1887,15 +1927,11 @@ void MainWindow::beginExport(const QString& output)
     auto* job = processingJob_.get();
     job->preservePartialOnCancel = true;
     job->resolveOutputConflict = [this](const QString& path) {
-        QMessageBox prompt(QMessageBox::Question, tr("Substituir arquivo?"),
-            tr("Já existe um arquivo com este nome:\n%1").arg(path), QMessageBox::Cancel, exportDialog_);
-        auto* replace = prompt.addButton(tr("Substituir"), QMessageBox::YesRole);
-        auto* keep = prompt.addButton(tr("Manter ambos"), QMessageBox::AcceptRole);
-        prompt.setDefaultButton(keep);
-        prompt.exec();
-        if (prompt.clickedButton() == replace)
+        OutputConflictDialog prompt(path,exportDialog_);
+        const auto choice=prompt.exec();
+        if (choice == OutputConflictDialog::Replace)
             return path;
-        if (prompt.clickedButton() != keep)
+        if (choice != OutputConflictDialog::KeepBoth)
             return QString();
         const QFileInfo info(path);
         int index = 2;

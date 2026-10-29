@@ -998,7 +998,7 @@ bool ProcessingJob::prepareVideoSteps(QString& error)
     if (audioEncoder != "copy") {
         // Re-encoding audio avoids packet-boundary offsets at the cut.
         for (QString& codec : videoOutputContract_.audioCodecs) {
-            codec = audioEncoder == "libmp3lame" ? "mp3" : audioEncoder;
+            codec = audioEncoder == "libmp3lame" ? "mp3" : audioEncoder == "libopus" ? "opus" : audioEncoder;
         }
     }
 
@@ -1201,6 +1201,8 @@ bool ProcessingJob::prepareVideoSteps(QString& error)
                 "-metadata", "crf=", "-metadata", "encoding_crf=", "-metadata", "encoding_preset=" });
         } else if (options_.videoCodec == "mjpeg") {
             encodeArguments.append({ "-q:v", "2", "-metadata", "crf=", "-metadata", "encoding_crf=", "-metadata", "encoding_preset=" });
+        } else if (options_.videoCodec == "libvpx-vp9") {
+            encodeArguments.append({ "-crf", QString::number(options_.crf), "-b:v", "0", "-deadline", "good", "-cpu-used", "2" });
         } else {
             encodeArguments.append({ "-preset", QString::fromStdString(options_.encoderPreset),
                 "-crf", QString::number(options_.crf),
@@ -1277,9 +1279,15 @@ bool ProcessingJob::prepareVideoSteps(QString& error)
         }
     }
     const QString suffix = QFileInfo(fromPath(options_.outputPath)).suffix().toLower();
-    if (suffix == "mkv" || suffix == "avi") {
+    // MOV/MP4 regenerate a data track from copied video timecode tags even
+    // with explicit video/audio maps. The output contract excludes data tracks.
+    if (suffix == "mp4" || suffix == "mov") {
+        encodeArguments.insert(encodeArguments.size() - 1, "-write_tmcd");
+        encodeArguments.insert(encodeArguments.size() - 1, "0");
+    }
+    if (suffix == "mkv" || suffix == "avi" || suffix == "webm") {
         const int format = encodeArguments.lastIndexOf("-f");
-        encodeArguments[format + 1] = suffix == "avi" ? "avi" : "matroska";
+        encodeArguments[format + 1] = suffix == "avi" ? "avi" : suffix == "webm" ? "webm" : "matroska";
         const int flags = encodeArguments.indexOf("-movflags");
         if (flags >= 0) {
             encodeArguments.removeAt(flags);
@@ -1427,6 +1435,7 @@ bool ProcessingJob::verifyFinalVideoProbe(QString& error) const
     const QString expectedCodec = gifOutput  ? QStringLiteral("gif")
         : options_.videoCodec == "prores_ks" ? QStringLiteral("prores")
         : options_.videoCodec == "libx265"   ? QStringLiteral("hevc")
+        : options_.videoCodec == "libvpx-vp9" ? QStringLiteral("vp9")
         : options_.videoCodec == "mjpeg"     ? QStringLiteral("mjpeg")
                                              : QStringLiteral("h264");
     QJsonParseError parseError;
@@ -1445,7 +1454,7 @@ bool ProcessingJob::verifyFinalVideoProbe(QString& error) const
                                     .toString()
                                     .split(QLatin1Char(','), Qt::SkipEmptyParts);
     const QString suffix = QFileInfo(fromPath(options_.outputPath)).suffix().toLower();
-    const QString expectedFormat = gifOutput ? "gif" : suffix == "mkv" ? "matroska"
+    const QString expectedFormat = gifOutput ? "gif" : suffix == "webm" ? "webm" : suffix == "mkv" ? "matroska"
         : suffix == "avi"                                              ? "avi"
         : suffix == "mov"                                              ? "mov"
                                                                        : "mp4";
@@ -1509,7 +1518,7 @@ bool ProcessingJob::verifyFinalVideoProbe(QString& error) const
             }
             double duration = jsonNumber(
                 stream, QStringLiteral("duration"));
-            if (duration <= 0.0 && (gifOutput || suffix == "mkv" || suffix == "avi")) {
+            if (duration <= 0.0 && (gifOutput || suffix == "mkv" || suffix == "avi" || suffix == "webm")) {
                 duration = jsonNumber(document.object().value(QStringLiteral("format")).toObject(),
                     QStringLiteral("duration"));
             }

@@ -1,0 +1,187 @@
+Start testing: Oct 27 08:36 GMT Standard Time
+----------------------------------------------------------
+1/11 Testing: FrameScaleCoreTests
+1/11 Test: FrameScaleCoreTests
+Command: "C:/Users/Admin/Downloads/FrameScale v0.1.0/FrameScale/build/Release/FrameScaleCoreTests.exe"
+Directory: C:/Users/Admin/Downloads/FrameScale v0.1.0/FrameScale/build/Release
+"FrameScaleCoreTests" start time: Oct 27 08:36 GMT Standard Time
+Output:
+----------------------------------------------------------
+FrameScale core tests: OK
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"FrameScaleCoreTests" end time: Oct 27 08:36 GMT Standard Time
+"FrameScaleCoreTests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/11 Testing: FrameScaleUiSmoke
+2/11 Test: FrameScaleUiSmoke
+Command: "C:/Users/Admin/Downloads/FrameScale v0.1.0/FrameScale/build/Release/FrameScaleUiSmoke.exe"
+Directory: C:/Users/Admin/Downloads/FrameScale v0.1.0/FrameScale/build/Release
+"FrameScaleUiSmoke" start time: Oct 27 08:36 GMT Standard Time
+Output:
+----------------------------------------------------------
+FrameScale UI smoke: menus, image preview, options, export flow, branding OK
+<end of output>
+Test time =   9.49 sec
+----------------------------------------------------------
+Test Passed.
+"FrameScaleUiSmoke" end time: Oct 27 08:36 GMT Standard Time
+"FrameScaleUiSmoke" time elapsed: 00:00:09
+----------------------------------------------------------
+
+3/11 Testing: FrameScaleOrientationUi
+3/11 Test: FrameScaleOrientationUi
+Command: "C:/Users/Admin/Downloads/FrameScale v0.1.0/FrameScale/build/Release/FrameScaleUiSmoke.exe" "--orientation-only"
+Directory: C:/Users/Admin/Downloads/FrameScale v0.1.0/FrameScale/build/Release
+"FrameScaleOrientationUi" start time: Oct 27 08:36 GMT Standard Time
+Output:
+----------------------------------------------------------
+Orientation UI: pixel transforms, four buttons and project isolation OK
+<end of output>
+Test time =   0.48 sec
+----------------------------------------------------------
+Test Passed.
+"FrameScaleOrientationUi" end time: Oct 27 08:36 GMT Standard Time
+"FrameScaleOrientationUi" time elapsed: 00:00:00
+----------------------------------------------------------
+
+4/11 Testing: FrameScaleProcessingSmoke
+4/11 Test: FrameScaleProcessingSmoke
+Command: "C:/Users/Admin/Downloads/FrameScale v0.1.0/FrameScale/build/Release/FrameScaleProcessingSmoke.exe" "--fake-suite" "C:/Users/Admin/Downloads/FrameScale v0.1.0/FrameScale/build/Release/FrameScaleFakeTool.exe"
+Directory: C:/Users/Admin/Downloads/FrameScale v0.1.0/FrameScale/build/Release
+"FrameScaleProcessingSmoke" start time: Oct 27 08:36 GMT Standard Time
+Output:
+----------------------------------------------------------
+FrameScale deterministic processing smoke: OK
+<end of output>
+Test time =  25.96 sec
+----------------------------------------------------------
+Test Passed.
+"FrameScaleProcessingSmoke" end time: Oct 27 08:37 GMT Standard Time
+"FrameScaleProcessingSmoke" time elapsed: 00:00:25
+----------------------------------------------------------
+
+5/11 Testing: FrameScaleExportQueueSmoke
+5/11 Test: FrameScaleExportQueueSmoke
+Command: "C:/Users/Admin/Downloads/FrameScale v0.1.0/FrameScale/build/Release/FrameScaleExportQueueSmoke.exe"
+Directory: C:/Users/Admin/Downloads/FrameScale v0.1.0/FrameScale/build/Release
+"FrameScaleExportQueueSmoke" start time: Oct 27 08:37 GMT Standard Time
+Output:
+----------------------------------------------------------
+Export queue smoke: close, snapshots, delete, cancel, retry, release, progress OK
+<end of output>
+Test time =   2.31 sec
+----------------------------------------------------------
+Test Passed.
+"FrameScaleExportQueueSmoke" end time: Oct 27 08:37 GMT Standard Time
+"FrameScaleExportQueueSmoke" time elapsed: 00:00:02
+----------------------------------------------------------
+
+6/11 Testing: FrameScaleLayerStateTests
+6/11 Test: FrameScaleLayerStateTests
+Command: "C:/Users/Admin/Downloads/FrameScale v0.1.0/FrameScale/build/Release/FrameScaleLayerStateTests.exe"
+Directory: C:/Users/Admin/Downloads/FrameScale v0.1.0/FrameScale/build/Release
+"FrameScaleLayerStateTests" start time: Oct 27 08:37 GMT Standard Time
+Output:
+----------------------------------------------------------
+Text Unicode raster, preview/export composition and visibility passed with FFmpeg
+Layer commands: independent speed, deletion, undo/redo and project isolation OK
+<end of output>
+Test time =   1.84 sec
+----------------------------------------------------------
+Test Passed.
+"FrameScaleLayerStateTests" end time: Oct 27 08:37 GMT Standard Time
+"FrameScaleLayerStateTests" time elapsed: 00:00:01
+----------------------------------------------------------
+
+7/11 Testing: FrameScaleTextLayerTests
+7/11 Test: FrameScaleTextLayerTests
+Command: "C:/Users/Admin/Downloads/FrameScale v0.1.0/FrameScale/build/Release/FrameScaleTextLayerTests.exe"
+Directory: C:/Users/Admin/Downloads/FrameScale v0.1.0/FrameScale/build/Release
+"FrameScaleTextLayerTests" start time: Oct 27 08:37 GMT Standard Time
+Output:
+----------------------------------------------------------
+Text settings icon, inline cursor, real-time editing and project isolation passed
+<end of output>
+Test time =   0.19 sec
+----------------------------------------------------------
+Test Passed.
+"FrameScaleTextLayerTests" end time: Oct 27 08:37 GMT Standard Time
+"FrameScaleTextLayerTests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+8/11 Testing: FrameScaleKeyboardBindingsTests
+8/11 Test: FrameScaleKeyboardBindingsTests
+Command: "C:/Users/Admin/Downloads/FrameScale v0.1.0/FrameScale/build/Release/FrameScaleKeyboardBindingsTests.exe"
+Directory: C:/Users/Admin/Downloads/FrameScale v0.1.0/FrameScale/build/Release
+"FrameScaleKeyboardBindingsTests" start time: Oct 27 08:37 GMT Standard Time
+Output:
+----------------------------------------------------------
+Keyboard bindings tests passed
+<end of output>
+Test time =   0.07 sec
+----------------------------------------------------------
+Test Passed.
+"FrameScaleKeyboardBindingsTests" end time: Oct 27 08:37 GMT Standard Time
+"FrameScaleKeyboardBindingsTests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+9/11 Testing: FrameScaleGlassMaterialTests
+9/11 Test: FrameScaleGlassMaterialTests
+Command: "C:/Users/Admin/Downloads/FrameScale v0.1.0/FrameScale/build/Release/FrameScaleGlassMaterialTests.exe"
+Directory: C:/Users/Admin/Downloads/FrameScale v0.1.0/FrameScale/build/Release
+"FrameScaleGlassMaterialTests" start time: Oct 27 08:37 GMT Standard Time
+Output:
+----------------------------------------------------------
+Glass material tests passed
+<end of output>
+Test time =   0.07 sec
+----------------------------------------------------------
+Test Passed.
+"FrameScaleGlassMaterialTests" end time: Oct 27 08:37 GMT Standard Time
+"FrameScaleGlassMaterialTests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+10/11 Testing: FrameScaleUrlImageTests
+10/11 Test: FrameScaleUrlImageTests
+Command: "C:/Users/Admin/Downloads/FrameScale v0.1.0/FrameScale/build/Release/FrameScaleUrlImageTests.exe"
+Directory: C:/Users/Admin/Downloads/FrameScale v0.1.0/FrameScale/build/Release
+"FrameScaleUrlImageTests" start time: Oct 27 08:37 GMT Standard Time
+Output:
+----------------------------------------------------------
+Image URLs without extension, redirects and duplicate filename preservation: OK
+<end of output>
+Test time =   0.26 sec
+----------------------------------------------------------
+Test Passed.
+"FrameScaleUrlImageTests" end time: Oct 27 08:37 GMT Standard Time
+"FrameScaleUrlImageTests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+11/11 Testing: FrameScaleHoverLayoutTests
+11/11 Test: FrameScaleHoverLayoutTests
+Command: "C:/Users/Admin/Downloads/FrameScale v0.1.0/FrameScale/build/Release/FrameScaleHoverLayoutTests.exe"
+Directory: C:/Users/Admin/Downloads/FrameScale v0.1.0/FrameScale/build/Release
+"FrameScaleHoverLayoutTests" start time: Oct 27 08:37 GMT Standard Time
+Output:
+----------------------------------------------------------
+control 0 underMouse=1 hover delta -21,-21
+control 1 underMouse=1 hover delta -46,-46
+control 2 underMouse=1 hover delta -46,-46
+control 3 underMouse=1 hover delta -46,-46
+Marker actual=30,430 expected=30,430
+<end of output>
+Test time =   0.16 sec
+----------------------------------------------------------
+Test Passed.
+"FrameScaleHoverLayoutTests" end time: Oct 27 08:37 GMT Standard Time
+"FrameScaleHoverLayoutTests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Oct 27 08:37 GMT Standard Time
+
+integration =  25.96 sec*proc
+

@@ -212,7 +212,7 @@ std::vector<std::string> validate(const ProcessingOptions& requested)
             [](const unsigned char character) {
                 return static_cast<char>(std::tolower(character));
             });
-        if (options.mediaType == MediaType::Video && !imageSequence(options) && extension != ".mp4" && extension != ".gif" && extension != ".mkv" && extension != ".mov" && extension != ".avi" && extension != ".mp3" && extension != ".wav") {
+        if (options.mediaType == MediaType::Video && !imageSequence(options) && extension != ".mp4" && extension != ".gif" && extension != ".webm" && extension != ".mkv" && extension != ".mov" && extension != ".avi" && extension != ".mp3" && extension != ".wav") {
             errors.emplace_back(
                 "Escolha MP4, MKV, MOV, AVI, GIF, MP3, WAV ou uma sequência PNG/JPEG.");
         } else if (options.mediaType == MediaType::Image && extension != ".png" && extension != ".jpg" && extension != ".jpeg" && extension != ".bmp" && extension != ".webp") {
@@ -277,7 +277,7 @@ std::vector<std::string> validate(const ProcessingOptions& requested)
             errors.emplace_back("O perfil ProRes tem de estar entre Proxy e 4444 XQ.");
         if (options.audioBitRate < 32000 || options.audioBitRate > 320000 || (options.audioSampleRate != 0 && options.audioSampleRate != 44100 && options.audioSampleRate != 48000) || options.audioChannels < 0 || options.audioChannels > 2)
             errors.emplace_back("As opções de áudio não são válidas.");
-        if (options.audioCodec != "copy" && options.audioCodec != "aac" && options.audioCodec != "pcm_s16le" && options.audioCodec != "libmp3lame")
+        if (options.audioCodec != "copy" && options.audioCodec != "aac" && options.audioCodec != "pcm_s16le" && options.audioCodec != "libmp3lame" && options.audioCodec != "libopus")
             errors.emplace_back("O codec de áudio não é válido.");
         if (options.rateControl != "crf" && options.rateControl != "vbr" && options.rateControl != "cbr")
             errors.emplace_back("O modo de qualidade não é válido.");
@@ -298,7 +298,7 @@ std::vector<std::string> validate(const ProcessingOptions& requested)
                 errors.emplace_back(
                     "Opção personalizada inválida: " + item.first + ". Use tune, profile:v, level:v, threads, g ou bf.");
         }
-        if (!audioOnly(options) && !imageSequence(options) && options.videoCodec != "libx264" && options.videoCodec != "libx265" && options.videoCodec != "prores_ks" && options.videoCodec != "mjpeg" && options.videoCodec != "gif") {
+        if (!audioOnly(options) && !imageSequence(options) && options.videoCodec != "libx264" && options.videoCodec != "libx265" && options.videoCodec != "prores_ks" && options.videoCodec != "mjpeg" && options.videoCodec != "gif" && options.videoCodec != "libvpx-vp9") {
             errors.emplace_back("Selecione um codec de vídeo compatível com o formato de saída.");
         }
         auto container = options.outputPath.extension().string();

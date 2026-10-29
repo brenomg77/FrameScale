@@ -129,10 +129,10 @@ private:
     QAction* openAction_ = nullptr;
     QPointer<ExportDialog> exportDialog_;
     std::unique_ptr<framescale::ProcessingJob> processingJob_;
-    std::unique_ptr<QTemporaryDir> clipboardDirectory_;
     std::unique_ptr<QTemporaryDir> pendingClipboardDirectory_;
     QString inputPath_;
     bool cancellationPending_ = false;
     bool clipboardCopyPending_ = false;
+    bool clipboardImportPending_ = false;
     bool closeWhenStopped_ = false;
 };

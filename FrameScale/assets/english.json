@@ -917,5 +917,10 @@
   "Gera detalhes novos para dar mais definição ao anime.\nConfira a preview: os detalhes gerados podem diferir do original.": "Generates new details to make anime look sharper.\nCheck the preview: generated details may differ from the original.",
   "Unir/desunir escala": "Link/unlink scale",
   "Intervalo de exportacao": "Export range",
-  "Ferramenta de seleção": "Selection tool"
+  "Ferramenta de seleção": "Selection tool",
+  "Guardando arquivo da área de transferência…": "Saving clipboard media…",
+  "Colar arquivo": "Paste file",
+  "Não foi possível guardar o arquivo na pasta Clipboard.\n%1": "Could not save the file in the Clipboard folder.\n%1",
+  "Não foi possível criar a pasta Clipboard.": "Could not create the Clipboard folder.",
+  "Não foi possível guardar a imagem copiada.": "Could not save the copied image."
 }
